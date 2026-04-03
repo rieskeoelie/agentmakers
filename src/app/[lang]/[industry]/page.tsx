@@ -112,14 +112,16 @@ export default async function LandingPage({ params }: Props) {
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 20, lineHeight: 1.2 }}>
               {content.problem_headline || headline}
             </h2>
-            <p style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 600, marginBottom: 32 }}>
+            <p style={{ color: '#0F172A', fontSize: '1.15rem', marginBottom: 32 }}>
               {content.problem_body || subline}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {(content.timeline || []).map((item: { time: string; scenario: string }, i: number) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, background: '#fff', padding: '20px 24px', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, background: i < 2 ? '#FEE2E2' : '#FEF3C7', color: i < 2 ? '#EF4444' : '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
-                    {i < 2 ? '📵' : '⚠️'}
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: i < 2 ? '#FEE2E2' : '#FEF3C7', color: i < 2 ? '#EF4444' : '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {i === 0 && <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>}
+                    {i === 1 && <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
+                    {i === 2 && <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
                   </div>
                   <div>
                     <h4 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.08rem', fontWeight: 600, color: '#0F172A' }}>{item.time}</h4>
@@ -239,7 +241,9 @@ export default async function LandingPage({ params }: Props) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
             {(content.usecases || []).map((uc: { title: string; body: string }, i: number) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, background: '#fff', padding: 24, borderRadius: 12, border: '1px solid rgba(13,148,136,.1)' }}>
-                <div style={{ color: '#0D9488', fontSize: '1.2rem', flexShrink: 0, marginTop: 2 }}>✓</div>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F0FDFA', color: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
                 <div>
                   <h4 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '.95rem', fontWeight: 600, color: '#0F172A' }}>{uc.title}</h4>
                   <p style={{ fontSize: '.85rem', color: '#64748B', marginTop: 4 }}>{uc.body}</p>
@@ -416,7 +420,7 @@ export default async function LandingPage({ params }: Props) {
 
       {/* FOOTER */}
       <footer style={{ background: '#0F172A', color: '#CBD5E1', padding: '40px 0', textAlign: 'center', fontSize: '.85rem' }}>
-        <p>© 2026 agentmakers.io. Alle rechten voorbehouden.</p>
+        <p>© 2026 agentmakers.io. Alle rechten voorbehouden. &nbsp;|&nbsp; <a href="/privacy" style={{ color: '#CBD5E1', textDecoration: 'none' }}>Privacy</a> &nbsp;|&nbsp; <a href="/voorwaarden" style={{ color: '#CBD5E1', textDecoration: 'none' }}>Voorwaarden</a></p>
       </footer>
     </div>
   )
