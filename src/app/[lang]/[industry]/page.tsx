@@ -85,7 +85,7 @@ export default async function LandingPage({ params }: Props) {
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 8vw', width: '100%', position: 'relative', zIndex: 2 }}>
           <div style={{ maxWidth: 620 }}>
             <div style={{ display: 'inline-block', background: 'rgba(13,148,136,.15)', color: '#CCFBF1', padding: '6px 16px', borderRadius: 100, fontSize: '.8rem', fontWeight: 600, letterSpacing: '.04em', marginBottom: 24 }}>
-              {t(l, 'hero_badge')}
+              {content.hero_badge || t(l, 'hero_badge')}
             </div>
             <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', color: '#fff', lineHeight: 1.15, marginBottom: 24 }}>
               {headline}
@@ -280,22 +280,25 @@ export default async function LandingPage({ params }: Props) {
           <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
             {l === 'nl' ? 'Hoe het werkt' : l === 'en' ? 'How it works' : 'Cómo funciona'}
           </div>
-          <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16 }}>{t(l, 'steps_title')}</h2>
+          <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16 }}>
+            {content.steps_title || t(l, 'steps_title')}
+          </h2>
           <p style={{ color: '#64748B', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto 48px' }}>
-            {l === 'nl' ? 'Geen maandenlange implementatie. Wij regelen alles.' : l === 'en' ? 'No months of implementation. We handle everything.' : 'Sin meses de implementación. Nosotros nos encargamos de todo.'}
+            {content.steps_sub || (l === 'nl' ? 'Geen maandenlange implementatie. Wij regelen alles.' : l === 'en' ? 'No months of implementation. We handle everything.' : 'Sin meses de implementación. Nosotros nos encargamos de todo.')}
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32, marginBottom: 48 }}>
-            {[
-              [t(l, 'step1'), t(l, 'step1_desc')],
-              [t(l, 'step2'), t(l, 'step2_desc')],
-              [t(l, 'step3'), t(l, 'step3_desc')],
-            ].map(([title, desc], i) => (
+            {(content.steps || [
+              {title: t(l, 'step1'), body: t(l, 'step1_desc')},
+              {title: t(l, 'step2'), body: t(l, 'step2_desc')},
+              {title: t(l, 'step3'), body: t(l, 'step3_desc')},
+            ]).map((step: {title: string; body: string}, i: number) => {
+              const title = step.title; const desc = step.body; return (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#0D9488', color: '#fff', fontWeight: 700, fontSize: '1.3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>{i + 1}</div>
                 <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.05rem', fontWeight: 600, marginBottom: 8 }}>{title}</h3>
                 <p style={{ fontSize: '.9rem', color: '#64748B', maxWidth: 280, margin: '0 auto' }}>{desc}</p>
               </div>
-            ))}
+            )})}
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', padding: 32, background: '#F1F5F9', borderRadius: 14 }}>
             {['Google Calendar', 'Clinicminds', 'Timify', 'Calendly', 'Microsoft 365', 'VoIP / SIP', 'Custom API'].map((badge) => (
@@ -354,6 +357,14 @@ export default async function LandingPage({ params }: Props) {
       {/* STATS */}
       <section style={{ padding: '100px 0' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+              {content.stats_label || (l === 'nl' ? 'Resultaten' : l === 'en' ? 'Results' : 'Resultados')}
+            </div>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)' }}>
+              {content.stats_title || (l === 'nl' ? 'Wat klanten ervaren met agentmakers.io' : l === 'en' ? 'What clients experience with agentmakers.io' : 'Lo que los clientes experimentan con agentmakers.io')}
+            </h2>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
             {[['98%', l === 'nl' ? 'van alle oproepen beantwoord' : l === 'en' ? 'of all calls answered' : 'de todas las llamadas atendidas'], ['+34%', l === 'nl' ? 'meer boekingen buiten openingstijden' : l === 'en' ? 'more bookings outside opening hours' : 'más reservas fuera del horario'], ['-40%', l === 'nl' ? 'reductie in no-shows' : l === 'en' ? 'reduction in no-shows' : 'reducción de no-shows']].map(([num, desc]) => (
               <div key={num} style={{ textAlign: 'center', padding: '40px 24px', background: '#F0FDFA', borderRadius: 14 }}>
@@ -372,7 +383,7 @@ export default async function LandingPage({ params }: Props) {
             {content.cta_headline || t(l, 'cta_label')}
           </h2>
           <p style={{ color: '#CCFBF1', fontSize: '1.05rem', marginBottom: 40, maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
-            {t(l, 'cta_sub')}
+            {content.cta_sub || t(l, 'cta_sub')}
           </p>
           <DemoForm slug={industry} lang={l} strings={{
             name: t(l, 'form_name'),
