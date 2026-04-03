@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Lang } from '@/lib/i18n'
 
 interface Props {
@@ -45,9 +45,70 @@ function Field({ icon, children }: { icon: React.ReactNode; children: React.Reac
   )
 }
 
+// Confetti canvas component
+function Confetti() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+
+    const colors = ['#0D9488', '#14B8A6', '#5EEAD4', '#FBBF24', '#F59E0B', '#EC4899', '#8B5CF6', '#fff']
+    const pieces: { x: number; y: number; w: number; h: number; color: string; vx: number; vy: number; angle: number; va: number }[] = []
+
+    for (let i = 0; i < 150; i++) {
+      pieces.push({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * 200,
+        w: 8 + Math.random() * 8,
+        h: 4 + Math.random() * 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vx: (Math.random() - 0.5) * 4,
+        vy: 3 + Math.random() * 5,
+        angle: Math.random() * Math.PI * 2,
+        va: (Math.random() - 0.5) * 0.2,
+      })
+    }
+
+    let frame: number
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      pieces.forEach(p => {
+        p.x += p.vx
+        p.y += p.vy
+        p.angle += p.va
+        p.vy += 0.1
+        ctx.save()
+        ctx.translate(p.x, p.y)
+        ctx.rotate(p.angle)
+        ctx.fillStyle = p.color
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h)
+        ctx.restore()
+      })
+      frame = requestAnimationFrame(animate)
+    }
+    animate()
+
+    const timer = setTimeout(() => cancelAnimationFrame(frame), 4000)
+    return () => { cancelAnimationFrame(frame); clearTimeout(timer) }
+  }, [])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 9999 }}
+    />
+  )
+}
+
 export function DemoForm({ slug, lang, strings }: Props) {
   const [state, setState] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
-  const [form, setForm] = useState({ naam: '', email: '', telefoon: '', website: '', bedrijfsnaam: '' })
+  const [form, setForm] = useState({ naam: '', email: '', telefoon: '', website: 'https://', bedrijfsnaam: '' })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -85,11 +146,16 @@ export function DemoForm({ slug, lang, strings }: Props) {
 
   if (state === 'success') {
     return (
-      <div style={{ background: '#fff', padding: '48px 40px', borderRadius: 20, maxWidth: 520, margin: '0 auto', textAlign: 'center', boxShadow: '0 8px 40px rgba(0,0,0,.12)' }}>
-        <div style={{ fontSize: '3rem', marginBottom: 16 }}>✅</div>
-        <h3 style={{ fontFamily: "'Poppins',sans-serif", color: '#0F172A', marginBottom: 8, fontSize: '1.3rem' }}>{strings.success}</h3>
-        <p style={{ color: '#64748B' }}>{strings.trust}</p>
-      </div>
+      <>
+        <Confetti />
+        <div style={{ textAlign: 'center', padding: '16px 0' }}>
+          <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>🎉</div>
+          <h3 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', marginBottom: 8, fontSize: '1.6rem', fontWeight: 700 }}>
+            {strings.success}
+          </h3>
+          <p style={{ color: '#CCFBF1', fontSize: '1.05rem' }}>{strings.trust}</p>
+        </div>
+      </>
     )
   }
 
