@@ -80,9 +80,9 @@ export default async function LandingPage({ params }: Props) {
       </nav>
 
       {/* HERO */}
-      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', backgroundImage: `url('${heroImg}')`, backgroundSize: 'cover', backgroundPosition: 'center', paddingTop: 80, overflow: 'hidden' }}>
+      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'flex-start', backgroundImage: `url('${heroImg}')`, backgroundSize: 'cover', backgroundPosition: 'center', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,.88) 0%, rgba(15,23,42,.75) 50%, rgba(13,148,136,.4) 100%)' }} />
-        <div style={{ maxWidth: 'none', padding: '0 8vw', width: '100%', position: 'relative', zIndex: 2, display: 'block' }}>
+        <div style={{ maxWidth: 'none', padding: '0 8vw', paddingTop: 'clamp(120px, 18vh, 180px)', width: '100%', position: 'relative', zIndex: 2, display: 'block' }}>
           <div style={{ maxWidth: 620 }}>
             <div style={{ display: 'inline-block', background: 'rgba(13,148,136,.15)', color: '#CCFBF1', padding: '6px 16px', borderRadius: 100, fontSize: '.8rem', fontWeight: 600, letterSpacing: '.04em', marginBottom: 24 }}>
               {content.hero_badge || t(l, 'hero_badge')}
