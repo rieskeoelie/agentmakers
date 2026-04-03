@@ -87,9 +87,10 @@ export default async function LandingPage({ params }: Props) {
             <div style={{ display: 'inline-block', background: 'rgba(13,148,136,.15)', color: '#CCFBF1', padding: '6px 16px', borderRadius: 100, fontSize: '.8rem', fontWeight: 600, letterSpacing: '.04em', marginBottom: 24 }}>
               {content.hero_badge || t(l, 'hero_badge')}
             </div>
-            <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', color: '#fff', lineHeight: 1.15, marginBottom: 24 }}>
-              {headline}
-            </h1>
+            <h1
+              style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', color: '#fff', lineHeight: 1.15, marginBottom: 24, fontWeight: 700 }}
+              dangerouslySetInnerHTML={{ __html: (headline || '').replace(/<em>/g, '<em style="font-style:normal;color:#CCFBF1;">') }}
+            />
             <p style={{ color: '#fff', fontSize: '1.15rem', marginBottom: 36, maxWidth: 540 }}>{subline}</p>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <a href="#demo" style={{ background: '#0D9488', color: '#fff', padding: '16px 32px', borderRadius: 10, fontWeight: 600, fontSize: '1rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
