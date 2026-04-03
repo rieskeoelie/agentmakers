@@ -91,7 +91,7 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
               <input type="range" min={1} max={30} step={1} value={calls}
                 onChange={e => setCalls(Number(e.target.value))}
                 style={{ width: '100%', accentColor: '#0D9488', cursor: 'pointer', height: 4 }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#334155', fontSize: '.7rem', marginTop: 3 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '.7rem', marginTop: 3 }}>
                 <span>1</span><span>30</span>
               </div>
             </div>
@@ -105,7 +105,7 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
               <input type="range" min={50} max={2000} step={25} value={value}
                 onChange={e => setValue(Number(e.target.value))}
                 style={{ width: '100%', accentColor: '#0D9488', cursor: 'pointer', height: 4 }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#334155', fontSize: '.7rem', marginTop: 3 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '.7rem', marginTop: 3 }}>
                 <span>€50</span><span>€2.000</span>
               </div>
             </div>
@@ -117,7 +117,7 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
           {/* Result row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             {/* Context text */}
-            <p style={{ color: '#64748B', fontSize: '.85rem', maxWidth: 300, margin: 0, lineHeight: 1.5 }}>
+            <p style={{ color: '#fff', fontSize: '.85rem', maxWidth: 300, margin: 0, lineHeight: 1.5 }}>
               {s.context(calls, value)}
             </p>
 
@@ -126,10 +126,10 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
               <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, color: '#fff', lineHeight: 1, letterSpacing: '-.02em' }}>
                 €{annual.toLocaleString('nl-NL')}
               </div>
-              <div style={{ color: '#475569', fontSize: '.78rem', marginTop: 4 }}>
+              <div style={{ color: '#fff', fontSize: '.95rem', marginTop: 4 }}>
                 {s.perYear}
               </div>
-              <div style={{ color: '#CCFBF1', fontSize: '.82rem', fontWeight: 600, marginTop: 2 }}>
+              <div style={{ color: '#CCFBF1', fontSize: '1rem', fontWeight: 600, marginTop: 2 }}>
                 {s.perMonth(monthly.toLocaleString('nl-NL'))}
               </div>
             </div>
