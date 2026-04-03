@@ -203,8 +203,8 @@ export default async function LandingPage({ params }: Props) {
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16, color: '#fff' }}>
               {l === 'nl' ? 'Laat meerdere agenten samenwerken voor een complete 360 graden upgrade van uw kliniek.' : l === 'en' ? 'Let multiple agents work together for a complete 360-degree upgrade of your clinic.' : 'Deje que varios agentes trabajen juntos para una mejora completa de 360 grados de su clínica.'}
             </h2>
-            <p style={{ color: '#CBD5E1', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto' }}>
-              {l === 'nl' ? 'Elk contactmoment geautomatiseerd — via telefoon, chat, e-mail en social media.' : l === 'en' ? 'Every touchpoint automated — phone, chat, email and social media.' : 'Cada punto de contacto automatizado — teléfono, chat, correo y redes sociales.'}
+            <p style={{ color: '#CBD5E1', fontSize: '1.05rem', maxWidth: 800, margin: '0 auto', whiteSpace: 'nowrap' }}>
+              {l === 'nl' ? 'Elk contactmoment geautomatiseerd - via telefoon, chat, e-mail en social media.' : l === 'en' ? 'Every touchpoint automated - phone, chat, email and social media.' : 'Cada punto de contacto automatizado - teléfono, chat, correo y redes sociales.'}
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
