@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
 const ADMIN_KEY_STORAGE = 'agentmakers_admin_key'
+const SEEN_LEADS_STORAGE = 'agentmakers_seen_leads'
 
 interface Page {
   id: string; slug: string; industry: string; status: string
@@ -9,8 +10,17 @@ interface Page {
 }
 interface Lead {
   id: string; naam: string; email: string; telefoon: string
-  landing_page_slug: string; language: string; created_at: string; website?: string
+  landing_page_slug: string; language: string; created_at: string
+  website?: string; bedrijfsnaam?: string; handled?: boolean
 }
+
+const GENERATION_STEPS = [
+  'Prompt versturen naar Claude AI...',
+  'Inhoud genereren in 3 talen (NL/EN/ES)...',
+  'Teksten verifiëren en structureren...',
+  'Pagina opslaan in database...',
+  'Bijna klaar...',
+]
 
 export default function AdminDashboard() {
   const [key, setKey] = useState('')
@@ -19,11 +29,16 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState<'pages' | 'leads' | 'analytics'>('pages')
   const [pages, setPages] = useState<Page[]>([])
   const [leads, setLeads] = useState<Lead[]>([])
+  const [handledLeads, setHandledLeads] = useState<Set<string>>(new Set())
+  const [seenLeadIds, setSeenLeadIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [generationStep, setGenerationStep] = useState(0)
   const [newIndustry, setNewIndustry] = useState('')
   const [newSlug, setNewSlug] = useState('')
+  const [deleteModal, setDeleteModal] = useState<Page | null>(null)
+  const [analyticsLang, setAnalyticsLang] = useState<'all' | 'nl' | 'en' | 'es'>('all')
 
   const fetchData = useCallback(async (k: string) => {
     setLoading(true)
@@ -32,7 +47,14 @@ export default function AdminDashboard() {
       fetch('/api/leads', { headers: { 'x-admin-key': k } }),
     ])
     if (pRes.ok) setPages(await pRes.json())
-    if (lRes.ok) setLeads(await lRes.json())
+    if (lRes.ok) {
+      const fetchedLeads: Lead[] = await lRes.json()
+      setLeads(fetchedLeads)
+      // Mark new leads (not seen before)
+      const stored = localStorage.getItem(SEEN_LEADS_STORAGE)
+      const seen: string[] = stored ? JSON.parse(stored) : []
+      setSeenLeadIds(new Set(seen))
+    }
     setLoading(false)
   }, [])
 
@@ -40,6 +62,22 @@ export default function AdminDashboard() {
     const stored = localStorage.getItem(ADMIN_KEY_STORAGE)
     if (stored) { setSavedKey(stored); setAuthed(true); fetchData(stored) }
   }, [fetchData])
+
+  // Simulate generation progress
+  useEffect(() => {
+    if (!creating) { setGenerationStep(0); return }
+    const intervals = [2000, 5000, 9000, 13000]
+    const timers = intervals.map((delay, i) =>
+      setTimeout(() => setGenerationStep(i + 1), delay)
+    )
+    return () => timers.forEach(clearTimeout)
+  }, [creating])
+
+  const markAllSeen = useCallback(() => {
+    const allIds = leads.map(l => l.id)
+    localStorage.setItem(SEEN_LEADS_STORAGE, JSON.stringify(allIds))
+    setSeenLeadIds(new Set(allIds))
+  }, [leads])
 
   const login = () => {
     localStorage.setItem(ADMIN_KEY_STORAGE, key)
@@ -53,27 +91,91 @@ export default function AdminDashboard() {
 
   const toggleStatus = async (page: Page) => {
     const next = page.status === 'live' ? 'offline' : 'live'
-    await fetch('/api/pages', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey }, body: JSON.stringify({ id: page.id, status: next }) })
-    fetchData(savedKey)
+    // Optimistic update
+    setPages(prev => prev.map(p => p.id === page.id ? { ...p, status: next } : p))
+    await fetch('/api/pages', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+      body: JSON.stringify({ id: page.id, status: next })
+    })
   }
 
-  const deletePage = async (page: Page) => {
-    if (!confirm(`Verwijder "${page.industry}"? Dit kan niet ongedaan worden gemaakt.`)) return
-    await fetch('/api/pages', { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey }, body: JSON.stringify({ id: page.id }) })
-    fetchData(savedKey)
+  const confirmDelete = async () => {
+    if (!deleteModal) return
+    // Optimistic update
+    setPages(prev => prev.filter(p => p.id !== deleteModal.id))
+    setDeleteModal(null)
+    await fetch('/api/pages', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+      body: JSON.stringify({ id: deleteModal.id })
+    })
   }
 
   const createPage = async () => {
     if (!newIndustry || !newSlug) return alert('Vul branche en URL-slug in')
     setCreating(true)
-    const res = await fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey }, body: JSON.stringify({ industry: newIndustry, slug: newSlug, status: 'draft' }) })
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+      body: JSON.stringify({ industry: newIndustry, slug: newSlug, status: 'draft' })
+    })
     const data = await res.json()
     setCreating(false)
-    if (data.success) { setShowCreate(false); setNewIndustry(''); setNewSlug(''); fetchData(savedKey) }
-    else alert('Fout: ' + data.error)
+    if (data.success) {
+      setShowCreate(false); setNewIndustry(''); setNewSlug('')
+      fetchData(savedKey)
+    } else alert('Fout: ' + data.error)
   }
 
-  const s = { background: '#fff', padding: '13px 16px', borderRadius: 10, border: '1.5px solid #CBD5E1', fontSize: '.92rem', fontFamily: "'Nunito',sans-serif", color: '#0F172A', outline: 'none', width: '100%' }
+  const toggleHandled = (id: string) => {
+    setHandledLeads(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const exportCSV = () => {
+    const headers = ['Naam', 'E-mail', 'Telefoon', 'Bedrijf', 'Website', 'Pagina', 'Taal', 'Datum', 'Afgehandeld']
+    const rows = leads.map(l => [
+      l.naam, l.email, l.telefoon,
+      l.bedrijfsnaam || '', l.website || '',
+      '/' + l.landing_page_slug, l.language,
+      new Date(l.created_at).toLocaleDateString('nl-NL'),
+      handledLeads.has(l.id) ? 'Ja' : 'Nee'
+    ])
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click(); URL.revokeObjectURL(url)
+  }
+
+  const newLeadsCount = leads.filter(l => !seenLeadIds.has(l.id)).length
+
+  const s = {
+    background: '#fff', padding: '13px 16px', borderRadius: 10,
+    border: '1.5px solid #CBD5E1', fontSize: '.92rem',
+    fontFamily: "'Nunito',sans-serif", color: '#0F172A', outline: 'none', width: '100%'
+  }
+
+  const totalVisits = pages.reduce((acc, p) => acc + (p.visits || 0), 0)
+  const totalConversions = pages.reduce((acc, p) => acc + (p.conversions || 0), 0)
+
+  // Analytics: sort pages by conversion ratio
+  const sortedByRatio = [...pages]
+    .filter(p => p.visits > 0)
+    .sort((a, b) => (b.conversions / b.visits) - (a.conversions / a.visits))
+
+  // Analytics: per-language lead breakdown
+  const leadsByLang = {
+    nl: leads.filter(l => l.language === 'nl').length,
+    en: leads.filter(l => l.language === 'en').length,
+    es: leads.filter(l => l.language === 'es').length,
+  }
+  const filteredLeads = analyticsLang === 'all' ? leads : leads.filter(l => l.language === analyticsLang)
 
   if (!authed) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F1F5F9' }}>
@@ -87,14 +189,13 @@ export default function AdminDashboard() {
     </div>
   )
 
-  const totalVisits = pages.reduce((s, p) => s + (p.visits || 0), 0)
-  const totalConversions = pages.reduce((s, p) => s + (p.conversions || 0), 0)
-
   return (
     <div style={{ minHeight: '100vh', background: '#F1F5F9', fontFamily: "'Nunito',sans-serif" }}>
       {/* Top nav */}
       <div style={{ background: '#fff', borderBottom: '1px solid #F1F5F9', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', fontWeight: 700, color: '#0D9488' }}>agentmakers.io <span style={{ fontSize: '.75rem', color: '#64748B', fontWeight: 400, marginLeft: 8 }}>admin</span></span>
+        <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', fontWeight: 700, color: '#0D9488' }}>
+          agentmakers.io <span style={{ fontSize: '.75rem', color: '#64748B', fontWeight: 400, marginLeft: 8 }}>admin</span>
+        </span>
         <button onClick={logout} style={{ background: 'none', border: '1px solid #CBD5E1', padding: '8px 18px', borderRadius: 8, fontSize: '.85rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>Uitloggen</button>
       </div>
 
@@ -102,7 +203,7 @@ export default function AdminDashboard() {
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
           {[
-            ['Pagina\'s', pages.length, '📄'],
+            ["Pagina's", pages.length, '📄'],
             ['Live', pages.filter(p => p.status === 'live').length, '🟢'],
             ['Bezoekers', totalVisits, '👁️'],
             ['Aanvragen', leads.length, '📥'],
@@ -118,8 +219,14 @@ export default function AdminDashboard() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           {(['pages', 'leads', 'analytics'] as const).map(t2 => (
-            <button key={t2} onClick={() => setTab(t2)} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: tab === t2 ? '#0D9488' : '#fff', color: tab === t2 ? '#fff' : '#64748B' }}>
-              {t2 === 'pages' ? '📄 Pagina\'s' : t2 === 'leads' ? '📥 Aanvragen' : '📊 Analytics'}
+            <button key={t2} onClick={() => { setTab(t2); if (t2 === 'leads') markAllSeen() }}
+              style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: tab === t2 ? '#0D9488' : '#fff', color: tab === t2 ? '#fff' : '#64748B', position: 'relative' }}>
+              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📥 Aanvragen' : '📊 Analytics'}
+              {t2 === 'leads' && newLeadsCount > 0 && (
+                <span style={{ position: 'absolute', top: -6, right: -6, background: '#EF4444', color: '#fff', borderRadius: '50%', width: 20, height: 20, fontSize: '.7rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {newLeadsCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -129,7 +236,9 @@ export default function AdminDashboard() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Landingspagina&apos;s</h2>
-              <button onClick={() => setShowCreate(true)} style={{ background: '#0D9488', color: '#fff', padding: '12px 24px', borderRadius: 10, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", display: 'flex', alignItems: 'center', gap: 8 }}>+ Nieuwe pagina</button>
+              <button onClick={() => setShowCreate(true)} style={{ background: '#0D9488', color: '#fff', padding: '12px 24px', borderRadius: 10, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                + Nieuwe pagina
+              </button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
               {loading ? <p>Laden...</p> : pages.map(page => (
@@ -143,13 +252,22 @@ export default function AdminDashboard() {
                   <div style={{ fontSize: '.85rem', color: '#0D9488', marginBottom: 8 }}>/{page.slug}</div>
                   <div style={{ fontSize: '.8rem', color: '#64748B', marginBottom: 16 }}>
                     👁 {page.visits || 0} bezoeken &nbsp;|&nbsp; 📥 {page.conversions || 0} conversies
+                    {page.visits > 0 && (
+                      <span style={{ marginLeft: 8, background: '#F0FDF4', color: '#166534', padding: '2px 8px', borderRadius: 6, fontSize: '.72rem', fontWeight: 600 }}>
+                        {((page.conversions / page.visits) * 100).toFixed(1)}% ratio
+                      </span>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <button onClick={() => toggleStatus(page)} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${page.status === 'live' ? '#EF4444' : '#22C55E'}`, background: '#fff', color: page.status === 'live' ? '#EF4444' : '#22C55E' }}>
                       {page.status === 'live' ? 'Offline' : 'Live zetten'}
                     </button>
-                    <button onClick={() => window.open(`/nl/${page.slug}`, '_blank')} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #CBD5E1', background: '#fff', color: '#334155' }}>Bekijken</button>
-                    <button onClick={() => deletePage(page)} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #EF4444', background: '#fff', color: '#EF4444' }}>Verwijder</button>
+                    <button onClick={() => window.open(`/nl/${page.slug}`, '_blank')} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #CBD5E1', background: '#fff', color: '#334155' }}>
+                      Bekijken
+                    </button>
+                    <button onClick={() => setDeleteModal(page)} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #EF4444', background: '#fff', color: '#EF4444' }}>
+                      Verwijder
+                    </button>
                   </div>
                 </div>
               ))}
@@ -160,29 +278,47 @@ export default function AdminDashboard() {
         {/* LEADS TAB */}
         {tab === 'leads' && (
           <div>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 20 }}>Demo-aanvragen ({leads.length})</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Demo-aanvragen ({leads.length})</h2>
+              <button onClick={exportCSV} style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                ⬇ Exporteer CSV
+              </button>
+            </div>
             <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #F1F5F9' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: '#F1F5F9' }}>
-                    {['Naam', 'E-mail', 'Telefoon', 'Pagina', 'Taal', 'Datum'].map(h => (
-                      <th key={h} style={{ padding: '14px 20px', textAlign: 'left', fontSize: '.8rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em' }}>{h}</th>
+                    {['', 'Naam', 'E-mail', 'Telefoon', 'Bedrijf', 'Pagina', 'Taal', 'Datum', 'Status'].map(h => (
+                      <th key={h} style={{ padding: '14px 16px', textAlign: 'left', fontSize: '.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {leads.map((lead, i) => (
-                    <tr key={lead.id} style={{ borderTop: '1px solid #F1F5F9', background: i % 2 === 0 ? '#fff' : '#FAFAFA' }}>
-                      <td style={{ padding: '16px 20px', fontWeight: 600, color: '#0F172A' }}>{lead.naam}</td>
-                      <td style={{ padding: '16px 20px' }}><a href={`mailto:${lead.email}`} style={{ color: '#0D9488' }}>{lead.email}</a></td>
-                      <td style={{ padding: '16px 20px' }}>{lead.telefoon}</td>
-                      <td style={{ padding: '16px 20px', color: '#0D9488' }}>/{lead.landing_page_slug}</td>
-                      <td style={{ padding: '16px 20px' }}>{lead.language === 'nl' ? '🇳🇱' : lead.language === 'en' ? '🇬🇧' : '🇪🇸'}</td>
-                      <td style={{ padding: '16px 20px', fontSize: '.85rem', color: '#64748B' }}>{new Date(lead.created_at).toLocaleDateString('nl-NL')}</td>
-                    </tr>
-                  ))}
+                  {leads.map((lead, i) => {
+                    const isNew = !seenLeadIds.has(lead.id)
+                    const isHandled = handledLeads.has(lead.id)
+                    return (
+                      <tr key={lead.id} style={{ borderTop: '1px solid #F1F5F9', background: isNew ? '#F0FDF4' : i % 2 === 0 ? '#fff' : '#FAFAFA', opacity: isHandled ? 0.55 : 1, transition: 'opacity .2s' }}>
+                        <td style={{ padding: '14px 16px' }}>
+                          {isNew && <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#22C55E', marginRight: 4 }} title="Nieuw" />}
+                        </td>
+                        <td style={{ padding: '14px 16px', fontWeight: 600, color: '#0F172A' }}>{lead.naam}</td>
+                        <td style={{ padding: '14px 16px' }}><a href={`mailto:${lead.email}`} style={{ color: '#0D9488' }}>{lead.email}</a></td>
+                        <td style={{ padding: '14px 16px' }}><a href={`tel:${lead.telefoon}`} style={{ color: '#334155' }}>{lead.telefoon}</a></td>
+                        <td style={{ padding: '14px 16px', color: '#64748B', fontSize: '.85rem' }}>{lead.bedrijfsnaam || lead.website || '—'}</td>
+                        <td style={{ padding: '14px 16px', color: '#0D9488', fontSize: '.85rem' }}>/{lead.landing_page_slug}</td>
+                        <td style={{ padding: '14px 16px' }}>{lead.language === 'nl' ? '🇳🇱' : lead.language === 'en' ? '🇬🇧' : '🇪🇸'}</td>
+                        <td style={{ padding: '14px 16px', fontSize: '.82rem', color: '#64748B' }}>{new Date(lead.created_at).toLocaleDateString('nl-NL')}</td>
+                        <td style={{ padding: '14px 16px' }}>
+                          <button onClick={() => toggleHandled(lead.id)} style={{ padding: '5px 12px', borderRadius: 6, fontSize: '.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${isHandled ? '#CBD5E1' : '#22C55E'}`, background: isHandled ? '#F1F5F9' : '#F0FDF4', color: isHandled ? '#94A3B8' : '#166534' }}>
+                            {isHandled ? 'Heropenen' : '✓ Afgehandeld'}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                   {leads.length === 0 && (
-                    <tr><td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>Nog geen aanvragen ontvangen.</td></tr>
+                    <tr><td colSpan={9} style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>Nog geen aanvragen ontvangen.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -194,7 +330,9 @@ export default function AdminDashboard() {
         {tab === 'analytics' && (
           <div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 20 }}>Analytics</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
+
+            {/* Totaal stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
               {[
                 ['Totaal bezoekers', totalVisits, '#0D9488'],
                 ['Totaal conversies', totalConversions, '#22C55E'],
@@ -206,6 +344,71 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+
+            {/* Aanvragen per taal */}
+            <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem', fontWeight: 600 }}>Aanvragen per taal</h3>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {(['all', 'nl', 'en', 'es'] as const).map(lang => (
+                    <button key={lang} onClick={() => setAnalyticsLang(lang)} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: '.82rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: analyticsLang === lang ? '#0D9488' : '#F1F5F9', color: analyticsLang === lang ? '#fff' : '#64748B' }}>
+                      {lang === 'all' ? 'Alle' : lang === 'nl' ? '🇳🇱 NL' : lang === 'en' ? '🇬🇧 EN' : '🇪🇸 ES'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+                {[
+                  { lang: 'nl', flag: '🇳🇱', label: 'Nederlands' },
+                  { lang: 'en', flag: '🇬🇧', label: 'Engels' },
+                  { lang: 'es', flag: '🇪🇸', label: 'Spaans' },
+                ].map(({ lang, flag, label }) => {
+                  const count = leadsByLang[lang as 'nl' | 'en' | 'es']
+                  const pct = leads.length > 0 ? Math.round((count / leads.length) * 100) : 0
+                  return (
+                    <div key={lang} style={{ textAlign: 'center', padding: '16px', background: '#F8FAFC', borderRadius: 10 }}>
+                      <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{flag}</div>
+                      <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.5rem', fontWeight: 700, color: '#0D9488' }}>{count}</div>
+                      <div style={{ fontSize: '.8rem', color: '#64748B' }}>{label} · {pct}%</div>
+                    </div>
+                  )
+                })}
+              </div>
+              {filteredLeads.length > 0 && (
+                <p style={{ fontSize: '.82rem', color: '#64748B', margin: 0 }}>
+                  Toont {filteredLeads.length} aanvragen{analyticsLang !== 'all' ? ` voor taal: ${analyticsLang.toUpperCase()}` : ''}
+                </p>
+              )}
+            </div>
+
+            {/* Beste pagina's op conversieratio */}
+            {sortedByRatio.length > 0 && (
+              <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 24 }}>
+                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem', fontWeight: 600, marginBottom: 16 }}>🏆 Beste pagina&apos;s op conversieratio</h3>
+                {sortedByRatio.map((page, i) => {
+                  const ratio = ((page.conversions / page.visits) * 100).toFixed(1)
+                  const barWidth = Math.min(100, parseFloat(ratio) * 10)
+                  return (
+                    <div key={page.id} style={{ marginBottom: 14 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: '.88rem', fontWeight: 600, color: '#0F172A' }}>
+                          {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`} {page.industry}
+                        </span>
+                        <span style={{ fontSize: '.88rem', fontWeight: 700, color: '#0D9488' }}>{ratio}%</span>
+                      </div>
+                      <div style={{ background: '#F1F5F9', borderRadius: 4, height: 6 }}>
+                        <div style={{ background: '#0D9488', borderRadius: 4, height: 6, width: `${barWidth}%`, transition: 'width .4s' }} />
+                      </div>
+                      <div style={{ fontSize: '.75rem', color: '#94A3B8', marginTop: 2 }}>
+                        {page.visits} bezoekers · {page.conversions} conversies
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Alle pagina's tabel */}
             <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #F1F5F9' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
@@ -220,11 +423,18 @@ export default function AdminDashboard() {
                     const ratio = page.visits > 0 ? ((page.conversions / page.visits) * 100).toFixed(1) : '0'
                     return (
                       <tr key={page.id} style={{ borderTop: '1px solid #F1F5F9', background: i % 2 === 0 ? '#fff' : '#FAFAFA' }}>
-                        <td style={{ padding: '16px 20px', fontWeight: 600, color: '#0F172A' }}>{page.industry}<br /><span style={{ fontSize: '.8rem', color: '#0D9488', fontWeight: 400 }}>/{page.slug}</span></td>
+                        <td style={{ padding: '16px 20px', fontWeight: 600, color: '#0F172A' }}>
+                          {page.industry}<br />
+                          <span style={{ fontSize: '.8rem', color: '#0D9488', fontWeight: 400 }}>/{page.slug}</span>
+                        </td>
                         <td style={{ padding: '16px 20px' }}>{page.visits || 0}</td>
                         <td style={{ padding: '16px 20px' }}>{page.conversions || 0}</td>
                         <td style={{ padding: '16px 20px' }}>{ratio}%</td>
-                        <td style={{ padding: '16px 20px' }}><span style={{ padding: '4px 10px', borderRadius: 100, fontSize: '.72rem', fontWeight: 700, background: page.status === 'live' ? '#DCFCE7' : '#FEF3C7', color: page.status === 'live' ? '#166534' : '#92400E' }}>{page.status}</span></td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: '.72rem', fontWeight: 700, background: page.status === 'live' ? '#DCFCE7' : '#FEF3C7', color: page.status === 'live' ? '#166534' : '#92400E' }}>
+                            {page.status}
+                          </span>
+                        </td>
                       </tr>
                     )
                   })}
@@ -239,22 +449,66 @@ export default function AdminDashboard() {
       {showCreate && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 1000 }}>
           <div style={{ background: '#fff', borderRadius: 20, maxWidth: 520, width: '100%', padding: 40, position: 'relative', boxShadow: '0 24px 64px rgba(0,0,0,.2)' }}>
-            <button onClick={() => setShowCreate(false)} style={{ position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+            <button onClick={() => !creating && setShowCreate(false)} style={{ position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: creating ? 'not-allowed' : 'pointer', fontSize: '1rem' }}>✕</button>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 8 }}>Nieuwe landingspagina</h2>
             <p style={{ color: '#64748B', fontSize: '.9rem', marginBottom: 28 }}>Claude AI schrijft de volledige pagina automatisch voor u.</p>
-            <div style={{ marginBottom: 18 }}>
-              <label style={{ fontSize: '.8rem', fontWeight: 600, color: '#334155', display: 'block', marginBottom: 6 }}>Branchenaam</label>
-              <input value={newIndustry} onChange={e => { setNewIndustry(e.target.value); setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')) }} placeholder="bijv. Tandartspraktijken" style={s} />
+
+            {!creating ? (
+              <>
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ fontSize: '.8rem', fontWeight: 600, color: '#334155', display: 'block', marginBottom: 6 }}>Branchenaam</label>
+                  <input value={newIndustry} onChange={e => { setNewIndustry(e.target.value); setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')) }} placeholder="bijv. Tandartspraktijken" style={s} />
+                </div>
+                <div style={{ marginBottom: 24 }}>
+                  <label style={{ fontSize: '.8rem', fontWeight: 600, color: '#334155', display: 'block', marginBottom: 6 }}>URL-slug</label>
+                  <input value={newSlug} onChange={e => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} placeholder="tandartsen" style={s} />
+                  <p style={{ fontSize: '.78rem', color: '#64748B', marginTop: 4 }}>Wordt: agentmakers.io/nl/<strong>{newSlug || 'slug'}</strong></p>
+                </div>
+                <button onClick={createPage} style={{ width: '100%', padding: 14, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                  ✨ Pagina genereren
+                </button>
+              </>
+            ) : (
+              <div style={{ paddingTop: 8 }}>
+                {GENERATION_STEPS.map((step, i) => {
+                  const done = i < generationStep
+                  const active = i === generationStep
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, opacity: i > generationStep ? 0.3 : 1, transition: 'opacity .3s' }}>
+                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: done ? '#0D9488' : active ? '#FEF3C7' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.8rem', flexShrink: 0, border: active ? '2px solid #F59E0B' : 'none', transition: 'all .3s' }}>
+                        {done ? '✓' : active ? '⏳' : i + 1}
+                      </div>
+                      <span style={{ fontSize: '.9rem', color: done ? '#0D9488' : active ? '#92400E' : '#94A3B8', fontWeight: active ? 600 : 400 }}>{step}</span>
+                    </div>
+                  )
+                })}
+                <div style={{ marginTop: 20, background: '#F1F5F9', borderRadius: 8, height: 6 }}>
+                  <div style={{ background: '#0D9488', borderRadius: 8, height: 6, width: `${(generationStep / GENERATION_STEPS.length) * 100}%`, transition: 'width .5s ease' }} />
+                </div>
+                <p style={{ textAlign: 'center', fontSize: '.83rem', color: '#64748B', marginTop: 12 }}>Dit duurt ±15 seconden. Even geduld...</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRM MODAL */}
+      {deleteModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 1000 }}>
+          <div style={{ background: '#fff', borderRadius: 20, maxWidth: 440, width: '100%', padding: 40, boxShadow: '0 24px 64px rgba(0,0,0,.2)' }}>
+            <div style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: 16 }}>🗑️</div>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', marginBottom: 8, textAlign: 'center' }}>Pagina verwijderen?</h2>
+            <p style={{ color: '#64748B', fontSize: '.9rem', textAlign: 'center', marginBottom: 28 }}>
+              Je staat op het punt <strong>{deleteModal.industry}</strong> (<code style={{ background: '#F1F5F9', padding: '2px 6px', borderRadius: 4, fontSize: '.82rem' }}>/{deleteModal.slug}</code>) permanent te verwijderen. Dit kan niet ongedaan worden gemaakt.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setDeleteModal(null)} style={{ flex: 1, padding: 14, background: '#F1F5F9', color: '#334155', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: '.95rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                Annuleren
+              </button>
+              <button onClick={confirmDelete} style={{ flex: 1, padding: 14, background: '#EF4444', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.95rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                Ja, verwijder
+              </button>
             </div>
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ fontSize: '.8rem', fontWeight: 600, color: '#334155', display: 'block', marginBottom: 6 }}>URL-slug</label>
-              <input value={newSlug} onChange={e => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} placeholder="tandartsen" style={s} />
-              <p style={{ fontSize: '.78rem', color: '#64748B', marginTop: 4 }}>Wordt: agentmakers.io/nl/<strong>{newSlug || 'slug'}</strong></p>
-            </div>
-            <button onClick={createPage} disabled={creating} style={{ width: '100%', padding: 14, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: creating ? 'wait' : 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-              {creating ? '⏳ Claude AI is aan het schrijven...' : '✨ Pagina genereren'}
-            </button>
-            {creating && <p style={{ textAlign: 'center', fontSize: '.85rem', color: '#64748B', marginTop: 12 }}>Dit duurt ±15 seconden. Even geduld...</p>}
           </div>
         </div>
       )}
