@@ -9,8 +9,9 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       // /klinieken → /nl/klinieken (default to Dutch)
+      // Exclude static files (with extensions), api, _next, admin, and known locales
       {
-        source: '/:industry((?!nl|en|es|admin|api|_next)[^/]+)',
+        source: '/:industry((?!nl|en|es|admin|api|_next|favicon)[^/.]+)',
         destination: '/nl/:industry',
         permanent: false,
       },
