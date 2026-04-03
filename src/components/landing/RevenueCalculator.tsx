@@ -85,7 +85,7 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
             {/* Slider 1 */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <label style={{ color: '#94A3B8', fontSize: '.82rem', fontWeight: 600, letterSpacing: '.02em' }}>{s.callsLabel}</label>
+                <label style={{ color: '#fff', fontSize: '.95rem', fontWeight: 600, letterSpacing: '.02em' }}>{s.callsLabel}</label>
                 <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', fontWeight: 700, color: '#CCFBF1', minWidth: 32, textAlign: 'right' }}>{calls}</span>
               </div>
               <input type="range" min={1} max={30} step={1} value={calls}
@@ -99,7 +99,7 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
             {/* Slider 2 */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <label style={{ color: '#94A3B8', fontSize: '.82rem', fontWeight: 600, letterSpacing: '.02em' }}>{s.valueLabel}</label>
+                <label style={{ color: '#fff', fontSize: '.95rem', fontWeight: 600, letterSpacing: '.02em' }}>{s.valueLabel}</label>
                 <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', fontWeight: 700, color: '#CCFBF1', minWidth: 60, textAlign: 'right' }}>€{value}</span>
               </div>
               <input type="range" min={50} max={2000} step={25} value={value}
@@ -123,7 +123,7 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
 
             {/* Amount */}
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, color: '#0D9488', lineHeight: 1, letterSpacing: '-.02em' }}>
+              <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, color: '#fff', lineHeight: 1, letterSpacing: '-.02em' }}>
                 €{annual.toLocaleString('nl-NL')}
               </div>
               <div style={{ color: '#475569', fontSize: '.78rem', marginTop: 4 }}>
