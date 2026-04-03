@@ -179,13 +179,51 @@ export default async function LandingPage({ params }: Props) {
         </div>
       </section>
 
+      {/* AGENTS SECTIE */}
+      <section style={{ padding: '100px 0', background: '#0F172A' }}>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ color: '#CCFBF1', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>Onze AI Agents</div>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16, color: '#fff' }}>
+              {l === 'nl' ? 'Combineer AI agents voor een optimale werking' : l === 'en' ? 'Combine AI agents for optimal results' : 'Combina agentes IA para resultados óptimos'}
+            </h2>
+            <p style={{ color: '#CBD5E1', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto' }}>
+              {l === 'nl' ? 'Elk contactmoment geautomatiseerd - via telefoon, chat, e-mail en social media.' : l === 'en' ? 'Every touchpoint automated - phone, chat, email and social media.' : 'Cada punto de contacto automatizado.'}
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+            {[
+              { icon: '📞', title: l === 'nl' ? 'AI Voice Agent - Inbound' : 'AI Voice Agent - Inbound', body: l === 'nl' ? 'Beantwoordt inkomende telefoongesprekken 24/7. Beantwoordt vragen over behandelingen, prijzen en beschikbaarheid en boekt direct afspraken in uw agenda.' : 'Answers incoming calls 24/7. Answers questions about treatments, prices and availability and books appointments directly.', tag: l === 'nl' ? 'Telefonie' : 'Phone' },
+              { icon: '📲', title: l === 'nl' ? 'AI Voice Agent - Outbound' : 'AI Voice Agent - Outbound', body: l === 'nl' ? 'Belt proactief klanten voor afspraakbevestigingen, no-show opvolging, nazorg na behandelingen en herinneringen. Vermindert no-shows met tot 40%.' : 'Proactively calls customers for appointment confirmations, no-show follow-up and reminders. Reduces no-shows by up to 40%.', tag: l === 'nl' ? 'Telefonie' : 'Phone' },
+              { icon: '💬', title: 'WhatsApp & SMS Agent', body: l === 'nl' ? 'Reageert direct op WhatsApp-berichten en sms\'jes. Beantwoordt vragen, stuurt afspraakbevestigingen en behandelinformatie. Altijd beschikbaar op het favoriete kanaal van uw klant.' : 'Responds instantly to WhatsApp messages and SMS. Answers questions, sends appointment confirmations and treatment information.', tag: 'Messaging' },
+              { icon: '📘', title: 'Facebook Messenger Agent', body: l === 'nl' ? 'Vangt leads op via uw Facebook-pagina. Beantwoordt vragen over behandelingen, deelt prijsinformatie en plant afspraken in - rechtstreeks vanuit Messenger.' : 'Captures leads via your Facebook page. Answers questions about treatments, shares pricing and schedules appointments.', tag: 'Social Media' },
+              { icon: '📷', title: 'Instagram DM Agent', body: l === 'nl' ? 'Reageert automatisch op Instagram DM\'s. Ideaal voor klinieken en salons die leads binnenkrijgen via Instagram. Converteert volgers naar betalende klanten.' : 'Automatically responds to Instagram DMs. Ideal for clinics getting leads via Instagram. Converts followers to paying customers.', tag: 'Social Media' },
+              { icon: '✉️', title: l === 'nl' ? 'E-mail Agent' : 'Email Agent', body: l === 'nl' ? 'Verwerkt inkomende e-mails automatisch. Beantwoordt veelgestelde vragen, stuurt offertes voor behandelingen en routeert complexe vragen naar het juiste teamlid.' : 'Automatically processes incoming emails. Answers FAQs, sends treatment quotes and routes complex questions to the right team member.', tag: 'E-mail' },
+            ].map((agent, i) => (
+              <div key={i} style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', padding: '32px 28px', borderRadius: 14 }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(13,148,136,.2)', color: '#CCFBF1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', marginBottom: 20 }}>{agent.icon}</div>
+                <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.05rem', fontWeight: 700, color: '#fff', marginBottom: 8 }}>{agent.title}</h3>
+                <p style={{ fontSize: '.88rem', color: '#CBD5E1', lineHeight: 1.6 }}>{agent.body}</p>
+                <span style={{ display: 'inline-block', marginTop: 14, padding: '4px 12px', background: 'rgba(13,148,136,.15)', color: '#CCFBF1', borderRadius: 6, fontSize: '.75rem', fontWeight: 600 }}>{agent.tag}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* USE CASES */}
       <section style={{ padding: '100px 0', background: '#F0FDFA' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+              {l === 'nl' ? 'Specifiek voor klinieken' : l === 'en' ? 'Specific for clinics' : 'Específico para clínicas'}
+            </div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16 }}>
-              {l === 'nl' ? `Specifiek voor ${page.industry}` : l === 'en' ? `Tailored for ${page.industry}` : `Diseñado para ${page.industry}`}
+              {l === 'nl' ? 'Uw AI agents zijn specifiek getraind op klinieken en salons' : l === 'en' ? 'Your AI agents are specifically trained for clinics and salons' : 'Sus agentes IA están específicamente entrenados para clínicas'}
             </h2>
+            <p style={{ color: '#64748B', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto' }}>
+              {l === 'nl' ? 'Van intake tot nazorg - Uw cliënten zijn u dankbaar.' : l === 'en' ? 'From intake to aftercare - your clients will thank you.' : 'Desde la admisión hasta el seguimiento.'}
+            </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
             {(content.usecases || []).map((uc: { title: string; body: string }, i: number) => (
@@ -237,10 +275,16 @@ export default async function LandingPage({ params }: Props) {
       </section>
 
       {/* HOE HET WERKT */}
-      <section id="hoe-het-werkt" style={{ padding: '100px 0', background: '#F1F5F9' }}>
+      <section id="hoe-het-werkt" style={{ padding: '100px 0' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
+          <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+            {l === 'nl' ? 'Hoe het werkt' : l === 'en' ? 'How it works' : 'Cómo funciona'}
+          </div>
           <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16 }}>{t(l, 'steps_title')}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32, marginTop: 48, marginBottom: 48 }}>
+          <p style={{ color: '#64748B', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto 48px' }}>
+            {l === 'nl' ? 'Geen maandenlange implementatie. Wij regelen alles.' : l === 'en' ? 'No months of implementation. We handle everything.' : 'Sin meses de implementación. Nosotros nos encargamos de todo.'}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32, marginBottom: 48 }}>
             {[
               [t(l, 'step1'), t(l, 'step1_desc')],
               [t(l, 'step2'), t(l, 'step2_desc')],
@@ -252,6 +296,57 @@ export default async function LandingPage({ params }: Props) {
                 <p style={{ fontSize: '.9rem', color: '#64748B', maxWidth: 280, margin: '0 auto' }}>{desc}</p>
               </div>
             ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', padding: 32, background: '#F1F5F9', borderRadius: 14 }}>
+            {['Google Calendar', 'Clinicminds', 'Timify', 'Calendly', 'Microsoft 365', 'VoIP / SIP', 'Custom API'].map((badge) => (
+              <span key={badge} style={{ background: '#fff', padding: '10px 20px', borderRadius: 8, fontSize: '.88rem', fontWeight: 500, color: '#334155', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>{badge}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* VERGELIJKING */}
+      <section style={{ padding: '100px 0', background: '#F1F5F9' }}>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+              {l === 'nl' ? 'Vergelijking' : l === 'en' ? 'Comparison' : 'Comparación'}
+            </div>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)' }}>
+              {l === 'nl' ? 'Traditioneel vs. agentmakers.io Receptioniste' : l === 'en' ? 'Traditional vs. agentmakers.io Receptionist' : 'Tradicional vs. Recepcionista agentmakers.io'}
+            </h2>
+          </div>
+          <div style={{ overflowX: 'auto', borderRadius: 16 }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '20px 28px', textAlign: 'left', fontFamily: "'Nunito',sans-serif", fontSize: '.85rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em', width: '30%' }}></th>
+                  <th style={{ padding: '20px 28px', textAlign: 'left', fontFamily: "'Nunito',sans-serif", fontSize: '.85rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                    {l === 'nl' ? 'Traditionele receptie' : l === 'en' ? 'Traditional reception' : 'Recepción tradicional'}
+                  </th>
+                  <th style={{ padding: '20px 28px', textAlign: 'left', fontFamily: "'Nunito',sans-serif", fontSize: '.85rem', fontWeight: 600, color: '#0F766E', textTransform: 'uppercase', letterSpacing: '.04em', background: '#F0FDFA' }}>
+                    agentmakers.io
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  [l === 'nl' ? 'Beschikbaarheid' : 'Availability', l === 'nl' ? 'Ma–vr, 9:00–18:00' : 'Mon–Fri, 9am–6pm', '24/7/365'],
+                  [l === 'nl' ? 'Kosten per maand' : 'Monthly costs', '€2.500 – €4.000+', l === 'nl' ? 'Vanaf €299' : 'From €299'],
+                  [l === 'nl' ? 'Schaalbaarheid' : 'Scalability', l === 'nl' ? 'Beperkt (1 lijn tegelijk)' : 'Limited (1 line at a time)', l === 'nl' ? 'Onbeperkt gelijktijdige oproepen' : 'Unlimited simultaneous calls'],
+                  [l === 'nl' ? 'Taalondersteuning' : 'Language support', '1–2 talen', '10+ talen'],
+                  [l === 'nl' ? 'Ziekteverzuim' : 'Sick leave', l === 'nl' ? 'Vervanging nodig' : 'Replacement needed', l === 'nl' ? 'Altijd beschikbaar' : 'Always available'],
+                  [l === 'nl' ? 'Consistentie' : 'Consistency', l === 'nl' ? 'Varieert per medewerker' : 'Varies per employee', l === 'nl' ? 'Altijd dezelfde kwaliteit' : 'Always same quality'],
+                  [l === 'nl' ? 'Opschalen bij drukte' : 'Scale during peak', l === 'nl' ? 'Extra personeel inhuren' : 'Hire extra staff', l === 'nl' ? 'Automatisch, direct' : 'Automatic, instant'],
+                ].map(([feature, traditional, ai], i) => (
+                  <tr key={i}>
+                    <td style={{ padding: '18px 28px', borderTop: '1px solid #F1F5F9', fontSize: '.92rem', fontWeight: 600, color: '#0F172A' }}>{feature}</td>
+                    <td style={{ padding: '18px 28px', borderTop: '1px solid #F1F5F9', fontSize: '.92rem', color: '#334155' }}>{traditional}</td>
+                    <td style={{ padding: '18px 28px', borderTop: '1px solid #F1F5F9', fontSize: '.92rem', fontWeight: 500, color: '#0F766E', background: '#F0FDFA' }}>{ai}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
