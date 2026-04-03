@@ -45,21 +45,21 @@ export async function sendConfirmationEmail(lead: LeadData) {
 export async function sendAdminNotification(lead: LeadData) {
   const subject = `🆕 Nieuwe demo-aanvraag: ${lead.naam} (${lead.landing_page_slug})`
   const body = `
-Nieuwe demo-aanvraag ontvangen via agentmakers.io
+Hoi,
 
-━━━━━━━━━━━━━━━━━━━━━━━━
-Naam:         ${lead.naam}
-E-mail:       ${lead.email}
-Telefoon:     ${lead.telefoon}
-Bedrijf:      ${lead.bedrijfsnaam || '—'}
-Website:      ${lead.website || '—'}
-Diensten:     ${lead.diensten && lead.diensten.length > 0 ? lead.diensten.join(', ') : '—'}
-Pagina:       /${lead.landing_page_slug}
-Taal:         ${lead.language}
-Tijdstip:     ${new Date().toLocaleString('nl-NL')}
-━━━━━━━━━━━━━━━━━━━━━━━━
+Je hebt een lead ontvangen via agentmakers.io
 
-Bekijk alle leads: https://agentmakers.io/admin/leads
+Naam: ${lead.naam}
+E-mail: ${lead.email}
+Telefoon: ${lead.telefoon}
+Bedrijf: ${lead.bedrijfsnaam || '—'}
+Website: ${lead.website || '—'}
+Diensten: ${lead.diensten && lead.diensten.length > 0 ? lead.diensten.join(', ') : '—'}
+Pagina: /${lead.landing_page_slug}
+Taal: ${lead.language}
+Timestamp: ${new Date().toLocaleString('nl-NL')}
+
+Bekijk alle leads via https://agentmakers.io/admin/leads
   `.trim()
 
   await resend.emails.send({
