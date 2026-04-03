@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     if (dbError) console.error('DB error:', dbError)
 
     // Update conversion count
-    await supabaseAdmin.rpc('increment_conversions', { page_slug: slug }).catch(() => {})
+    try { await supabaseAdmin.rpc('increment_conversions', { page_slug: slug }) } catch { /* ignore */ }
 
     // Send emails
     await Promise.allSettled([
