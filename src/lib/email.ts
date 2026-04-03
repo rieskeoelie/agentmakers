@@ -22,13 +22,38 @@ export async function sendConfirmationEmail(lead: LeadData) {
     en: 'Thank you for your request — agentmakers.io',
     es: 'Gracias por su solicitud — agentmakers.io',
   }
-  const dienstenStr = lead.diensten && lead.diensten.length > 0
-    ? `U heeft een demo aangevraagd voor: ${lead.diensten.join(', ')}.`
+
+  const hasDiensten = lead.diensten && lead.diensten.length > 0
+  const dienstenHtml = hasDiensten
+    ? lead.diensten!.map(d => `<strong>${d}</strong>`).join(', ')
     : ''
-  const bodies: Record<string, string> = {
-    nl: `Beste ${lead.naam},\n\nWat leuk dat u een demo van een AI agent heeft aangevraagd.\n\n${dienstenStr}\n\nKlanten die al AI toepassen in hun bedrijf zien een toename van het aantal boekingen, meer omzet, verhoogde klanttevredenheid en minder stress.\n\nWe nemen snel even contact met u op.\n\nMet vriendelijke groet,\n\nHet agentmakers.io team.`.replace('\n\n\n', '\n\n'),
-    en: `Dear ${lead.naam},\n\nGreat to see you've requested a demo of an AI agent.\n\n${lead.diensten && lead.diensten.length > 0 ? `You requested a demo for: ${lead.diensten.join(', ')}.` : ''}\n\nCustomers who already apply AI in their business see an increase in bookings, more revenue, higher customer satisfaction and less stress.\n\nWe'll be in touch shortly.\n\nKind regards,\n\nThe agentmakers.io team.`.replace('\n\n\n', '\n\n'),
-    es: `Estimado/a ${lead.naam},\n\nQué bien que haya solicitado una demo de un agente IA.\n\n${lead.diensten && lead.diensten.length > 0 ? `Ha solicitado una demo para: ${lead.diensten.join(', ')}.` : ''}\n\nLos clientes que ya aplican IA en su empresa ven un aumento de reservas, más ingresos, mayor satisfacción del cliente y menos estrés.\n\nNos pondremos en contacto con usted en breve.\n\nSaludos,\n\nEl equipo de agentmakers.io.`.replace('\n\n\n', '\n\n'),
+  const dienstenText = hasDiensten ? lead.diensten!.join(', ') : ''
+
+  const htmlBodies: Record<string, string> = {
+    nl: `<p>Beste ${lead.naam},</p>
+<p>Wat leuk dat u een demo van een AI agent heeft aangevraagd.</p>
+${hasDiensten ? `<p>U heeft een demo aangevraagd voor: ${dienstenHtml}.</p>` : ''}
+<p>Klanten die al AI toepassen in hun bedrijf zien een toename van het aantal boekingen, meer omzet, verhoogde klanttevredenheid en minder stress.</p>
+<p>We nemen snel even contact met u op.</p>
+<p>Met vriendelijke groet,<br><br>Het agentmakers.io team.</p>`,
+    en: `<p>Dear ${lead.naam},</p>
+<p>Great to see you've requested a demo of an AI agent.</p>
+${hasDiensten ? `<p>You requested a demo for: ${dienstenHtml}.</p>` : ''}
+<p>Customers who already apply AI in their business see an increase in bookings, more revenue, higher customer satisfaction and less stress.</p>
+<p>We'll be in touch shortly.</p>
+<p>Kind regards,<br><br>The agentmakers.io team.</p>`,
+    es: `<p>Estimado/a ${lead.naam},</p>
+<p>Qué bien que haya solicitado una demo de un agente IA.</p>
+${hasDiensten ? `<p>Ha solicitado una demo para: ${dienstenHtml}.</p>` : ''}
+<p>Los clientes que ya aplican IA en su empresa ven un aumento de reservas, más ingresos, mayor satisfacción del cliente y menos estrés.</p>
+<p>Nos pondremos en contacto con usted en breve.</p>
+<p>Saludos,<br><br>El equipo de agentmakers.io.</p>`,
+  }
+
+  const textBodies: Record<string, string> = {
+    nl: `Beste ${lead.naam},\n\nWat leuk dat u een demo van een AI agent heeft aangevraagd.\n\n${hasDiensten ? `U heeft een demo aangevraagd voor: ${dienstenText}.\n\n` : ''}Klanten die al AI toepassen in hun bedrijf zien een toename van het aantal boekingen, meer omzet, verhoogde klanttevredenheid en minder stress.\n\nWe nemen snel even contact met u op.\n\nMet vriendelijke groet,\n\nHet agentmakers.io team.`,
+    en: `Dear ${lead.naam},\n\nGreat to see you've requested a demo of an AI agent.\n\n${hasDiensten ? `You requested a demo for: ${dienstenText}.\n\n` : ''}Customers who already apply AI in their business see an increase in bookings, more revenue, higher customer satisfaction and less stress.\n\nWe'll be in touch shortly.\n\nKind regards,\n\nThe agentmakers.io team.`,
+    es: `Estimado/a ${lead.naam},\n\nQué bien que haya solicitado una demo de un agente IA.\n\n${hasDiensten ? `Ha solicitado una demo para: ${dienstenText}.\n\n` : ''}Los clientes que ya aplican IA en su empresa ven un aumento de reservas, más ingresos, mayor satisfacción del cliente y menos estrés.\n\nNos pondremos en contacto con usted en breve.\n\nSaludos,\n\nEl equipo de agentmakers.io.`,
   }
 
   const lang = lead.language in subjects ? lead.language : 'nl'
@@ -37,7 +62,8 @@ export async function sendConfirmationEmail(lead: LeadData) {
     from: FROM,
     to: lead.email,
     subject: subjects[lang],
-    text: bodies[lang],
+    html: htmlBodies[lang],
+    text: textBodies[lang],
   })
 }
 
