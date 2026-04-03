@@ -49,15 +49,15 @@ Hoi,
 
 Je hebt een lead ontvangen via agentmakers.io
 
-Naam: ${lead.naam}
-E-mail: ${lead.email}
-Telefoon: ${lead.telefoon}
-Bedrijf: ${lead.bedrijfsnaam || '—'}
-Website: ${lead.website || '—'}
-Diensten: ${lead.diensten && lead.diensten.length > 0 ? lead.diensten.join(', ') : '—'}
-Pagina: /${lead.landing_page_slug}
-Taal: ${lead.language}
-Timestamp: ${new Date().toLocaleString('nl-NL')}
+Naam:       ${lead.naam}
+E-mail:     ${lead.email}
+Telefoon:   ${lead.telefoon}
+Bedrijf:    ${lead.bedrijfsnaam || '—'}
+Website:    ${lead.website || '—'}
+Diensten:   ${lead.diensten && lead.diensten.length > 0 ? lead.diensten.join(', ') : '—'}
+Pagina:     /${lead.landing_page_slug}
+Taal:       ${lead.language}
+Timestamp:  ${new Date().toLocaleString('nl-NL')}
 
 Bekijk alle leads via https://agentmakers.io/admin/leads
   `.trim()
