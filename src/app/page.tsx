@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { LandingPage } from '@/lib/supabase'
 
@@ -27,9 +28,9 @@ export default async function HomePage() {
       {/* NAV */}
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #F1F5F9', padding: '16px 0' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.4rem', fontWeight: 700, color: '#0D9488' }}>
-            agentmakers.io
-          </span>
+          <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <Image src="/logo-transparent.png" alt="agentmakers.io" width={686} height={108} style={{ height: 36, width: 'auto' }} priority />
+          </a>
           <a href="#contact" style={{ background: '#0D9488', color: '#fff', padding: '10px 24px', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: '.9rem' }}>
             Neem contact op
           </a>
