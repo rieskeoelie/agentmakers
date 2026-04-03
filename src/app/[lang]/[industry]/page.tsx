@@ -201,10 +201,10 @@ export default async function LandingPage({ params }: Props) {
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ color: '#CCFBF1', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>Onze AI Agents</div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16, color: '#fff' }}>
-              {l === 'nl' ? 'Combineer AI agents voor een optimale werking' : l === 'en' ? 'Combine AI agents for optimal results' : 'Combina agentes IA para resultados óptimos'}
+              {l === 'nl' ? 'Laat meerdere agenten samenwerken voor een complete 360 graden upgrade van uw kliniek.' : l === 'en' ? 'Let multiple agents work together for a complete 360-degree upgrade of your clinic.' : 'Deje que varios agentes trabajen juntos para una mejora completa de 360 grados de su clínica.'}
             </h2>
             <p style={{ color: '#CBD5E1', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto' }}>
-              {l === 'nl' ? 'Elk contactmoment geautomatiseerd - via telefoon, chat, e-mail en social media.' : l === 'en' ? 'Every touchpoint automated - phone, chat, email and social media.' : 'Cada punto de contacto automatizado.'}
+              {l === 'nl' ? 'Elk contactmoment geautomatiseerd — via telefoon, chat, e-mail en social media.' : l === 'en' ? 'Every touchpoint automated — phone, chat, email and social media.' : 'Cada punto de contacto automatizado — teléfono, chat, correo y redes sociales.'}
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
