@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { t, SUPPORTED_LANGS, LANG_LABELS, type Lang } from '@/lib/i18n'
 import { DemoForm } from '@/components/landing/DemoForm'
 import { TrackView } from '@/components/landing/TrackView'
+import { RevenueCalculator } from '@/components/landing/RevenueCalculator'
 import type { Metadata } from 'next'
 
 interface Props {
@@ -254,43 +255,12 @@ export default async function LandingPage({ params }: Props) {
         </div>
       </section>
 
-      {/* OMZET */}
-      <section style={{ padding: '100px 0' }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ background: 'linear-gradient(135deg, #0F172A, #1a2d42)', borderRadius: 20, padding: '56px', color: '#fff', textAlign: 'center', maxWidth: 800, margin: '0 auto' }}>
-            <div style={{ color: '#CCFBF1', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
-              {l === 'nl' ? 'De impact' : l === 'en' ? 'The impact' : 'El impacto'}
-            </div>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', marginBottom: 16, fontSize: 'clamp(1.4rem, 2.8vw, 2rem)' }}>
-              {l === 'nl' ? 'Hoeveel omzet loopt u mis?' : l === 'en' ? 'How much revenue are you missing?' : '¿Cuántos ingresos está perdiendo?'}
-            </h2>
-            <p style={{ color: '#CBD5E1', fontSize: '1rem', marginBottom: 40 }}>
-              {l === 'nl' ? 'Een realistisch rekenvoorbeeld.' : l === 'en' ? 'A realistic calculation.' : 'Un ejemplo de cálculo realista.'}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', alignItems: 'center', marginBottom: 32 }}>
-              {[
-                [content.revenue_calls || 5, l === 'nl' ? 'gemiste oproepen per week' : l === 'en' ? 'missed calls per week' : 'llamadas perdidas por semana'],
-                [`€${content.revenue_per_call || 500}`, l === 'nl' ? 'gem. behandelwaarde' : l === 'en' ? 'avg. appointment value' : 'valor medio por cita'],
-                [52, l === 'nl' ? 'weken per jaar' : l === 'en' ? 'weeks per year' : 'semanas por año'],
-              ].map(([num, desc], i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ background: 'rgba(255,255,255,.08)', padding: '20px 28px', borderRadius: 12, textAlign: 'center', minWidth: 150 }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#CCFBF1', fontFamily: "'Nunito',sans-serif" }}>{num}</div>
-                    <div style={{ fontSize: '.8rem', color: '#CBD5E1', marginTop: 4 }}>{desc}</div>
-                  </div>
-                  {i < 2 && <span style={{ fontSize: '1.6rem', color: '#CBD5E1', fontWeight: 300 }}>×</span>}
-                </div>
-              ))}
-            </div>
-            <div style={{ background: '#0D9488', padding: '24px 40px', borderRadius: 14, display: 'inline-block' }}>
-              <div style={{ fontSize: '2.4rem', fontWeight: 700, color: '#fff', fontFamily: "'Nunito',sans-serif" }}>
-                €{((content.revenue_calls || 5) * (content.revenue_per_call || 500) * 52).toLocaleString('nl-NL')}
-              </div>
-              <div style={{ fontSize: '.85rem', color: '#CCFBF1', marginTop: 4 }}>{t(l, 'missed_revenue')}</div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* OMZET - interactive calculator */}
+      <RevenueCalculator
+        lang={l}
+        defaultCalls={content.revenue_calls || 5}
+        defaultValue={content.revenue_per_call || 500}
+      />
 
       {/* HOE HET WERKT */}
       <section id="hoe-het-werkt" style={{ padding: '100px 0' }}>
