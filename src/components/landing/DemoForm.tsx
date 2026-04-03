@@ -166,10 +166,12 @@ export function DemoForm({ slug, lang, strings }: Props) {
         <Confetti />
         <div style={{ textAlign: 'center', padding: '16px 0' }}>
           <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>🎉</div>
-          <h3 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', marginBottom: 8, fontSize: '1.6rem', fontWeight: 700 }}>
+          <h3 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', marginBottom: 16, fontSize: '1.6rem', fontWeight: 700 }}>
             {strings.success}
           </h3>
-          <p style={{ color: '#CCFBF1', fontSize: '1.05rem' }}>{strings.trust}</p>
+          {strings.success_sub.split('\n\n').map((line, i) => (
+            <p key={i} style={{ color: '#CCFBF1', fontSize: '1.05rem', margin: '0 0 8px' }}>{line}</p>
+          ))}
         </div>
       </>
     )

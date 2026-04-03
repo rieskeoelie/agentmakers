@@ -385,6 +385,7 @@ export default async function LandingPage({ params }: Props) {
             submit: t(l, 'form_submit'),
             sending: t(l, 'form_sending'),
             success: t(l, 'form_success'),
+            success_sub: t(l, 'form_success_sub'),
             error: t(l, 'form_error'),
             trust: t(l, 'form_trust'),
           }} />
