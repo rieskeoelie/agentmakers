@@ -22,11 +22,13 @@ export async function sendConfirmationEmail(lead: LeadData) {
     en: 'Thank you for your request — agentmakers.io',
     es: 'Gracias por su solicitud — agentmakers.io',
   }
-  const dienstenStr = lead.diensten && lead.diensten.length > 0 ? lead.diensten.join(', ') : null
+  const dienstenStr = lead.diensten && lead.diensten.length > 0
+    ? `U heeft een demo aangevraagd voor: ${lead.diensten.join(', ')}.`
+    : ''
   const bodies: Record<string, string> = {
-    nl: `Beste ${lead.naam},\n\nBedankt voor uw interesse in agentmakers.io!\n\nWij hebben uw aanvraag ontvangen${dienstenStr ? ` voor: ${dienstenStr}` : ''}. Wij nemen binnen 24 uur contact met u op voor een persoonlijke demo.\n\nMet vriendelijke groet,\nHet agentmakers.io team`,
-    en: `Dear ${lead.naam},\n\nThank you for your interest in agentmakers.io!\n\nWe have received your request${dienstenStr ? ` for: ${dienstenStr}` : ''}. We will contact you within 24 hours for a personal demo.\n\nKind regards,\nThe agentmakers.io team`,
-    es: `Estimado/a ${lead.naam},\n\n¡Gracias por su interés en agentmakers.io!\n\nHemos recibido su solicitud${dienstenStr ? ` para: ${dienstenStr}` : ''}. Nos pondremos en contacto con usted en 24 horas para una demo personalizada.\n\nSaludos,\nEl equipo de agentmakers.io`,
+    nl: `Beste ${lead.naam},\n\nWat leuk dat u een demo van een AI agent heeft aangevraagd.\n\n${dienstenStr}\n\nKlanten die al AI toepassen in hun bedrijf zien een toename van het aantal boekingen, meer omzet, verhoogde klanttevredenheid en minder stress.\n\nWe nemen snel even contact met u op.\n\nMet vriendelijke groet,\n\nHet agentmakers.io team.`.replace('\n\n\n', '\n\n'),
+    en: `Dear ${lead.naam},\n\nGreat to see you've requested a demo of an AI agent.\n\n${lead.diensten && lead.diensten.length > 0 ? `You requested a demo for: ${lead.diensten.join(', ')}.` : ''}\n\nCustomers who already apply AI in their business see an increase in bookings, more revenue, higher customer satisfaction and less stress.\n\nWe'll be in touch shortly.\n\nKind regards,\n\nThe agentmakers.io team.`.replace('\n\n\n', '\n\n'),
+    es: `Estimado/a ${lead.naam},\n\nQué bien que haya solicitado una demo de un agente IA.\n\n${lead.diensten && lead.diensten.length > 0 ? `Ha solicitado una demo para: ${lead.diensten.join(', ')}.` : ''}\n\nLos clientes que ya aplican IA en su empresa ven un aumento de reservas, más ingresos, mayor satisfacción del cliente y menos estrés.\n\nNos pondremos en contacto con usted en breve.\n\nSaludos,\n\nEl equipo de agentmakers.io.`.replace('\n\n\n', '\n\n'),
   }
 
   const lang = lead.language in subjects ? lead.language : 'nl'
