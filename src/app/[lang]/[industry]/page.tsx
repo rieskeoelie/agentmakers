@@ -59,8 +59,8 @@ export default async function LandingPage({ params }: Props) {
       {/* NAV */}
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #F1F5F9', padding: '16px 0' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <a href="/" style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', fontWeight: 700, color: '#0D9488', textDecoration: 'none' }}>
-            agentmakers.io
+          <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <img src="/logo.svg" alt="agentmakers.io" style={{ height: 32, width: 'auto' }} />
           </a>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {/* Language switcher */}
