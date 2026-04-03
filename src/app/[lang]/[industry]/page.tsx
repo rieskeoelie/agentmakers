@@ -369,13 +369,9 @@ export default async function LandingPage({ params }: Props) {
       {/* DEMO FORM */}
       <section id="demo" style={{ padding: '80px 0', background: 'linear-gradient(160deg, #0F766E, #0D9488)', textAlign: 'center' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
-          <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16 }}>
-            {content.cta_headline || t(l, 'cta_label')}
-          </h2>
-          <p style={{ color: '#CCFBF1', fontSize: '1.05rem', marginBottom: 40, maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
-            {content.cta_sub || t(l, 'cta_sub')}
-          </p>
           <DemoForm slug={industry} lang={l} strings={{
+            cta_headline: content.cta_headline || t(l, 'cta_label'),
+            cta_sub: content.cta_sub || t(l, 'cta_sub'),
             name: t(l, 'form_name'),
             email: t(l, 'form_email'),
             phone: t(l, 'form_phone'),
