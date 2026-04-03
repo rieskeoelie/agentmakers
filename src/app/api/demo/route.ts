@@ -5,7 +5,7 @@ import { sendConfirmationEmail, sendAdminNotification } from '@/lib/email'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { naam, email, telefoon, website, bedrijfsnaam, slug, language } = body
+    const { naam, email, telefoon, website, bedrijfsnaam, diensten, slug, language } = body
 
     if (!naam || !email || !telefoon || !slug) {
       return NextResponse.json({ error: 'Verplichte velden ontbreken' }, { status: 400 })
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Ongeldig e-mailadres' }, { status: 400 })
     }
 
-    const lead = { naam, email, telefoon, website, bedrijfsnaam, landing_page_slug: slug, language: language || 'nl' }
+    const lead = { naam, email, telefoon, website, bedrijfsnaam, diensten: diensten || [], landing_page_slug: slug, language: language || 'nl' }
 
     // Store lead in Supabase
     const { error: dbError } = await supabaseAdmin.from('leads').insert([{

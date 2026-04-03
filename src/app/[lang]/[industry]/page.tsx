@@ -381,6 +381,7 @@ export default async function LandingPage({ params }: Props) {
             phone: t(l, 'form_phone'),
             website: t(l, 'form_website'),
             company: t(l, 'form_company'),
+            diensten_label: t(l, 'form_diensten_label'),
             submit: t(l, 'form_submit'),
             sending: t(l, 'form_sending'),
             success: t(l, 'form_success'),

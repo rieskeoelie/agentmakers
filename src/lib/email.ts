@@ -10,6 +10,7 @@ interface LeadData {
   telefoon: string
   website?: string
   bedrijfsnaam?: string
+  diensten?: string[]
   landing_page_slug: string
   language: string
 }
@@ -21,10 +22,11 @@ export async function sendConfirmationEmail(lead: LeadData) {
     en: 'Thank you for your request — agentmakers.io',
     es: 'Gracias por su solicitud — agentmakers.io',
   }
+  const dienstenStr = lead.diensten && lead.diensten.length > 0 ? lead.diensten.join(', ') : null
   const bodies: Record<string, string> = {
-    nl: `Beste ${lead.naam},\n\nBedankt voor uw interesse in agentmakers.io!\n\nWij hebben uw aanvraag ontvangen en nemen binnen 24 uur contact met u op voor een persoonlijke demo.\n\nMet vriendelijke groet,\nHet agentmakers.io team`,
-    en: `Dear ${lead.naam},\n\nThank you for your interest in agentmakers.io!\n\nWe have received your request and will contact you within 24 hours for a personal demo.\n\nKind regards,\nThe agentmakers.io team`,
-    es: `Estimado/a ${lead.naam},\n\n¡Gracias por su interés en agentmakers.io!\n\nHemos recibido su solicitud y nos pondremos en contacto con usted en 24 horas para una demo personalizada.\n\nSaludos,\nEl equipo de agentmakers.io`,
+    nl: `Beste ${lead.naam},\n\nBedankt voor uw interesse in agentmakers.io!\n\nWij hebben uw aanvraag ontvangen${dienstenStr ? ` voor: ${dienstenStr}` : ''}. Wij nemen binnen 24 uur contact met u op voor een persoonlijke demo.\n\nMet vriendelijke groet,\nHet agentmakers.io team`,
+    en: `Dear ${lead.naam},\n\nThank you for your interest in agentmakers.io!\n\nWe have received your request${dienstenStr ? ` for: ${dienstenStr}` : ''}. We will contact you within 24 hours for a personal demo.\n\nKind regards,\nThe agentmakers.io team`,
+    es: `Estimado/a ${lead.naam},\n\n¡Gracias por su interés en agentmakers.io!\n\nHemos recibido su solicitud${dienstenStr ? ` para: ${dienstenStr}` : ''}. Nos pondremos en contacto con usted en 24 horas para una demo personalizada.\n\nSaludos,\nEl equipo de agentmakers.io`,
   }
 
   const lang = lead.language in subjects ? lead.language : 'nl'
@@ -49,6 +51,7 @@ E-mail:       ${lead.email}
 Telefoon:     ${lead.telefoon}
 Bedrijf:      ${lead.bedrijfsnaam || '—'}
 Website:      ${lead.website || '—'}
+Diensten:     ${lead.diensten && lead.diensten.length > 0 ? lead.diensten.join(', ') : '—'}
 Pagina:       /${lead.landing_page_slug}
 Taal:         ${lead.language}
 Tijdstip:     ${new Date().toLocaleString('nl-NL')}
