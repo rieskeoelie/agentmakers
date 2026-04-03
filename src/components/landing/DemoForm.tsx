@@ -34,9 +34,9 @@ export function DemoForm({ slug, lang, strings }: Props) {
   }
 
   const inputStyle = {
-    width: '100%', padding: '14px 18px', borderRadius: 10,
-    border: '1.5px solid rgba(255,255,255,.2)', background: 'rgba(255,255,255,.1)',
-    color: '#fff', fontSize: '.95rem', fontFamily: "'Nunito', sans-serif",
+    width: '100%', padding: '14px 18px', borderRadius: 10, boxSizing: 'border-box' as const,
+    border: '1.5px solid rgba(255,255,255,.3)', background: '#fff',
+    color: '#0F172A', fontSize: '.95rem', fontFamily: "'Nunito', sans-serif",
     outline: 'none',
   }
 
