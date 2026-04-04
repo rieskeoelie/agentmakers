@@ -94,15 +94,16 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
             }
           },
         },
-        onConnect: () => setStatus('listening'),
-        onDisconnect: () => { setStatus('idle'); convRef.current = null },
-        onError: (msg: string) => { setErrorMsg(msg); setStatus('error'); convRef.current = null },
+        onConnect: () => { console.log('[EL] connected'); setStatus('listening') },
+        onDisconnect: () => { console.log('[EL] disconnected'); setStatus('idle'); convRef.current = null },
+        onError: (msg: string) => { console.error('[EL] error:', msg); setErrorMsg(msg); setStatus('error'); convRef.current = null },
         onModeChange: ({ mode }: { mode: string }) => {
           setStatus(mode === 'speaking' ? 'talking' : 'listening')
         },
       })
       convRef.current = conv
     } catch (err) {
+      console.error('[EL] startSession threw:', err)
       setErrorMsg(err instanceof Error ? err.message : 'Verbinding mislukt.')
       setStatus('error')
     }
