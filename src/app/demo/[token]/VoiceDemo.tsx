@@ -52,6 +52,7 @@ export function VoiceDemo({ token, strings, logoUrl }: Props) {
 
       const conv = await VoiceConversation.startSession({
         agentId: agent_id,
+        connectionType: 'websocket',
         dynamicVariables: { business_info: business_info || 'Geen informatie beschikbaar.' },
         clientTools: {
           collect_lead_info: async (params: { naam?: string; email?: string; telefoon?: string }) => {
