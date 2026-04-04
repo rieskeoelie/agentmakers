@@ -8,14 +8,6 @@ interface Props {
   strings: Record<string, string>
 }
 
-const AGENT_OPTIONS = [
-  'AI Voice Agent - Inbound',
-  'AI Voice Agent - Outbound',
-  'WhatsApp & SMS Agent',
-  'Facebook Messenger Agent',
-  'Instagram DM Agent',
-  'E-mail Agent',
-]
 
 const IconUser = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -118,16 +110,9 @@ function Confetti() {
 export function DemoForm({ slug, lang, strings }: Props) {
   const [state, setState] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [form, setForm] = useState({ naam: '', email: '', telefoon: '', website: 'https://', bedrijfsnaam: '' })
-  const [diensten, setDiensten] = useState<string[]>([])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
-  }
-
-  const toggleDienst = (option: string) => {
-    setDiensten(prev =>
-      prev.includes(option) ? prev.filter(d => d !== option) : [...prev, option]
-    )
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -137,7 +122,7 @@ export function DemoForm({ slug, lang, strings }: Props) {
       const res = await fetch('/api/demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, diensten, slug, language: lang }),
+        body: JSON.stringify({ ...form, diensten: ['AI Voice Agent - Inbound'], slug, language: lang }),
       })
       if (!res.ok) throw new Error('Failed')
       setState('success')
@@ -202,39 +187,6 @@ export function DemoForm({ slug, lang, strings }: Props) {
         <Field icon={<IconBuilding />}>
           <input name="bedrijfsnaam" value={form.bedrijfsnaam} onChange={handleChange} placeholder={strings.company} style={inputStyle} />
         </Field>
-
-        {/* Multi-select agent options */}
-        <div style={{ marginTop: 4 }}>
-          <p style={{ color: '#64748B', fontSize: '.85rem', fontFamily: "'Nunito', sans-serif", marginBottom: 10, fontWeight: 600 }}>
-            {strings.diensten_label || 'Waarvoor wilt u een demo? (meerdere mogelijk)'}
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {AGENT_OPTIONS.map(option => {
-              const selected = diensten.includes(option)
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => toggleDienst(option)}
-                  style={{
-                    padding: '7px 14px',
-                    borderRadius: 20,
-                    border: selected ? '1.5px solid #0D9488' : '1.5px solid #E2E8F0',
-                    background: selected ? '#CCFBF1' : '#F8FAFC',
-                    color: selected ? '#0D9488' : '#64748B',
-                    fontSize: '.82rem',
-                    fontFamily: "'Nunito', sans-serif",
-                    fontWeight: selected ? 700 : 500,
-                    cursor: 'pointer',
-                    transition: 'all .15s',
-                  }}
-                >
-                  {selected ? '✓ ' : ''}{option}
-                </button>
-              )
-            })}
-          </div>
-        </div>
 
         <button
           type="submit"
