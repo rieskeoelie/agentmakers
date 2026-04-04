@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { sendConfirmationEmail, sendAdminNotification } from '@/lib/email'
+import { scrapeWebsite, buildBusinessInfo } from '@/lib/scrape'
 import { nanoid } from 'nanoid'
 
 export async function POST(req: NextRequest) {
@@ -58,20 +59,26 @@ export async function POST(req: NextRequest) {
       await supabaseAdmin.rpc('increment_conversions', { page_slug: slug })
     } catch { /* ignore */ }
 
-    // Fire-and-forget: scrape website in background
+    // Scrape website first, then send email — so the agent is ready when they arrive
     if (insertedLead?.id && website && website !== 'https://') {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://agentmakers.io'
-      fetch(`${siteUrl}/api/scrape`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-secret': process.env.ADMIN_SECRET_KEY || '',
-        },
-        body: JSON.stringify({ lead_id: insertedLead.id }),
-      }).catch(() => { /* ignore background errors */ })
+      try {
+        const scrapedContent = await scrapeWebsite(website)
+        const business_info = buildBusinessInfo({
+          naam,
+          bedrijfsnaam,
+          website,
+          scrapedContent,
+        })
+        await supabaseAdmin
+          .from('leads')
+          .update({ business_info, scraped_at: new Date().toISOString() })
+          .eq('id', insertedLead.id)
+      } catch {
+        // Scraping failed — email still goes out, demo page shows fallback info
+      }
     }
 
-    // Send emails (confirmation includes demo link)
+    // Send emails only after scraping is done
     await Promise.allSettled([
       sendConfirmationEmail({ ...lead, demo_token }),
       sendAdminNotification(lead),
