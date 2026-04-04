@@ -61,7 +61,6 @@ export function VoiceDemo({ token, strings, logoUrl }: Props) {
         },
         overrides: {
           tts: {
-            voiceId: 'DXFkLCBUTmvXpp2QwZjA',
             speed: 0.88,
           },
         },
