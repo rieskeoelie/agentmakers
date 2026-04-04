@@ -72,7 +72,7 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
           agent: {
             language: effectiveLang,
             firstMessage,
-            prompt: system_prompt,
+            prompt: { prompt: system_prompt },
           },
         },
         dynamicVariables: {
