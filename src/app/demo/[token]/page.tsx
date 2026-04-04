@@ -20,14 +20,35 @@ function extractDescription(businessInfo?: string | null): string {
   if (!businessInfo) return ''
   const idx = businessInfo.indexOf('Website inhoud:')
   const raw = idx !== -1 ? businessInfo.substring(idx + 15) : businessInfo
-  const stripped = raw
-    .replace(/#{1,6}\s/g, '')
+  const lines = raw
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/#{1,6}\s+[^\n]*/g, '')
+    .replace(/`[^`]+`/g, '')
+    .replace(/\|[^\n]*/g, '')
     .replace(/\*\*/g, '')
     .replace(/\*/g, '')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/\n+/g, ' ')
-    .trim()
-  return stripped.length > 200 ? stripped.substring(0, 200).trimEnd() + '…' : stripped
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 45 && !/^http/i.test(l))
+  const joined = lines.slice(0, 4).join(' ').trim()
+  return joined.length > 280 ? joined.substring(0, 280).trimEnd() + '…' : joined
+}
+
+async function checkLogoUrl(domain: string): Promise<string | null> {
+  if (!domain) return null
+  try {
+    const controller = new AbortController()
+    const t = setTimeout(() => controller.abort(), 3000)
+    const res = await fetch(`https://logo.clearbit.com/${domain}`, {
+      method: 'HEAD',
+      signal: controller.signal,
+    })
+    clearTimeout(t)
+    return res.ok ? `https://logo.clearbit.com/${domain}` : null
+  } catch {
+    return null
+  }
 }
 
 export default async function DemoPage({ params }: Props) {
@@ -45,7 +66,7 @@ export default async function DemoPage({ params }: Props) {
   const scraped = !!lead.scraped_at
   const domain = getDomain(lead.website)
   const description = extractDescription(lead.business_info)
-  const logoUrl = domain ? `https://logo.clearbit.com/${domain}` : null
+  const logoUrl = await checkLogoUrl(domain)
   const companyName = lead.bedrijfsnaam || domain || lead.naam
   const websiteHref = lead.website?.startsWith('http') ? lead.website : `https://${lead.website}`
 
@@ -68,6 +89,15 @@ export default async function DemoPage({ params }: Props) {
       cta_sub: 'Live binnen 48 uur.',
       cta_btn: 'Plan een gesprek',
       cta_url: 'https://calendly.com/agentmakersdemo/30min',
+      tips_title: 'Wat kunt u doen?',
+      tips: [
+        `Vraag wat ${companyName} precies doet`,
+        'Stel vragen over diensten of prijzen',
+        'Vraag hoe het proces werkt',
+        'Plan direct een afspraak in het gesprek',
+      ],
+      tips_note: 'Aan het einde stuurt de agent u een persoonlijke meeting link.',
+      configured_for: 'Geconfigureerd voor',
     },
     en: {
       eyebrow: 'Personal AI demo',
@@ -87,6 +117,15 @@ export default async function DemoPage({ params }: Props) {
       cta_sub: 'Live within 48 hours.',
       cta_btn: 'Book a call',
       cta_url: 'https://calendly.com/agentmakersdemo/30min',
+      tips_title: 'What can you do?',
+      tips: [
+        `Ask what ${companyName} does`,
+        'Ask about services or pricing',
+        'Ask how the process works',
+        'Book a meeting directly in the conversation',
+      ],
+      tips_note: 'At the end, the agent will send you a personal meeting link.',
+      configured_for: 'Configured for',
     },
     es: {
       eyebrow: 'Demo de IA personal',
@@ -106,6 +145,15 @@ export default async function DemoPage({ params }: Props) {
       cta_sub: 'En marcha en 48 horas.',
       cta_btn: 'Reservar una llamada',
       cta_url: 'https://calendly.com/agentmakersdemo/30min',
+      tips_title: '¿Qué puede hacer?',
+      tips: [
+        `Pregunte qué hace ${companyName}`,
+        'Consulte sobre servicios o precios',
+        'Pregunte cómo funciona el proceso',
+        'Reserve una cita directamente en la conversación',
+      ],
+      tips_note: 'Al final, el agente le enviará un enlace personal de reunión.',
+      configured_for: 'Configurado para',
     },
   }
 
@@ -176,8 +224,8 @@ export default async function DemoPage({ params }: Props) {
         }
         @keyframes blobDrift {
           0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(3%, 5%) scale(1.06); }
-          66% { transform: translate(-2%, -3%) scale(0.97); }
+          33%  { transform: translate(3%, 5%) scale(1.06); }
+          66%  { transform: translate(-2%, -3%) scale(0.97); }
         }
 
         /* ── Content shell ── */
@@ -185,21 +233,20 @@ export default async function DemoPage({ params }: Props) {
           position: relative;
           z-index: 1;
           width: 100%;
-          max-width: 560px;
-          padding: 28px 20px 80px;
+          max-width: 960px;
+          padding: 28px 24px 80px;
           display: flex;
           flex-direction: column;
-          align-items: center;
+          align-items: stretch;
           gap: 0;
         }
 
         /* ── Top bar ── */
         .topbar {
-          width: 100%;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 56px;
+          margin-bottom: 48px;
         }
         .logo-wordmark {
           font-family: 'Poppins', sans-serif;
@@ -224,8 +271,7 @@ export default async function DemoPage({ params }: Props) {
         /* ── Hero ── */
         .hero {
           text-align: center;
-          margin-bottom: 36px;
-          width: 100%;
+          margin-bottom: 48px;
         }
         .eyebrow {
           display: inline-flex;
@@ -251,10 +297,10 @@ export default async function DemoPage({ params }: Props) {
         .headline {
           font-family: 'Poppins', sans-serif;
           font-weight: 800;
-          font-size: clamp(2rem, 6vw, 2.8rem);
+          font-size: clamp(2rem, 5vw, 2.9rem);
           line-height: 1.1;
           letter-spacing: -0.03em;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
           background: linear-gradient(160deg, #ffffff 0%, #ffffff 50%, #7EEEDE 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -262,7 +308,7 @@ export default async function DemoPage({ params }: Props) {
           white-space: pre-line;
         }
         .hero-sub {
-          font-size: 0.92rem;
+          font-size: 0.93rem;
           color: rgba(240,244,248,0.45);
           font-weight: 400;
         }
@@ -271,26 +317,62 @@ export default async function DemoPage({ params }: Props) {
           font-weight: 600;
         }
 
+        /* ── Main two-column grid ── */
+        .main-grid {
+          display: grid;
+          grid-template-columns: 320px 1fr;
+          gap: 28px;
+          align-items: start;
+          margin-bottom: 60px;
+        }
+        @media (max-width: 720px) {
+          .main-grid {
+            grid-template-columns: 1fr;
+          }
+          .left-col { order: 2; }
+          .right-col { order: 1; }
+        }
+
+        /* ── Left column ── */
+        .left-col {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+
         /* ── Company card ── */
         .company-card {
-          width: 100%;
-          background: rgba(255,255,255,0.045);
+          background: rgba(255,255,255,0.04);
           backdrop-filter: blur(24px);
           -webkit-backdrop-filter: blur(24px);
-          border: 1px solid rgba(255,255,255,0.09);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-top: 1px solid rgba(45,212,191,0.22);
           border-radius: 20px;
-          padding: 20px 22px;
-          margin-bottom: 44px;
+          padding: 24px;
+          box-shadow:
+            0 1px 0 rgba(255,255,255,0.05) inset,
+            0 24px 48px rgba(0,0,0,0.28);
+          position: relative;
+          overflow: hidden;
+        }
+        .company-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 24px; right: 24px;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(45,212,191,0.35), transparent);
+        }
+
+        .company-header {
           display: flex;
-          gap: 16px;
-          align-items: flex-start;
-          box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset,
-                      0 24px 48px rgba(0,0,0,0.25);
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 16px;
         }
         .company-logo-wrap {
           flex-shrink: 0;
-          width: 52px; height: 52px;
-          border-radius: 13px;
+          width: 56px; height: 56px;
+          border-radius: 14px;
           background: rgba(255,255,255,0.07);
           border: 1px solid rgba(255,255,255,0.1);
           display: flex;
@@ -301,37 +383,38 @@ export default async function DemoPage({ params }: Props) {
         .company-logo-wrap img {
           width: 100%; height: 100%;
           object-fit: contain;
-          padding: 7px;
+          padding: 8px;
         }
         .company-logo-fallback {
           font-family: 'Poppins', sans-serif;
           font-weight: 800;
-          font-size: 1.3rem;
+          font-size: 1.5rem;
           color: #2DD4BF;
           line-height: 1;
         }
-        .company-info { flex: 1; min-width: 0; }
-        .company-name-row {
-          display: flex;
-          align-items: center;
-          gap: 9px;
-          flex-wrap: wrap;
-          margin-bottom: 4px;
-        }
+
+        .company-meta { flex: 1; min-width: 0; }
         .company-name {
           font-family: 'Poppins', sans-serif;
           font-weight: 700;
-          font-size: 0.97rem;
+          font-size: 1rem;
           color: #fff;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          margin-bottom: 4px;
+        }
+        .company-badges {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          flex-wrap: wrap;
         }
         .ai-badge {
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          font-size: 0.6rem;
+          font-size: 0.58rem;
           font-weight: 700;
           letter-spacing: 0.08em;
           text-transform: uppercase;
@@ -346,29 +429,110 @@ export default async function DemoPage({ params }: Props) {
           width: 5px; height: 5px;
           border-radius: 50%;
           background: #2DD4BF;
+          animation: dotPulse 2.5s ease-in-out infinite;
         }
-        .company-domain {
-          display: inline-block;
-          font-size: 0.73rem;
+        .ai-badge-wait {
+          color: #FCD34D;
+          background: rgba(252,211,77,0.1);
+          border-color: rgba(252,211,77,0.2);
+        }
+
+        .company-divider {
+          width: 100%;
+          height: 1px;
+          background: rgba(255,255,255,0.06);
+          margin-bottom: 14px;
+        }
+
+        .company-domain-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 0.72rem;
           color: rgba(240,244,248,0.32);
           text-decoration: none;
-          margin-bottom: 9px;
+          margin-bottom: 12px;
           transition: color 0.2s;
         }
-        .company-domain:hover { color: rgba(240,244,248,0.6); }
+        .company-domain-link:hover { color: rgba(240,244,248,0.6); }
+
         .company-desc {
-          font-size: 0.79rem;
+          font-size: 0.8rem;
           color: rgba(240,244,248,0.45);
-          line-height: 1.65;
+          line-height: 1.7;
+        }
+
+        /* ── Tips card ── */
+        .tips-card {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 20px;
+          padding: 22px 24px;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.2);
+        }
+        .tips-title {
+          font-family: 'Poppins', sans-serif;
+          font-weight: 700;
+          font-size: 0.82rem;
+          color: rgba(255,255,255,0.55);
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          margin-bottom: 14px;
+        }
+        .tips-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin-bottom: 16px;
+        }
+        .tip-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          font-size: 0.82rem;
+          color: rgba(240,244,248,0.65);
+          line-height: 1.45;
+        }
+        .tip-icon {
+          flex-shrink: 0;
+          margin-top: 1px;
+          width: 18px; height: 18px;
+          border-radius: 50%;
+          background: rgba(45,212,191,0.1);
+          border: 1px solid rgba(45,212,191,0.2);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 0.55rem;
+          color: #2DD4BF;
+          font-weight: 900;
+        }
+        .tips-note {
+          font-size: 0.74rem;
+          color: rgba(240,244,248,0.3);
+          line-height: 1.55;
+          border-top: 1px solid rgba(255,255,255,0.05);
+          padding-top: 13px;
+        }
+        .tips-note-icon {
+          display: inline;
+          margin-right: 4px;
+          font-style: normal;
+        }
+
+        /* ── Right column ── */
+        .right-col {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-start;
+          padding-top: 8px;
         }
 
         /* ── Divider ── */
         .divider {
-          width: 100%;
           display: flex;
           align-items: center;
           gap: 14px;
-          margin: 52px 0 28px;
+          margin-bottom: 28px;
         }
         .divider-line {
           flex: 1;
@@ -385,7 +549,6 @@ export default async function DemoPage({ params }: Props) {
         /* ── CTA ── */
         .cta-section {
           text-align: center;
-          width: 100%;
         }
         .cta-heading {
           font-family: 'Poppins', sans-serif;
@@ -412,14 +575,16 @@ export default async function DemoPage({ params }: Props) {
           border-radius: 12px;
           text-decoration: none;
           letter-spacing: -0.01em;
-          box-shadow: 0 0 0 1px rgba(45,212,191,0.3),
-                      0 8px 24px rgba(13,148,136,0.35);
+          box-shadow:
+            0 0 0 1px rgba(45,212,191,0.3),
+            0 8px 24px rgba(13,148,136,0.35);
           transition: transform 0.15s, box-shadow 0.15s;
         }
         .cta-btn:hover {
           transform: translateY(-1px);
-          box-shadow: 0 0 0 1px rgba(45,212,191,0.4),
-                      0 12px 32px rgba(13,148,136,0.45);
+          box-shadow:
+            0 0 0 1px rgba(45,212,191,0.4),
+            0 12px 32px rgba(13,148,136,0.45);
         }
       `}</style>
 
@@ -453,55 +618,102 @@ export default async function DemoPage({ params }: Props) {
             </p>
           </div>
 
-          {/* Company card */}
-          <div className="company-card">
-            <div className="company-logo-wrap">
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoUrl} alt={companyName} />
-              ) : (
-                <span className="company-logo-fallback">
-                  {companyName.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <div className="company-info">
-              <div className="company-name-row">
-                <span className="company-name">{companyName}</span>
-                {scraped ? (
-                  <span className="ai-badge">
-                    <span className="ai-badge-dot" />
-                    {s.aiReady}
-                  </span>
+          {/* Main two-column grid */}
+          <div className="main-grid">
+
+            {/* ── Left column: company info + tips ── */}
+            <div className="left-col">
+
+              {/* Company card */}
+              <div className="company-card">
+                <div className="company-header">
+                  <div className="company-logo-wrap">
+                    {logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={logoUrl} alt={companyName} />
+                    ) : (
+                      <span className="company-logo-fallback">
+                        {companyName.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="company-meta">
+                    <div className="company-name">{companyName}</div>
+                    <div className="company-badges">
+                      {scraped ? (
+                        <span className="ai-badge">
+                          <span className="ai-badge-dot" />
+                          {s.aiReady}
+                        </span>
+                      ) : (
+                        <span className="ai-badge ai-badge-wait">
+                          {s.notReady}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="company-divider" />
+
+                {domain && (
+                  <a
+                    href={websiteHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="company-domain-link"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                      <path d="M10 2L2 10M10 2H5M10 2V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    {domain}
+                  </a>
+                )}
+
+                {description ? (
+                  <p className="company-desc">{description}</p>
                 ) : (
-                  <span className="ai-badge" style={{ color: '#FCD34D', background: 'rgba(252,211,77,0.1)', borderColor: 'rgba(252,211,77,0.2)' }}>
-                    {s.notReady}
-                  </span>
+                  <p className="company-desc" style={{ color: 'rgba(240,244,248,0.2)', fontStyle: 'italic' }}>
+                    {scraped ? '' : s.notReady}
+                  </p>
                 )}
               </div>
-              {domain && (
-                <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="company-domain">
-                  ↗ {domain}
-                </a>
-              )}
-              {description && (
-                <p className="company-desc">{description}</p>
-              )}
-            </div>
-          </div>
 
-          {/* Voice demo */}
-          <VoiceDemo
-            token={token}
-            strings={s}
-            companyName={companyName}
-            logoUrl={logoUrl}
-          />
+              {/* Tips card */}
+              <div className="tips-card">
+                <div className="tips-title">{s.tips_title}</div>
+                <div className="tips-list">
+                  {s.tips.map((tip, i) => (
+                    <div key={i} className="tip-item">
+                      <span className="tip-icon">✓</span>
+                      <span>{tip}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="tips-note">
+                  <i className="tips-note-icon">📅</i>
+                  {s.tips_note}
+                </p>
+              </div>
+
+            </div>
+
+            {/* ── Right column: voice orb ── */}
+            <div className="right-col">
+              <VoiceDemo
+                token={token}
+                strings={s}
+                companyName={companyName}
+                logoUrl={logoUrl}
+              />
+            </div>
+
+          </div>
 
           {/* CTA */}
           <div className="divider">
             <div className="divider-line" />
-            <span className="divider-text">of</span>
+            <span className="divider-text">{lang === 'nl' ? 'of' : lang === 'es' ? 'o' : 'or'}</span>
             <div className="divider-line" />
           </div>
           <div className="cta-section">
