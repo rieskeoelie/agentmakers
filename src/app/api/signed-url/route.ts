@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     // Look up the lead by token
     const { data: lead, error } = await supabaseAdmin
       .from('leads')
-      .select('naam, bedrijfsnaam, website, business_info, scraped_at')
+      .select('naam, email, telefoon, bedrijfsnaam, website, business_info, scraped_at')
       .eq('demo_token', token)
       .single()
 
@@ -41,6 +41,9 @@ export async function GET(req: NextRequest) {
       agent_id: ELEVENLABS_AGENT_ID,
       business_info,
       scraped: !!lead.scraped_at,
+      prospect_naam: lead.naam || '',
+      prospect_email: lead.email || '',
+      prospect_telefoon: lead.telefoon || '',
     })
   } catch (err) {
     console.error('Signed URL error:', err)

@@ -48,12 +48,17 @@ export function VoiceDemo({ token, strings, logoUrl }: Props) {
     try {
       const res = await fetch(`/api/signed-url?token=${token}`)
       if (!res.ok) throw new Error('Could not connect')
-      const { agent_id, business_info } = await res.json()
+      const { agent_id, business_info, prospect_naam, prospect_email, prospect_telefoon } = await res.json()
 
       const conv = await VoiceConversation.startSession({
         agentId: agent_id,
         connectionType: 'websocket',
-        dynamicVariables: { business_info: business_info || 'Geen informatie beschikbaar.' },
+        dynamicVariables: {
+          business_info: business_info || 'Geen informatie beschikbaar.',
+          prospect_naam: prospect_naam || '',
+          prospect_email: prospect_email || '',
+          prospect_telefoon: prospect_telefoon || '',
+        },
         overrides: {
           tts: {
             voiceId: 'DXFkLCBUTmvXpp2QwZjA',
@@ -62,15 +67,19 @@ export function VoiceDemo({ token, strings, logoUrl }: Props) {
         },
         clientTools: {
           collect_lead_info: async (params: { naam?: string; email?: string; telefoon?: string }) => {
+            // Fall back to the known prospect data if agent didn't capture it
+            const naam = params.naam || prospect_naam
+            const email = params.email || prospect_email
+            const telefoon = params.telefoon || prospect_telefoon
             try {
               const r = await fetch('/api/demo-collect', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, ...params }),
+                body: JSON.stringify({ token, naam, email, telefoon }),
               })
               const data = await r.json()
-              if (data.success) { setScheduled(true); setScheduledEmail(params.email || '') }
-              return `Bedankt${params.naam ? ' ' + params.naam : ''}! Ik heb een persoonlijke meeting link gestuurd naar ${params.email}.`
+              if (data.success) { setScheduled(true); setScheduledEmail(email) }
+              return `Geweldig${naam ? ', ' + naam : ''}! Ik heb een persoonlijke meeting link gestuurd naar ${email}. Fijne dag verder!`
             } catch {
               return 'Er is iets misgegaan. U kunt altijd een afspraak maken via agentmakers.io.'
             }
