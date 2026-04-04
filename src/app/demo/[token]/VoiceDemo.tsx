@@ -105,7 +105,12 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
         onDisconnect: () => {
           console.log('[EL] disconnected')
           convRef.current = null
-          if (wasActiveRef.current) { setEnded(true) } else { setStatus('idle') }
+          if (wasActiveRef.current) {
+            setEnded(true)
+            window.dispatchEvent(new CustomEvent('demo:ended'))
+          } else {
+            setStatus('idle')
+          }
           wasActiveRef.current = false
         },
         onError: (msg: string) => { console.error('[EL] error:', msg); setErrorMsg(msg); setStatus('error'); convRef.current = null },

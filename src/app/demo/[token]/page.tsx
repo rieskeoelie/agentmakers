@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import { VoiceDemo } from './VoiceDemo'
+import { HeroSection } from './HeroSection'
 
 interface Props {
   params: Promise<{ token: string }>
@@ -73,8 +74,8 @@ export default async function DemoPage({ params }: Props) {
   const strings = {
     nl: {
       eyebrow: 'Persoonlijke AI demo',
-      headline: 'Zo klinkt uw\neigen AI agent',
-      for: 'Geconfigureerd voor',
+      headline: `AI receptioniste voor\n${companyName}`,
+      for: 'Deze receptioniste is voor deze demo getraind op uw website. Zodra ze is getraind met echte data en gekoppeld met uw agenda verandert ze in een volwaardige medewerkster die 24/7 vriendelijk mensen te woord staat.',
       aiReady: 'AI-ready',
       notReady: 'Wordt voorbereid…',
       start: 'Start gesprek',
@@ -103,8 +104,8 @@ export default async function DemoPage({ params }: Props) {
     },
     en: {
       eyebrow: 'Personal AI demo',
-      headline: 'This is what your\nown AI agent sounds like',
-      for: 'Configured for',
+      headline: `AI receptionist for\n${companyName}`,
+      for: 'This receptionist has been trained on your website for this demo. Once trained with real data and connected to your calendar, she becomes a full-time team member available 24/7 to answer calls in a friendly manner.',
       aiReady: 'AI-ready',
       notReady: 'Preparing…',
       start: 'Start conversation',
@@ -133,8 +134,8 @@ export default async function DemoPage({ params }: Props) {
     },
     es: {
       eyebrow: 'Demo de IA personal',
-      headline: 'Así suena su\npropio agente IA',
-      for: 'Configurado para',
+      headline: `IA recepcionista de\n${companyName}`,
+      for: 'Esta recepcionista ha sido entrenada en su sitio web para esta demo. Una vez entrenada con datos reales y conectada a su agenda, se convierte en una empleada disponible 24/7 para atender llamadas con amabilidad.',
       aiReady: 'IA-ready',
       notReady: 'Preparando…',
       start: 'Iniciar conversación',
@@ -317,10 +318,9 @@ export default async function DemoPage({ params }: Props) {
           font-size: 0.93rem;
           color: rgba(240,244,248,0.45);
           font-weight: 400;
-        }
-        .hero-sub strong {
-          color: rgba(240,244,248,0.85);
-          font-weight: 600;
+          max-width: 580px;
+          margin: 0 auto;
+          line-height: 1.65;
         }
 
         /* ── Main two-column grid ── */
@@ -613,16 +613,7 @@ export default async function DemoPage({ params }: Props) {
           </div>
 
           {/* Hero */}
-          <div className="hero">
-            <div className="eyebrow">
-              <span className="eyebrow-dot" />
-              {s.eyebrow}
-            </div>
-            <h1 className="headline">{s.headline}</h1>
-            <p className="hero-sub">
-              {s.for} <strong>{companyName}</strong>
-            </p>
-          </div>
+          <HeroSection eyebrow={s.eyebrow} headline={s.headline} sub={s.for} />
 
           {/* Main two-column grid */}
           <div className="main-grid">
