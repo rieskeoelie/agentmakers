@@ -30,9 +30,11 @@ export default async function HomePage() {
           <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
             <img src="/logo-transparent.png" alt="agentmakers.io" style={{ height: 36, width: 'auto', display: 'block' }} />
           </a>
-          <a href="#contact" className="nav-cta" style={{ background: '#0D9488', color: '#fff', padding: '10px 24px', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: '.9rem' }}>
-            Neem contact op
-          </a>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <span style={{ fontSize: '1.35rem', opacity: 1, lineHeight: 1 }} title="Nederlands">🇳🇱</span>
+            <span style={{ fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }} title="English">🇬🇧</span>
+            <span style={{ fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }} title="Español">🇪🇸</span>
+          </div>
         </div>
       </nav>
 
