@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { sendConfirmationEmail, sendAdminNotification } from '@/lib/email'
+import { nanoid } from 'nanoid'
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,25 +17,63 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Ongeldig e-mailadres' }, { status: 400 })
     }
 
-    const lead = { naam, email, telefoon, website, bedrijfsnaam, diensten: diensten || [], landing_page_slug: slug, language: language || 'nl' }
+    // Generate a unique demo token
+    const demo_token = nanoid(24)
 
-    // Store lead in Supabase
-    const { error: dbError } = await supabaseAdmin.from('leads').insert([{
-      naam, email, telefoon, website, bedrijfsnaam,
+    const lead = {
+      naam,
+      email,
+      telefoon,
+      website,
+      bedrijfsnaam,
+      diensten: diensten || [],
       landing_page_slug: slug,
       language: language || 'nl',
-      ip_address: req.headers.get('x-forwarded-for') || '',
-      user_agent: req.headers.get('user-agent') || '',
-      referrer: req.headers.get('referer') || '',
-    }])
+    }
+
+    // Store lead in Supabase
+    const { data: insertedLead, error: dbError } = await supabaseAdmin
+      .from('leads')
+      .insert([{
+        naam,
+        email,
+        telefoon,
+        website,
+        bedrijfsnaam,
+        diensten: diensten || [],
+        landing_page_slug: slug,
+        language: language || 'nl',
+        demo_token,
+        ip_address: req.headers.get('x-forwarded-for') || '',
+        user_agent: req.headers.get('user-agent') || '',
+        referrer: req.headers.get('referer') || '',
+      }])
+      .select('id')
+      .single()
+
     if (dbError) console.error('DB error:', dbError)
 
     // Update conversion count
-    try { await supabaseAdmin.rpc('increment_conversions', { page_slug: slug }) } catch { /* ignore */ }
+    try {
+      await supabaseAdmin.rpc('increment_conversions', { page_slug: slug })
+    } catch { /* ignore */ }
 
-    // Send emails
+    // Fire-and-forget: scrape website in background
+    if (insertedLead?.id && website && website !== 'https://') {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://agentmakers.io'
+      fetch(`${siteUrl}/api/scrape`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-secret': process.env.ADMIN_SECRET_KEY || '',
+        },
+        body: JSON.stringify({ lead_id: insertedLead.id }),
+      }).catch(() => { /* ignore background errors */ })
+    }
+
+    // Send emails (confirmation includes demo link)
     await Promise.allSettled([
-      sendConfirmationEmail(lead),
+      sendConfirmationEmail({ ...lead, demo_token }),
       sendAdminNotification(lead),
     ])
 

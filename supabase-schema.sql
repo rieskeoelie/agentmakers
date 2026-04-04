@@ -120,6 +120,20 @@ CREATE POLICY "Service role full access leads" ON leads
 CREATE POLICY "Service role full access views" ON page_views
   FOR ALL USING (auth.role() = 'service_role');
 
+-- ─── DEMO FUNNEL MIGRATION ───
+-- Run this in Supabase → SQL Editor if you already have the tables
+
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS demo_token TEXT UNIQUE;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS business_info TEXT;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS scraped_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS diensten TEXT[];
+
+CREATE INDEX IF NOT EXISTS idx_leads_demo_token ON leads(demo_token);
+
+-- Allow public to read a lead by its demo_token (for the demo page)
+CREATE POLICY IF NOT EXISTS "Public read lead by token" ON leads
+  FOR SELECT USING (demo_token IS NOT NULL);
+
 -- ─── SEED: kliniek pagina (al live) ───
 INSERT INTO landing_pages (
   slug, industry, status,
