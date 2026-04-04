@@ -37,7 +37,7 @@ export default async function DemoPage({ params }: Props) {
       cta_headline: 'Klaar om te beginnen?',
       cta_sub: 'Boek een persoonlijk gesprek met ons team en ga binnen 48 uur live.',
       cta_button: '📅 Boek een demo gesprek',
-      cta_url: 'https://calendly.com/agentmakers',
+      cta_url: 'https://calendly.com/agentmakersdemo/30min',
     },
     en: {
       headline: `Your personal AI demo`,
@@ -52,7 +52,7 @@ export default async function DemoPage({ params }: Props) {
       cta_headline: 'Ready to get started?',
       cta_sub: 'Book a personal call with our team and go live within 48 hours.',
       cta_button: '📅 Book a demo call',
-      cta_url: 'https://calendly.com/agentmakers',
+      cta_url: 'https://calendly.com/agentmakersdemo/30min',
     },
     es: {
       headline: `Su demo de IA personal`,
@@ -67,7 +67,7 @@ export default async function DemoPage({ params }: Props) {
       cta_headline: '¿Listo para empezar?',
       cta_sub: 'Reserve una llamada personal con nuestro equipo y comience en 48 horas.',
       cta_button: '📅 Reservar una llamada',
-      cta_url: 'https://calendly.com/agentmakers',
+      cta_url: 'https://calendly.com/agentmakersdemo/30min',
     },
   }
 
