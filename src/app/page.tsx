@@ -30,7 +30,7 @@ export default async function HomePage() {
           <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
             <img src="/logo-transparent.png" alt="agentmakers.io" style={{ height: 36, width: 'auto', display: 'block' }} />
           </a>
-          <a href="#contact" style={{ background: '#0D9488', color: '#fff', padding: '10px 24px', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: '.9rem' }}>
+          <a href="#contact" className="nav-cta" style={{ background: '#0D9488', color: '#fff', padding: '10px 24px', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: '.9rem' }}>
             Neem contact op
           </a>
         </div>
@@ -65,7 +65,7 @@ export default async function HomePage() {
       </section>
 
       {/* BRANCHES */}
-      <section id="branches" style={{ padding: '100px 0' }}>
+      <section id="branches" className="sp">
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ display: 'inline-block', color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>Onze oplossingen</div>
@@ -73,7 +73,7 @@ export default async function HomePage() {
             <p style={{ color: '#64748B', fontSize: '1.05rem', maxWidth: 560, margin: '0 auto' }}>Kies uw branche en ontdek wat onze AI agents specifiek voor u kunnen betekenen.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="grid-3col">
             {/* Live pages */}
             {livePages.map((page) => (
               <a key={page.slug} href={`/nl/${page.slug}`} style={{ background: '#fff', border: '1px solid #F1F5F9', borderRadius: 16, overflow: 'hidden', textDecoration: 'none', color: 'inherit', display: 'block', transition: 'all .3s' }}>
@@ -104,12 +104,12 @@ export default async function HomePage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section style={{ padding: '100px 0', background: '#0F172A' }}>
+      <section className="sp" style={{ background: '#0F172A' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
           <div style={{ color: '#CCFBF1', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>Hoe het werkt</div>
           <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16 }}>In 4 stappen operationeel</h2>
           <p style={{ color: '#CBD5E1', fontSize: '1.05rem', maxWidth: 560, margin: '0 auto 56px' }}>Geen technische kennis nodig. Wij regelen alles.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32 }}>
+          <div className="grid-4col">
             {[
               ['1', 'Kies uw branche', 'Selecteer uw branche zodat wij de AI agents optimaal kunnen afstemmen.'],
               ['2', 'Wij configureren', 'We trainen de AI op uw bedrijf: diensten, prijzen, tone of voice en protocollen.'],

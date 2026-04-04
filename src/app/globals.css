@@ -22,3 +22,33 @@ body {
 }
 
 h1, h2, h3, h4 { font-family: 'Poppins', sans-serif; color: var(--slate-900); }
+
+/* ── Responsive layout helpers ─────────────────────── */
+.sp { padding-top: 60px; padding-bottom: 60px; }
+.grid-split  { display: grid; grid-template-columns: 1fr 1fr;        gap: 56px; align-items: center; }
+.grid-2col   { display: grid; grid-template-columns: repeat(2,1fr);  gap: 20px; }
+.grid-3col   { display: grid; grid-template-columns: repeat(3,1fr);  gap: 24px; }
+.grid-4col   { display: grid; grid-template-columns: repeat(4,1fr);  gap: 32px; }
+
+@media (min-width: 768px) { .sp { padding-top: 100px; padding-bottom: 100px; } }
+
+/* tablet: 3-col and 4-col become 2-col */
+@media (max-width: 1023px) {
+  .grid-3col,
+  .grid-4col { grid-template-columns: repeat(2,1fr); }
+}
+
+/* mobile: everything stacks */
+@media (max-width: 639px) {
+  .grid-split,
+  .grid-2col,
+  .grid-3col,
+  .grid-4col { grid-template-columns: 1fr; gap: 20px; }
+
+  /* nav: hide language flags, shrink CTA */
+  .nav-lang { display: none; }
+  .nav-cta  { padding: 8px 16px !important; font-size: .8rem !important; }
+
+  /* hero: reduce padding */
+  .hero-pad { padding-left: 5vw !important; padding-right: 5vw !important; }
+}

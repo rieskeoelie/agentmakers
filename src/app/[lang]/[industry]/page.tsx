@@ -65,7 +65,7 @@ export default async function LandingPage({ params }: Props) {
           </a>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {/* Language switcher */}
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div className="nav-lang" style={{ display: 'flex', gap: 6 }}>
               {SUPPORTED_LANGS.map((lng) => (
                 <a key={lng} href={`/${lng}/${industry}`}
                   style={{ fontSize: '1.2rem', opacity: lng === l ? 1 : .5, textDecoration: 'none', transition: 'opacity .2s' }}
@@ -74,7 +74,7 @@ export default async function LandingPage({ params }: Props) {
                 </a>
               ))}
             </div>
-            <a href="#demo" style={{ background: '#0D9488', color: '#fff', padding: '10px 24px', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: '.9rem' }}>
+            <a href="#demo" className="nav-cta" style={{ background: '#0D9488', color: '#fff', padding: '10px 24px', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: '.9rem' }}>
               {t(l, 'nav_demo')}
             </a>
           </div>
@@ -108,8 +108,8 @@ export default async function LandingPage({ params }: Props) {
       </section>
 
       {/* PROBLEEM */}
-      <section style={{ padding: '100px 0', background: '#F1F5F9' }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'center' }}>
+      <section className="sp" style={{ background: '#F1F5F9' }}>
+        <div className="grid-split" style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div>
             <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>{t(l, 'problem_label')}</div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 20, lineHeight: 1.2 }}>
@@ -165,7 +165,7 @@ export default async function LandingPage({ params }: Props) {
       </section>
 
       {/* OPLOSSING / FEATURES */}
-      <section style={{ padding: '100px 0' }}>
+      <section className="sp">
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>{t(l, 'solution_label')}</div>
@@ -176,7 +176,7 @@ export default async function LandingPage({ params }: Props) {
               {l === 'nl' ? 'Ze beantwoordt elke oproep - dag en nacht - met een natuurlijke, warme stem. Alsof uw beste receptioniste 24/7 aan het werk is.' : l === 'en' ? 'She answers every call - day and night - with a natural, warm voice. As if your best receptionist works 24/7.' : 'Responde cada llamada, de día y de noche, con una voz natural y cálida.'}
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="grid-3col">
             {(content.features || []).map((f: { title: string; body: string }, i: number) => (
               <div key={i} style={{ background: '#fff', border: '1px solid #F1F5F9', padding: '32px 28px', borderRadius: 14, transition: 'box-shadow .25s, transform .25s' }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: '#F0FDFA', color: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
@@ -196,18 +196,18 @@ export default async function LandingPage({ params }: Props) {
       </section>
 
       {/* AGENTS SECTIE */}
-      <section style={{ padding: '100px 0', background: '#0F172A' }}>
+      <section className="sp" style={{ background: '#0F172A' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ color: '#CCFBF1', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>Onze AI Agents</div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16, color: '#fff' }}>
               {l === 'nl' ? 'Laat meerdere agenten samenwerken voor een complete 360 graden upgrade van uw kliniek.' : l === 'en' ? 'Let multiple agents work together for a complete 360-degree upgrade of your clinic.' : 'Deje que varios agentes trabajen juntos para una mejora completa de 360 grados de su clínica.'}
             </h2>
-            <p style={{ color: '#CBD5E1', fontSize: '1.05rem', maxWidth: 800, margin: '0 auto', whiteSpace: 'nowrap' }}>
+            <p style={{ color: '#CBD5E1', fontSize: '1.05rem', maxWidth: 800, margin: '0 auto' }}>
               {l === 'nl' ? 'Elk contactmoment geautomatiseerd - via telefoon, chat, e-mail en social media.' : l === 'en' ? 'Every touchpoint automated - phone, chat, email and social media.' : 'Cada punto de contacto automatizado - teléfono, chat, correo y redes sociales.'}
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="grid-3col">
             {[
               { icon: <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/><path d="M14.05 2a9 9 0 0 1 8 7.94"/><path d="M14.05 6A5 5 0 0 1 18 10"/></svg>, title: 'AI Voice Agent - Inbound', body: l === 'nl' ? 'Beantwoordt inkomende telefoongesprekken 24/7. Beantwoordt vragen over behandelingen, prijzen en beschikbaarheid en boekt direct afspraken in uw agenda.' : 'Answers incoming calls 24/7. Answers questions about treatments, prices and availability and books appointments directly.', tag: l === 'nl' ? 'Telefonie' : 'Phone' },
               { icon: <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94"/><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>, title: 'AI Voice Agent - Outbound', body: l === 'nl' ? 'Belt proactief klanten voor afspraakbevestigingen, no-show opvolging, nazorg na behandelingen en herinneringen. Vermindert no-shows met tot 40%.' : 'Proactively calls customers for appointment confirmations, no-show follow-up and reminders. Reduces no-shows by up to 40%.', tag: l === 'nl' ? 'Telefonie' : 'Phone' },
@@ -228,7 +228,7 @@ export default async function LandingPage({ params }: Props) {
       </section>
 
       {/* USE CASES */}
-      <section style={{ padding: '100px 0', background: '#F0FDFA' }}>
+      <section className="sp" style={{ background: '#F0FDFA' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
@@ -241,7 +241,7 @@ export default async function LandingPage({ params }: Props) {
               {l === 'nl' ? 'Van intake tot nazorg - Uw cliënten zijn u dankbaar.' : l === 'en' ? 'From intake to aftercare - your clients will thank you.' : 'Desde la admisión hasta el seguimiento.'}
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+          <div className="grid-2col">
             {(content.usecases || []).map((uc: { title: string; body: string }, i: number) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, background: '#fff', padding: 24, borderRadius: 12, border: '1px solid rgba(13,148,136,.1)' }}>
                 <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F0FDFA', color: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -265,7 +265,7 @@ export default async function LandingPage({ params }: Props) {
       />
 
       {/* HOE HET WERKT */}
-      <section id="hoe-het-werkt" style={{ padding: '100px 0' }}>
+      <section id="hoe-het-werkt" className="sp">
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
           <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
             {l === 'nl' ? 'Hoe het werkt' : l === 'en' ? 'How it works' : 'Cómo funciona'}
@@ -276,7 +276,7 @@ export default async function LandingPage({ params }: Props) {
           <p style={{ color: '#64748B', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto 48px' }}>
             {content.steps_sub || (l === 'nl' ? 'Geen maandenlange implementatie. Wij regelen alles.' : l === 'en' ? 'No months of implementation. We handle everything.' : 'Sin meses de implementación. Nosotros nos encargamos de todo.')}
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32, marginBottom: 48 }}>
+          <div className="grid-3col" style={{ marginBottom: 48 }}>
             {(content.steps || [
               {title: t(l, 'step1'), body: t(l, 'step1_desc')},
               {title: t(l, 'step2'), body: t(l, 'step2_desc')},
@@ -299,7 +299,7 @@ export default async function LandingPage({ params }: Props) {
       </section>
 
       {/* VERGELIJKING */}
-      <section style={{ padding: '100px 0', background: '#F1F5F9' }}>
+      <section className="sp" style={{ background: '#F1F5F9' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
@@ -345,7 +345,7 @@ export default async function LandingPage({ params }: Props) {
       </section>
 
       {/* STATS */}
-      <section style={{ padding: '100px 0' }}>
+      <section className="sp">
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
@@ -355,7 +355,7 @@ export default async function LandingPage({ params }: Props) {
               {content.stats_title || (l === 'nl' ? 'Wat klanten ervaren met agentmakers.io' : l === 'en' ? 'What clients experience with agentmakers.io' : 'Lo que los clientes experimentan con agentmakers.io')}
             </h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
+          <div className="grid-3col" style={{ gap: 32 }}>
             {[['98%', l === 'nl' ? 'van alle oproepen beantwoord' : l === 'en' ? 'of all calls answered' : 'de todas las llamadas atendidas'], ['+34%', l === 'nl' ? 'meer boekingen buiten openingstijden' : l === 'en' ? 'more bookings outside opening hours' : 'más reservas fuera del horario'], ['-40%', l === 'nl' ? 'reductie in no-shows' : l === 'en' ? 'reduction in no-shows' : 'reducción de no-shows']].map(([num, desc]) => (
               <div key={num} style={{ textAlign: 'center', padding: '40px 24px', background: '#F0FDFA', borderRadius: 14 }}>
                 <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '2.8rem', fontWeight: 700, color: '#0F766E' }}>{num}</div>
