@@ -13,6 +13,44 @@ interface Lead {
   landing_page_slug: string; language: string; created_at: string
   website?: string; bedrijfsnaam?: string; handled?: boolean
 }
+interface Conversation {
+  conversation_id: string
+  status: string
+  metadata: {
+    start_time_unix_secs: number
+    call_duration_secs: number
+  }
+  has_audio: boolean
+  has_user_audio: boolean
+  has_response_audio: boolean
+}
+interface TranscriptTurn {
+  role: 'user' | 'agent'
+  message: string
+  time_in_call_secs?: number
+}
+interface ConversationDetail {
+  conversation_id: string
+  status: string
+  metadata: { start_time_unix_secs: number; call_duration_secs: number; cost?: number }
+  has_audio: boolean
+  transcript: TranscriptTurn[]
+  conversation_initiation_client_data?: {
+    dynamic_variables?: { business_info?: string }
+  }
+}
+
+function parseCompanyName(detail: ConversationDetail): string {
+  const biz = detail.conversation_initiation_client_data?.dynamic_variables?.business_info ?? ''
+  const m = biz.match(/Bedrijfsnaam:\s*(.+)/i)
+  return m ? m[1].trim() : ''
+}
+
+function fmtDuration(secs: number): string {
+  const m = Math.floor(secs / 60)
+  const s = Math.round(secs % 60)
+  return m > 0 ? `${m}m ${s}s` : `${s}s`
+}
 
 const GENERATION_STEPS = [
   'Prompt versturen naar Claude AI...',
@@ -26,13 +64,18 @@ export default function AdminDashboard() {
   const [key, setKey] = useState('')
   const [savedKey, setSavedKey] = useState('')
   const [authed, setAuthed] = useState(false)
-  const [tab, setTab] = useState<'pages' | 'leads' | 'analytics'>('pages')
+  const [tab, setTab] = useState<'pages' | 'leads' | 'analytics' | 'conversations'>('pages')
   const [pages, setPages] = useState<Page[]>([])
   const [leads, setLeads] = useState<Lead[]>([])
   const [handledLeads, setHandledLeads] = useState<Set<string>>(new Set())
   const [seenLeadIds, setSeenLeadIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
+  // conversations state
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [convLoading, setConvLoading] = useState(false)
+  const [openConvId, setOpenConvId] = useState<string | null>(null)
+  const [convDetails, setConvDetails] = useState<Record<string, ConversationDetail>>({})
   const [creating, setCreating] = useState(false)
   const [generationStep, setGenerationStep] = useState(0)
   const [newIndustry, setNewIndustry] = useState('')
@@ -57,6 +100,25 @@ export default function AdminDashboard() {
     }
     setLoading(false)
   }, [])
+
+  const fetchConversations = useCallback(async (k: string) => {
+    setConvLoading(true)
+    const res = await fetch('/api/conversations', { headers: { 'x-admin-key': k } })
+    if (res.ok) {
+      const data = await res.json()
+      setConversations(data.conversations ?? [])
+    }
+    setConvLoading(false)
+  }, [])
+
+  const fetchConversationDetail = useCallback(async (id: string) => {
+    if (convDetails[id]) return // already loaded
+    const res = await fetch(`/api/conversations/${id}`, { headers: { 'x-admin-key': savedKey } })
+    if (res.ok) {
+      const data: ConversationDetail = await res.json()
+      setConvDetails(prev => ({ ...prev, [id]: data }))
+    }
+  }, [convDetails, savedKey])
 
   useEffect(() => {
     const stored = localStorage.getItem(ADMIN_KEY_STORAGE)
@@ -217,11 +279,15 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-          {(['pages', 'leads', 'analytics'] as const).map(t2 => (
-            <button key={t2} onClick={() => { setTab(t2); if (t2 === 'leads') markAllSeen() }}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+          {(['pages', 'leads', 'analytics', 'conversations'] as const).map(t2 => (
+            <button key={t2} onClick={() => {
+              setTab(t2)
+              if (t2 === 'leads') markAllSeen()
+              if (t2 === 'conversations' && conversations.length === 0) fetchConversations(savedKey)
+            }}
               style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: tab === t2 ? '#0D9488' : '#fff', color: tab === t2 ? '#fff' : '#64748B', position: 'relative' }}>
-              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📥 Aanvragen' : '📊 Analytics'}
+              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📥 Aanvragen' : t2 === 'analytics' ? '📊 Analytics' : '🎙 Gesprekken'}
               {t2 === 'leads' && newLeadsCount > 0 && (
                 <span style={{ position: 'absolute', top: -6, right: -6, background: '#EF4444', color: '#fff', borderRadius: '50%', width: 20, height: 20, fontSize: '.7rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {newLeadsCount}
@@ -440,6 +506,158 @@ export default function AdminDashboard() {
                   })}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* CONVERSATIONS TAB */}
+        {tab === 'conversations' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>
+                🎙 Gesprekken ({conversations.length})
+              </h2>
+              <button
+                onClick={() => fetchConversations(savedKey)}
+                disabled={convLoading}
+                style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: convLoading ? 0.6 : 1 }}
+              >
+                {convLoading ? 'Laden…' : '↻ Vernieuwen'}
+              </button>
+            </div>
+
+            {convLoading && conversations.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}>Gesprekken laden…</div>
+            )}
+
+            {!convLoading && conversations.length === 0 && (
+              <div style={{ background: '#fff', borderRadius: 14, padding: '60px 24px', textAlign: 'center', color: '#94A3B8', border: '1px solid #F1F5F9' }}>
+                Nog geen gesprekken gevonden voor deze agent.
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {conversations.map(conv => {
+                const isOpen = openConvId === conv.conversation_id
+                const detail = convDetails[conv.conversation_id]
+                const startDate = new Date(conv.metadata.start_time_unix_secs * 1000)
+                const company = detail ? parseCompanyName(detail) : ''
+                const statusColor = conv.status === 'done' ? '#166534' : conv.status === 'failed' ? '#991B1B' : '#92400E'
+                const statusBg   = conv.status === 'done' ? '#DCFCE7' : conv.status === 'failed' ? '#FEE2E2'  : '#FEF3C7'
+
+                return (
+                  <div key={conv.conversation_id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #F1F5F9', overflow: 'hidden' }}>
+                    {/* Row header */}
+                    <div
+                      onClick={async () => {
+                        if (isOpen) { setOpenConvId(null); return }
+                        setOpenConvId(conv.conversation_id)
+                        await fetchConversationDetail(conv.conversation_id)
+                      }}
+                      style={{ padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', userSelect: 'none' }}
+                    >
+                      {/* Expand arrow */}
+                      <span style={{ fontSize: '1rem', color: '#94A3B8', transition: 'transform .2s', display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'none' }}>▶</span>
+
+                      {/* Date */}
+                      <div style={{ minWidth: 130 }}>
+                        <div style={{ fontWeight: 600, fontSize: '.88rem', color: '#0F172A' }}>
+                          {startDate.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </div>
+                        <div style={{ fontSize: '.76rem', color: '#94A3B8' }}>
+                          {startDate.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+
+                      {/* Company name if loaded */}
+                      <div style={{ flex: 1, fontSize: '.88rem', color: company ? '#0F172A' : '#CBD5E1', fontWeight: company ? 600 : 400 }}>
+                        {company || conv.conversation_id.slice(0, 16) + '…'}
+                      </div>
+
+                      {/* Duration */}
+                      <div style={{ fontSize: '.82rem', color: '#64748B', minWidth: 60, textAlign: 'right' }}>
+                        {fmtDuration(conv.metadata.call_duration_secs)}
+                      </div>
+
+                      {/* Status */}
+                      <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: '.7rem', fontWeight: 700, background: statusBg, color: statusColor, minWidth: 60, textAlign: 'center' }}>
+                        {conv.status === 'done' ? 'Klaar' : conv.status === 'failed' ? 'Mislukt' : conv.status}
+                      </span>
+
+                      {/* Audio badge */}
+                      {conv.has_audio && (
+                        <span style={{ fontSize: '.72rem', fontWeight: 700, background: '#EFF6FF', color: '#1D4ED8', padding: '3px 9px', borderRadius: 100 }}>
+                          🔊 Audio
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Expanded detail */}
+                    {isOpen && (
+                      <div style={{ borderTop: '1px solid #F1F5F9', background: '#FAFAFA' }}>
+                        {!detail ? (
+                          <div style={{ padding: '32px', textAlign: 'center', color: '#94A3B8' }}>Transcript laden…</div>
+                        ) : (
+                          <div style={{ padding: '24px' }}>
+
+                            {/* Audio player */}
+                            {detail.has_audio && (
+                              <div style={{ marginBottom: 24, background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #E2E8F0' }}>
+                                <div style={{ fontSize: '.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>
+                                  🔊 Geluidsopname
+                                </div>
+                                <audio
+                                  controls
+                                  preload="none"
+                                  style={{ width: '100%', height: 40 }}
+                                  src={`/api/conversations/${detail.conversation_id}/audio?key=${encodeURIComponent(savedKey)}`}
+                                >
+                                  Uw browser ondersteunt geen audio element.
+                                </audio>
+                                <div style={{ fontSize: '.72rem', color: '#94A3B8', marginTop: 6 }}>
+                                  Duur: {fmtDuration(detail.metadata.call_duration_secs)}
+                                  {detail.metadata.cost != null && ` · Kosten: $${detail.metadata.cost.toFixed(4)}`}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Transcript */}
+                            <div style={{ fontSize: '.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 14 }}>
+                              💬 Transcript ({detail.transcript.length} berichten)
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 480, overflowY: 'auto', paddingRight: 4 }}>
+                              {detail.transcript.map((turn, i) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: turn.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                                  <div style={{
+                                    maxWidth: '72%',
+                                    padding: '10px 14px',
+                                    borderRadius: turn.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                                    background: turn.role === 'user' ? '#0D9488' : '#fff',
+                                    color: turn.role === 'user' ? '#fff' : '#0F172A',
+                                    fontSize: '.85rem',
+                                    lineHeight: 1.5,
+                                    border: turn.role === 'agent' ? '1px solid #E2E8F0' : 'none',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,.06)',
+                                  }}>
+                                    <div style={{ fontSize: '.68rem', fontWeight: 700, marginBottom: 4, opacity: 0.65, textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                                      {turn.role === 'user' ? '👤 Prospect' : '🤖 Agent'}
+                                      {turn.time_in_call_secs != null && ` · ${fmtDuration(turn.time_in_call_secs)}`}
+                                    </div>
+                                    {turn.message}
+                                  </div>
+                                </div>
+                              ))}
+                              {detail.transcript.length === 0 && (
+                                <p style={{ color: '#94A3B8', fontSize: '.85rem', textAlign: 'center', padding: '20px 0' }}>Geen transcript beschikbaar.</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
