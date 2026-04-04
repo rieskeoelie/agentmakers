@@ -179,7 +179,7 @@ export default async function HomePage() {
                 slug="homepage"
                 lang="nl"
                 strings={{
-                  cta_headline: 'Start uw persoonlijke demo',
+                  cta_headline: 'Zie de Voice Agent in actie',
                   cta_sub: 'Binnen enkele minuten ontvangt u een link om uw eigen AI receptioniste te beluisteren.',
                   name: 'Uw naam',
                   email: 'E-mailadres',

@@ -398,7 +398,7 @@ export default async function LandingPage({ params }: Props) {
             {/* Form — order 1 on mobile so it stays above fold */}
             <div className="demo-section-form" style={{ textAlign: 'center' }}>
               <DemoForm slug={industry} lang={l} strings={{
-                cta_headline: l === 'nl' ? 'Start uw persoonlijke demo' : l === 'en' ? 'Start your personal demo' : 'Inicie su demo personal',
+                cta_headline: l === 'nl' ? 'Zie de Voice Agent in actie' : l === 'en' ? 'See the Voice Agent in action' : 'Vea el Voice Agent en acción',
                 cta_sub: l === 'nl' ? 'Ontvang binnen enkele minuten uw persoonlijke demo-link.' : l === 'en' ? 'Receive your personal demo link within minutes.' : 'Reciba su enlace de demo personal en minutos.',
                 name: t(l, 'form_name'),
                 email: t(l, 'form_email'),
