@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
       prospect_email,
       prospect_telefoon,
       business_info,
+      bedrijfsnaam: lead.bedrijfsnaam || '',
       lang,
     })
 
