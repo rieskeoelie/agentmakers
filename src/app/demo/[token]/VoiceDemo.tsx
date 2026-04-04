@@ -16,47 +16,41 @@ interface Strings {
 interface Props {
   token: string
   strings: Strings
+  companyName: string
+  logoUrl: string | null
 }
 
 type CallStatus = 'idle' | 'connecting' | 'listening' | 'talking' | 'error'
 
-export function VoiceDemo({ token, strings }: Props) {
+export function VoiceDemo({ token, strings, logoUrl }: Props) {
   const [status, setStatus] = useState<CallStatus>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [scheduled, setScheduled] = useState(false)
   const [scheduledEmail, setScheduledEmail] = useState('')
-  const conversationRef = useRef<VoiceConversation | null>(null)
-  const volumeRef = useRef<number>(0)
   const [volume, setVolume] = useState(0)
+  const [logoError, setLogoError] = useState(false)
+  const conversationRef = useRef<VoiceConversation | null>(null)
   const animFrameRef = useRef<number | null>(null)
 
-  // Animate volume indicator
   useEffect(() => {
     const tick = () => {
-      if (conversationRef.current && status !== 'idle') {
-        const v = conversationRef.current.getOutputVolume()
-        volumeRef.current = v
-        setVolume(v)
+      if (conversationRef.current) {
+        setVolume(conversationRef.current.getOutputVolume())
       }
       animFrameRef.current = requestAnimationFrame(tick)
     }
     animFrameRef.current = requestAnimationFrame(tick)
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
-    }
-  }, [status])
+    return () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current) }
+  }, [])
 
   const startCall = useCallback(async () => {
     setStatus('connecting')
     setErrorMsg('')
-
     try {
-      // Get signed URL + business_info from our server
       const res = await fetch(`/api/signed-url?token=${token}`)
       if (!res.ok) throw new Error('Could not get signed URL')
       const { signed_url, business_info } = await res.json()
 
-      // Start ElevenLabs conversation
       const conversation = await VoiceConversation.startSession({
         signedUrl: signed_url,
         dynamicVariables: {
@@ -65,12 +59,12 @@ export function VoiceDemo({ token, strings }: Props) {
         clientTools: {
           collect_lead_info: async (params: { naam?: string; email?: string; telefoon?: string }) => {
             try {
-              const res = await fetch('/api/demo-collect', {
+              const r = await fetch('/api/demo-collect', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token, ...params }),
               })
-              const data = await res.json()
+              const data = await r.json()
               if (data.success) {
                 setScheduled(true)
                 setScheduledEmail(params.email || '')
@@ -82,12 +76,8 @@ export function VoiceDemo({ token, strings }: Props) {
           },
         },
         onConnect: () => setStatus('listening'),
-        onDisconnect: () => {
-          setStatus('idle')
-          conversationRef.current = null
-        },
+        onDisconnect: () => { setStatus('idle'); conversationRef.current = null },
         onError: (message: string) => {
-          console.error('Conversation error:', message)
           setErrorMsg(message || 'Er is een fout opgetreden.')
           setStatus('error')
           conversationRef.current = null
@@ -97,10 +87,8 @@ export function VoiceDemo({ token, strings }: Props) {
           else if (mode === 'listening') setStatus('listening')
         },
       })
-
       conversationRef.current = conversation
     } catch (err) {
-      console.error('Start call error:', err)
       setErrorMsg(err instanceof Error ? err.message : 'Kan de verbinding niet starten.')
       setStatus('error')
     }
@@ -114,6 +102,11 @@ export function VoiceDemo({ token, strings }: Props) {
     setStatus('idle')
   }, [])
 
+  const isActive = status !== 'idle' && status !== 'error'
+  const isConnecting = status === 'connecting'
+  const isTalking = status === 'talking'
+  const isListening = status === 'listening'
+
   const statusLabel = {
     idle: strings.status_ready,
     connecting: strings.status_connecting,
@@ -122,153 +115,169 @@ export function VoiceDemo({ token, strings }: Props) {
     error: errorMsg || 'Er is een fout opgetreden.',
   }[status]
 
-  const isActive = status !== 'idle' && status !== 'error'
-  const isConnecting = status === 'connecting'
+  const glowSize = isTalking ? 40 + volume * 80 : isListening ? 20 : 0
+  const orbScale = isTalking ? 1 + volume * 0.06 : 1
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
-      {/* Orb / pulse animation */}
-      <div style={{ position: 'relative', width: 120, height: 120 }}>
-        {/* Outer pulse rings when active */}
-        {isActive && (
-          <>
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: '50%',
-                background: 'rgba(45,212,191,0.15)',
-                animation: 'pulse 1.5s ease-in-out infinite',
-                transform: `scale(${1 + volume * 0.5})`,
-                transition: 'transform 0.1s',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                inset: -10,
-                borderRadius: '50%',
-                background: 'rgba(45,212,191,0.08)',
-                animation: 'pulse 1.5s ease-in-out 0.3s infinite',
-              }}
-            />
-          </>
-        )}
-
-        {/* Main orb button */}
-        <button
-          onClick={isActive ? stopCall : startCall}
-          disabled={isConnecting}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            borderRadius: '50%',
-            border: 'none',
-            background: isActive
-              ? status === 'talking'
-                ? 'linear-gradient(135deg, #0D9488, #2DD4BF)'
-                : 'linear-gradient(135deg, #134E4A, #0D9488)'
-              : 'linear-gradient(135deg, #0D9488, #14B8A6)',
-            cursor: isConnecting ? 'wait' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: isActive
-              ? '0 0 40px rgba(45,212,191,0.5)'
-              : '0 8px 32px rgba(13,148,136,0.4)',
-            transition: 'all 0.3s ease',
-            fontSize: '2.2rem',
-          }}
-        >
-          {isConnecting ? '⏳' : isActive ? '⏹' : '🎤'}
-        </button>
-      </div>
-
-      {/* Status label */}
-      <p
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      width: '100%', maxWidth: 560,
+    }}>
+      {/* Orb */}
+      <div
+        onClick={isActive ? stopCall : startCall}
         style={{
-          color: status === 'error' ? '#F87171' : '#CCFBF1',
-          fontSize: '0.95rem',
-          margin: 0,
-          minHeight: 24,
-          textAlign: 'center',
+          position: 'relative',
+          width: 190, height: 190,
+          cursor: isConnecting ? 'wait' : 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 28,
         }}
       >
-        {statusLabel}
-      </p>
+        {/* Pulse rings */}
+        {isActive && [0, 0.5, 1.0].map((delay, i) => (
+          <div key={i} style={{
+            position: 'absolute',
+            width: 190, height: 190,
+            borderRadius: '50%',
+            border: `1px solid rgba(45,212,191,${isTalking ? 0.45 - i * 0.12 : 0.2 - i * 0.05})`,
+            animation: `ringPulse 2s ease-out ${delay}s infinite`,
+          }} />
+        ))}
 
-      {/* Wave bars when talking */}
-      {status === 'talking' && (
-        <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 32 }}>
-          {[1, 2, 3, 4, 5].map(i => (
-            <div
-              key={i}
-              style={{
-                width: 5,
-                borderRadius: 3,
-                background: '#2DD4BF',
-                height: `${Math.max(6, Math.min(32, 8 + volume * 80 * Math.sin(i * 0.8 + Date.now() / 200)))}px`,
-                animation: `wave ${0.8 + i * 0.1}s ease-in-out infinite alternate`,
-                transition: 'height 0.1s',
-              }}
+        {/* Glow halo */}
+        {isActive && (
+          <div style={{
+            position: 'absolute',
+            width: 140, height: 140,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(45,212,191,0.3) 0%, transparent 70%)',
+            filter: `blur(${glowSize}px)`,
+            transition: 'filter 0.12s',
+            transform: `scale(${orbScale})`,
+          }} />
+        )}
+
+        {/* Orb surface */}
+        <div style={{
+          width: 138, height: 138,
+          borderRadius: '50%',
+          transform: `scale(${orbScale})`,
+          transition: 'transform 0.1s',
+          background: isActive
+            ? 'linear-gradient(145deg, #0A3D38 0%, #0D9488 55%, #2DD4BF 100%)'
+            : 'linear-gradient(145deg, #0D1117 0%, #0F2E2B 55%, #0D9488 100%)',
+          boxShadow: isActive
+            ? `0 0 ${20 + glowSize * 0.5}px rgba(45,212,191,0.55),
+               0 0 60px rgba(13,148,136,0.25),
+               inset 0 1px 0 rgba(255,255,255,0.18)`
+            : '0 0 16px rgba(13,148,136,0.18), inset 0 1px 0 rgba(255,255,255,0.07)',
+          border: isActive
+            ? '1.5px solid rgba(45,212,191,0.45)'
+            : '1px solid rgba(255,255,255,0.09)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {/* Company logo (idle) or status icon (active) */}
+          {!isActive && logoUrl && !logoError ? (
+            <img
+              src={logoUrl}
+              alt=""
+              width={50} height={50}
+              style={{ width: 50, height: 50, objectFit: 'contain', borderRadius: 8, opacity: 0.8 }}
+              onError={() => setLogoError(true)}
             />
+          ) : (
+            <span style={{ fontSize: '2.2rem', lineHeight: 1 }}>
+              {isConnecting ? '⏳' : isTalking ? '🔊' : isListening ? '👂' : '🎤'}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Sound wave bars */}
+      {isTalking && (
+        <div style={{
+          display: 'flex', gap: 5, alignItems: 'center', height: 34,
+          marginBottom: 20,
+        }}>
+          {[0.6, 1.1, 0.75, 1.3, 0.5, 1.2, 0.85, 1.0, 0.65].map((amp, i) => (
+            <div key={i} style={{
+              width: 4, borderRadius: 4,
+              background: 'linear-gradient(to top, #0D9488, #2DD4BF)',
+              height: `${Math.max(5, Math.min(32, 5 + volume * 65 * amp))}px`,
+              animation: `wave ${0.65 + i * 0.08}s ease-in-out infinite alternate`,
+              transition: 'height 0.07s',
+            }} />
           ))}
         </div>
       )}
 
-      {/* Action button text */}
+      {/* Status label */}
+      <p style={{
+        color: status === 'error' ? '#F87171' : isActive ? '#2DD4BF' : 'rgba(255,255,255,0.38)',
+        fontSize: '0.82rem',
+        fontWeight: isActive ? 600 : 400,
+        letterSpacing: isActive ? '0.03em' : 0,
+        marginBottom: 22,
+        minHeight: 18,
+        textAlign: 'center',
+        textTransform: isActive ? 'uppercase' : 'none',
+      }}>
+        {statusLabel}
+      </p>
+
+      {/* Action button */}
       <button
         onClick={isActive ? stopCall : startCall}
         disabled={isConnecting}
         style={{
-          background: isActive ? 'rgba(239,68,68,0.15)' : 'rgba(45,212,191,0.15)',
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          background: isActive ? 'rgba(239,68,68,0.09)' : 'rgba(45,212,191,0.09)',
           color: isActive ? '#F87171' : '#2DD4BF',
-          border: `1.5px solid ${isActive ? 'rgba(239,68,68,0.3)' : 'rgba(45,212,191,0.3)'}`,
-          borderRadius: 10,
-          padding: '12px 28px',
-          fontSize: '1rem',
-          fontWeight: 700,
+          border: `1.5px solid ${isActive ? 'rgba(239,68,68,0.22)' : 'rgba(45,212,191,0.22)'}`,
+          borderRadius: 12, padding: '12px 32px',
+          fontSize: '0.88rem', fontWeight: 700,
           cursor: isConnecting ? 'wait' : 'pointer',
-          fontFamily: "'Nunito', sans-serif",
-          transition: 'all 0.2s',
+          fontFamily: "'Inter', sans-serif",
+          backdropFilter: 'blur(8px)',
+          letterSpacing: '0.01em',
+          transition: 'background 0.2s, border-color 0.2s',
         }}
       >
+        <span>{isConnecting ? '⏳' : isActive ? '⏹' : '🎤'}</span>
         {isConnecting ? strings.status_connecting : isActive ? strings.stop : strings.start}
       </button>
 
-      {/* Scheduled confirmation banner */}
+      {/* Scheduled confirmation */}
       {scheduled && (
-        <div
-          style={{
-            marginTop: 16,
-            background: 'rgba(45,212,191,0.12)',
-            border: '1.5px solid rgba(45,212,191,0.35)',
-            borderRadius: 14,
-            padding: '20px 24px',
-            textAlign: 'center',
-            maxWidth: 420,
-          }}
-        >
-          <div style={{ fontSize: '2rem', marginBottom: 8 }}>✅</div>
-          <p style={{ color: '#2DD4BF', fontWeight: 700, fontSize: '1rem', margin: '0 0 6px' }}>
+        <div style={{
+          marginTop: 32,
+          background: 'rgba(45,212,191,0.07)',
+          border: '1.5px solid rgba(45,212,191,0.22)',
+          borderRadius: 18,
+          padding: '24px 28px',
+          textAlign: 'center',
+          width: '100%', maxWidth: 460,
+          backdropFilter: 'blur(16px)',
+        }}>
+          <div style={{ fontSize: '2rem', marginBottom: 10 }}>✅</div>
+          <p style={{ color: '#2DD4BF', fontWeight: 700, fontSize: '0.97rem', marginBottom: 6 }}>
             {strings.scheduled_title}
           </p>
-          <p style={{ color: '#CCFBF1', fontSize: '0.88rem', margin: 0 }}>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.82rem' }}>
             {strings.scheduled_sub}{scheduledEmail ? ` (${scheduledEmail})` : ''}
           </p>
         </div>
       )}
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.6; transform: scale(1); }
-          50% { opacity: 0.2; transform: scale(1.15); }
+        @keyframes ringPulse {
+          0% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(1.7); opacity: 0; }
         }
         @keyframes wave {
-          from { transform: scaleY(0.5); }
-          to { transform: scaleY(1.5); }
+          from { transform: scaleY(0.3); }
+          to { transform: scaleY(1.7); }
         }
       `}</style>
     </div>
