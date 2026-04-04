@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { buildBusinessInfo } from '@/lib/scrape'
 
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY!
 const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID!
 
 /**
  * GET /api/signed-url?token=xxx
- * Returns a short-lived ElevenLabs signed WebSocket URL for the demo agent,
- * plus the business_info string to inject as a dynamic variable.
+ * Returns the ElevenLabs agent ID + business_info for the demo.
+ * The agent is Public so no signed URL is needed.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -38,27 +37,8 @@ export async function GET(req: NextRequest) {
         scrapedContent: null,
       })
 
-    // Get signed URL from ElevenLabs
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${ELEVENLABS_AGENT_ID}`,
-      {
-        method: 'GET',
-        headers: {
-          'xi-api-key': ELEVENLABS_API_KEY,
-        },
-      }
-    )
-
-    if (!response.ok) {
-      const text = await response.text()
-      console.error('ElevenLabs signed URL error:', text)
-      return NextResponse.json({ error: 'Failed to get signed URL' }, { status: 500 })
-    }
-
-    const { signed_url } = await response.json()
-
     return NextResponse.json({
-      signed_url,
+      agent_id: ELEVENLABS_AGENT_ID,
       business_info,
       scraped: !!lead.scraped_at,
     })

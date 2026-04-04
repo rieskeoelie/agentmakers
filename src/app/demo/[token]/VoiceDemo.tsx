@@ -49,10 +49,10 @@ export function VoiceDemo({ token, strings, logoUrl }: Props) {
     try {
       const res = await fetch(`/api/signed-url?token=${token}`)
       if (!res.ok) throw new Error('Could not get signed URL')
-      const { signed_url, business_info } = await res.json()
+      const { agent_id, business_info } = await res.json()
 
       const conversation = await VoiceConversation.startSession({
-        signedUrl: signed_url,
+        agentId: agent_id,
         dynamicVariables: {
           business_info: business_info || 'Geen informatie beschikbaar.',
         },
