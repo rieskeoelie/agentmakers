@@ -54,6 +54,12 @@ export function VoiceDemo({ token, strings, logoUrl }: Props) {
         agentId: agent_id,
         connectionType: 'websocket',
         dynamicVariables: { business_info: business_info || 'Geen informatie beschikbaar.' },
+        overrides: {
+          tts: {
+            voiceId: 'DXFkLCBUTmvXpp2QwZjA',
+            speed: 0.88,
+          },
+        },
         clientTools: {
           collect_lead_info: async (params: { naam?: string; email?: string; telefoon?: string }) => {
             try {
