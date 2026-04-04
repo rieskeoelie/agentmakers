@@ -164,12 +164,16 @@ export function DemoForm({ slug, lang, strings }: Props) {
 
   return (
     <>
-      <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16, fontWeight: 700 }}>
-        {strings.cta_headline}
-      </h2>
-      <p style={{ color: '#fff', fontSize: '1.05rem', marginBottom: 40, maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
-        {strings.cta_sub}
-      </p>
+      {strings.cta_headline && (
+        <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16, fontWeight: 700 }}>
+          {strings.cta_headline}
+        </h2>
+      )}
+      {strings.cta_sub && (
+        <p style={{ color: '#fff', fontSize: '1.05rem', marginBottom: 40, maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
+          {strings.cta_sub}
+        </p>
+      )}
     <div style={{ background: '#fff', borderRadius: 20, padding: '40px', maxWidth: 520, margin: '0 auto', boxShadow: '0 8px 40px rgba(0,0,0,.12)' }}>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Field icon={<IconUser />}>

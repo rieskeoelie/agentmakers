@@ -381,7 +381,7 @@ export default async function LandingPage({ params }: Props) {
               </span>
             </div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)', lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 20, maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}>
-              {l === 'nl' ? 'Zie de Voice Agent in actie tijdens een live demo' : l === 'en' ? 'See the Voice Agent in action during a live demo' : 'Vea el Voice Agent en acción durante una demo en vivo'}
+              {l === 'nl' ? 'Zie de Voice Agent in actie' : l === 'en' ? 'See the Voice Agent in action' : 'Vea el Voice Agent en acción'}
             </h2>
             <p style={{ color: 'rgba(240,244,248,0.55)', fontSize: '1rem', maxWidth: 620, margin: '0 auto', lineHeight: 1.75 }}>
               {l === 'nl'
@@ -398,8 +398,8 @@ export default async function LandingPage({ params }: Props) {
             {/* Form — order 1 on mobile so it stays above fold */}
             <div className="demo-section-form" style={{ textAlign: 'center' }}>
               <DemoForm slug={industry} lang={l} strings={{
-                cta_headline: l === 'nl' ? 'Zie de Voice Agent in actie' : l === 'en' ? 'See the Voice Agent in action' : 'Vea el Voice Agent en acción',
-                cta_sub: l === 'nl' ? 'Ontvang binnen enkele minuten uw persoonlijke demo-link.' : l === 'en' ? 'Receive your personal demo link within minutes.' : 'Reciba su enlace de demo personal en minutos.',
+                cta_headline: '',
+                cta_sub: '',
                 name: t(l, 'form_name'),
                 email: t(l, 'form_email'),
                 phone: t(l, 'form_phone'),
