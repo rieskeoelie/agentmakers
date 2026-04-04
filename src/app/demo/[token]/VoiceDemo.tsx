@@ -59,11 +59,6 @@ export function VoiceDemo({ token, strings, logoUrl }: Props) {
           prospect_email: prospect_email || '',
           prospect_telefoon: prospect_telefoon || '',
         },
-        overrides: {
-          tts: {
-            speed: 0.88,
-          },
-        },
         clientTools: {
           collect_lead_info: async (params: { naam?: string; email?: string; telefoon?: string }) => {
             // Fall back to the known prospect data if agent didn't capture it
