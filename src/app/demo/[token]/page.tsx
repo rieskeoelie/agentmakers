@@ -27,7 +27,7 @@ function extractDescription(businessInfo?: string | null): string {
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/\n+/g, ' ')
     .trim()
-  return stripped.length > 220 ? stripped.substring(0, 220).trimEnd() + '…' : stripped
+  return stripped.length > 200 ? stripped.substring(0, 200).trimEnd() + '…' : stripped
 }
 
 export default async function DemoPage({ params }: Props) {
@@ -35,13 +35,11 @@ export default async function DemoPage({ params }: Props) {
 
   const { data: lead, error } = await supabaseAdmin
     .from('leads')
-    .select('naam, bedrijfsnaam, website, language, scraped_at, business_info, diensten')
+    .select('naam, bedrijfsnaam, website, language, scraped_at, business_info')
     .eq('demo_token', token)
     .single()
 
-  if (error || !lead) {
-    notFound()
-  }
+  if (error || !lead) notFound()
 
   const lang = (lead.language as 'nl' | 'en' | 'es') || 'nl'
   const scraped = !!lead.scraped_at
@@ -49,303 +47,473 @@ export default async function DemoPage({ params }: Props) {
   const description = extractDescription(lead.business_info)
   const logoUrl = domain ? `https://logo.clearbit.com/${domain}` : null
   const companyName = lead.bedrijfsnaam || domain || lead.naam
+  const websiteHref = lead.website?.startsWith('http') ? lead.website : `https://${lead.website}`
 
   const strings = {
     nl: {
-      powered: 'Demo door',
-      headline: 'Zo klinkt uw eigen AI agent',
-      sub: 'Speciaal geconfigureerd voor',
-      scraping: 'Website wordt geanalyseerd — de agent is zo klaar.',
+      eyebrow: 'Persoonlijke AI demo',
+      headline: 'Zo klinkt uw\neigen AI agent',
+      for: 'Geconfigureerd voor',
+      aiReady: 'AI-ready',
+      notReady: 'Wordt voorbereid…',
       start: 'Start gesprek',
       stop: 'Stop gesprek',
-      status_connecting: 'Verbinden...',
-      status_talking: 'AI agent spreekt...',
-      status_listening: 'Luistert...',
-      status_ready: 'Klik om te starten',
+      status_connecting: 'Verbinden…',
+      status_talking: 'Spreekt…',
+      status_listening: 'Luistert…',
+      status_ready: 'Tik om te starten',
       scheduled_title: 'Meeting link verstuurd!',
-      scheduled_sub: 'Controleer uw inbox voor de persoonlijke Calendly link',
-      cta_headline: 'Wil u dit voor uw eigen bedrijf?',
-      cta_sub: 'Wij bouwen uw AI agent en gaan binnen 48 uur live.',
-      cta_button: 'Boek een gesprek',
+      scheduled_sub: 'Check uw inbox voor de persoonlijke Calendly link',
+      cta: 'Wil u dit voor uw bedrijf?',
+      cta_sub: 'Live binnen 48 uur.',
+      cta_btn: 'Plan een gesprek',
       cta_url: 'https://calendly.com/agentmakersdemo/30min',
     },
     en: {
-      powered: 'Demo by',
-      headline: 'This is what your own AI agent sounds like',
-      sub: 'Specially configured for',
-      scraping: 'Website is being analysed — the agent will be ready shortly.',
+      eyebrow: 'Personal AI demo',
+      headline: 'This is what your\nown AI agent sounds like',
+      for: 'Configured for',
+      aiReady: 'AI-ready',
+      notReady: 'Preparing…',
       start: 'Start conversation',
       stop: 'Stop conversation',
-      status_connecting: 'Connecting...',
-      status_talking: 'AI agent speaking...',
-      status_listening: 'Listening...',
-      status_ready: 'Click to start',
+      status_connecting: 'Connecting…',
+      status_talking: 'Speaking…',
+      status_listening: 'Listening…',
+      status_ready: 'Tap to start',
       scheduled_title: 'Meeting link sent!',
       scheduled_sub: 'Check your inbox for your personal Calendly link',
-      cta_headline: 'Want this for your own business?',
-      cta_sub: 'We build your AI agent and go live within 48 hours.',
-      cta_button: 'Book a call',
+      cta: 'Want this for your business?',
+      cta_sub: 'Live within 48 hours.',
+      cta_btn: 'Book a call',
       cta_url: 'https://calendly.com/agentmakersdemo/30min',
     },
     es: {
-      powered: 'Demo por',
-      headline: 'Así suena su propio agente IA',
-      sub: 'Configurado especialmente para',
-      scraping: 'Analizando su sitio web — el agente estará listo en breve.',
+      eyebrow: 'Demo de IA personal',
+      headline: 'Así suena su\npropio agente IA',
+      for: 'Configurado para',
+      aiReady: 'IA-ready',
+      notReady: 'Preparando…',
       start: 'Iniciar conversación',
       stop: 'Detener conversación',
-      status_connecting: 'Conectando...',
-      status_talking: 'Agente IA hablando...',
-      status_listening: 'Escuchando...',
+      status_connecting: 'Conectando…',
+      status_talking: 'Hablando…',
+      status_listening: 'Escuchando…',
       status_ready: 'Toque para empezar',
       scheduled_title: '¡Enlace de reunión enviado!',
-      scheduled_sub: 'Revise su bandeja de entrada para el enlace personal de Calendly',
-      cta_headline: '¿Quiere esto para su propio negocio?',
-      cta_sub: 'Construimos su agente IA y lo ponemos en marcha en 48 horas.',
-      cta_button: 'Reservar una llamada',
+      scheduled_sub: 'Revise su bandeja de entrada para el enlace de Calendly',
+      cta: '¿Quiere esto para su empresa?',
+      cta_sub: 'En marcha en 48 horas.',
+      cta_btn: 'Reservar una llamada',
       cta_url: 'https://calendly.com/agentmakersdemo/30min',
     },
   }
 
+  const s = strings[lang]
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#060B14',
-      fontFamily: "'Inter', sans-serif",
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Animated background */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{
-          position: 'absolute', top: '-20%', left: '-10%',
-          width: '65vw', height: '65vw', maxWidth: 750, maxHeight: 750,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(13,148,136,0.2) 0%, transparent 70%)',
-          animation: 'floatA 12s ease-in-out infinite',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: '-20%', right: '-10%',
-          width: '55vw', height: '55vw', maxWidth: 650, maxHeight: 650,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.16) 0%, transparent 70%)',
-          animation: 'floatB 16s ease-in-out infinite',
-        }} />
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)`,
-          backgroundSize: '64px 64px',
-        }} />
-      </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { background: #07101E; }
 
-      {/* Page content */}
-      <div style={{
-        position: 'relative', zIndex: 1,
-        minHeight: '100vh',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        padding: '28px 20px 72px',
-      }}>
+        .demo-page {
+          min-height: 100svh;
+          background: #07101E;
+          font-family: 'Inter', system-ui, sans-serif;
+          color: #F0F4F8;
+          position: relative;
+          overflow-x: hidden;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
 
-        {/* Top bar */}
-        <div style={{
-          width: '100%', maxWidth: 600,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: 52,
-        }}>
-          <span style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontWeight: 800, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.5px',
-          }}>
-            agent<span style={{ color: '#2DD4BF' }}>makers</span>.io
-          </span>
-          <span style={{
-            fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 20, padding: '4px 12px',
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-          }}>
-            AI Demo
-          </span>
+        /* ── Background ── */
+        .bg-layer {
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          overflow: hidden;
+        }
+        .bg-blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(80px);
+        }
+        .bg-blob-1 {
+          width: 70vw; height: 70vw;
+          max-width: 700px; max-height: 700px;
+          top: -25%; left: -20%;
+          background: radial-gradient(circle, rgba(13,148,136,0.22) 0%, transparent 70%);
+          animation: blobDrift 18s ease-in-out infinite;
+        }
+        .bg-blob-2 {
+          width: 60vw; height: 60vw;
+          max-width: 620px; max-height: 620px;
+          bottom: -20%; right: -15%;
+          background: radial-gradient(circle, rgba(79,70,229,0.18) 0%, transparent 70%);
+          animation: blobDrift 22s ease-in-out 4s infinite reverse;
+        }
+        .bg-blob-3 {
+          width: 40vw; height: 40vw;
+          max-width: 480px; max-height: 480px;
+          top: 45%; left: 55%;
+          transform: translate(-50%, -50%);
+          background: radial-gradient(circle, rgba(20,184,166,0.1) 0%, transparent 70%);
+          animation: blobDrift 28s ease-in-out 8s infinite;
+        }
+        .bg-grid {
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
+          background-size: 56px 56px;
+          mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+        }
+        @keyframes blobDrift {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(3%, 5%) scale(1.06); }
+          66% { transform: translate(-2%, -3%) scale(0.97); }
+        }
+
+        /* ── Content shell ── */
+        .content {
+          position: relative;
+          z-index: 1;
+          width: 100%;
+          max-width: 560px;
+          padding: 28px 20px 80px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0;
+        }
+
+        /* ── Top bar ── */
+        .topbar {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 56px;
+        }
+        .logo-wordmark {
+          font-family: 'Poppins', sans-serif;
+          font-weight: 800;
+          font-size: 1.05rem;
+          color: #fff;
+          letter-spacing: -0.03em;
+        }
+        .logo-wordmark span { color: #2DD4BF; }
+        .demo-badge {
+          font-size: 0.65rem;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.3);
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 100px;
+          padding: 5px 13px;
+        }
+
+        /* ── Hero ── */
+        .hero {
+          text-align: center;
+          margin-bottom: 36px;
+          width: 100%;
+        }
+        .eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          font-size: 0.72rem;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #2DD4BF;
+          margin-bottom: 18px;
+        }
+        .eyebrow-dot {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: #2DD4BF;
+          animation: dotPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes dotPulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(0.7); }
+        }
+        .headline {
+          font-family: 'Poppins', sans-serif;
+          font-weight: 800;
+          font-size: clamp(2rem, 6vw, 2.8rem);
+          line-height: 1.1;
+          letter-spacing: -0.03em;
+          margin-bottom: 16px;
+          background: linear-gradient(160deg, #ffffff 0%, #ffffff 50%, #7EEEDE 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          white-space: pre-line;
+        }
+        .hero-sub {
+          font-size: 0.92rem;
+          color: rgba(240,244,248,0.45);
+          font-weight: 400;
+        }
+        .hero-sub strong {
+          color: rgba(240,244,248,0.85);
+          font-weight: 600;
+        }
+
+        /* ── Company card ── */
+        .company-card {
+          width: 100%;
+          background: rgba(255,255,255,0.045);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 20px;
+          padding: 20px 22px;
+          margin-bottom: 44px;
+          display: flex;
+          gap: 16px;
+          align-items: flex-start;
+          box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset,
+                      0 24px 48px rgba(0,0,0,0.25);
+        }
+        .company-logo-wrap {
+          flex-shrink: 0;
+          width: 52px; height: 52px;
+          border-radius: 13px;
+          background: rgba(255,255,255,0.07);
+          border: 1px solid rgba(255,255,255,0.1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+        .company-logo-wrap img {
+          width: 100%; height: 100%;
+          object-fit: contain;
+          padding: 7px;
+        }
+        .company-logo-fallback {
+          font-family: 'Poppins', sans-serif;
+          font-weight: 800;
+          font-size: 1.3rem;
+          color: #2DD4BF;
+          line-height: 1;
+        }
+        .company-info { flex: 1; min-width: 0; }
+        .company-name-row {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          flex-wrap: wrap;
+          margin-bottom: 4px;
+        }
+        .company-name {
+          font-family: 'Poppins', sans-serif;
+          font-weight: 700;
+          font-size: 0.97rem;
+          color: #fff;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .ai-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 0.6rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #2DD4BF;
+          background: rgba(45,212,191,0.1);
+          border: 1px solid rgba(45,212,191,0.2);
+          border-radius: 100px;
+          padding: 3px 9px;
+          white-space: nowrap;
+        }
+        .ai-badge-dot {
+          width: 5px; height: 5px;
+          border-radius: 50%;
+          background: #2DD4BF;
+        }
+        .company-domain {
+          display: inline-block;
+          font-size: 0.73rem;
+          color: rgba(240,244,248,0.32);
+          text-decoration: none;
+          margin-bottom: 9px;
+          transition: color 0.2s;
+        }
+        .company-domain:hover { color: rgba(240,244,248,0.6); }
+        .company-desc {
+          font-size: 0.79rem;
+          color: rgba(240,244,248,0.45);
+          line-height: 1.65;
+        }
+
+        /* ── Divider ── */
+        .divider {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin: 52px 0 28px;
+        }
+        .divider-line {
+          flex: 1;
+          height: 1px;
+          background: rgba(255,255,255,0.07);
+        }
+        .divider-text {
+          font-size: 0.68rem;
+          color: rgba(255,255,255,0.2);
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+
+        /* ── CTA ── */
+        .cta-section {
+          text-align: center;
+          width: 100%;
+        }
+        .cta-heading {
+          font-family: 'Poppins', sans-serif;
+          font-weight: 700;
+          font-size: 1.05rem;
+          color: #fff;
+          margin-bottom: 6px;
+        }
+        .cta-sub {
+          font-size: 0.83rem;
+          color: rgba(240,244,248,0.38);
+          margin-bottom: 20px;
+        }
+        .cta-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: linear-gradient(135deg, #0D9488 0%, #2DD4BF 100%);
+          color: #fff;
+          font-family: 'Inter', sans-serif;
+          font-weight: 700;
+          font-size: 0.9rem;
+          padding: 13px 30px;
+          border-radius: 12px;
+          text-decoration: none;
+          letter-spacing: -0.01em;
+          box-shadow: 0 0 0 1px rgba(45,212,191,0.3),
+                      0 8px 24px rgba(13,148,136,0.35);
+          transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .cta-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 0 0 1px rgba(45,212,191,0.4),
+                      0 12px 32px rgba(13,148,136,0.45);
+        }
+      `}</style>
+
+      <div className="demo-page">
+        {/* Background */}
+        <div className="bg-layer">
+          <div className="bg-blob bg-blob-1" />
+          <div className="bg-blob bg-blob-2" />
+          <div className="bg-blob bg-blob-3" />
+          <div className="bg-grid" />
         </div>
 
-        {/* Hero headline */}
-        <div style={{ textAlign: 'center', marginBottom: 32, maxWidth: 560, width: '100%' }}>
-          <p style={{
-            fontSize: '0.72rem', color: '#2DD4BF', fontWeight: 600,
-            letterSpacing: '0.14em', textTransform: 'uppercase',
-            marginBottom: 16,
-          }}>
-            {strings[lang].powered} agentmakers.io
-          </p>
-          <h1 style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: 'clamp(1.6rem, 5vw, 2.5rem)',
-            fontWeight: 800, lineHeight: 1.15, marginBottom: 12,
-            background: 'linear-gradient(135deg, #ffffff 30%, #2DD4BF 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>
-            {strings[lang].headline}
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.95rem' }}>
-            {strings[lang].sub}{' '}
-            <strong style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
-              {companyName}
-            </strong>
-          </p>
-        </div>
+        {/* Content */}
+        <div className="content">
 
-        {/* Company card */}
-        <div style={{
-          width: '100%', maxWidth: 560,
-          background: 'rgba(255,255,255,0.04)',
-          backdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 20,
-          padding: '20px 24px',
-          marginBottom: 40,
-          display: 'flex', gap: 18, alignItems: 'flex-start',
-        }}>
-          {/* Logo box */}
-          <div style={{
-            flexShrink: 0,
-            width: 54, height: 54,
-            borderRadius: 14,
-            background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            overflow: 'hidden',
-          }}>
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={logoUrl}
-                alt={companyName}
-                width={54} height={54}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 7 }}
-              />
-            ) : (
-              <span style={{
-                fontSize: '1.5rem', fontWeight: 800,
-                fontFamily: "'Poppins', sans-serif",
-                color: '#2DD4BF',
-              }}>
-                {companyName.charAt(0).toUpperCase()}
-              </span>
-            )}
+          {/* Top bar */}
+          <div className="topbar">
+            <span className="logo-wordmark">agent<span>makers</span>.io</span>
+            <span className="demo-badge">AI Demo</span>
           </div>
 
-          {/* Company info */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-              <span style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 700, fontSize: '0.97rem', color: '#fff',
-              }}>
-                {companyName}
-              </span>
-              {scraped && (
-                <span style={{
-                  fontSize: '0.62rem', color: '#2DD4BF', fontWeight: 700,
-                  background: 'rgba(45,212,191,0.1)',
-                  border: '1px solid rgba(45,212,191,0.22)',
-                  borderRadius: 20, padding: '2px 8px',
-                  letterSpacing: '0.07em', textTransform: 'uppercase',
-                }}>
-                  ✓ AI-ready
+          {/* Hero */}
+          <div className="hero">
+            <div className="eyebrow">
+              <span className="eyebrow-dot" />
+              {s.eyebrow}
+            </div>
+            <h1 className="headline">{s.headline}</h1>
+            <p className="hero-sub">
+              {s.for} <strong>{companyName}</strong>
+            </p>
+          </div>
+
+          {/* Company card */}
+          <div className="company-card">
+            <div className="company-logo-wrap">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt={companyName} />
+              ) : (
+                <span className="company-logo-fallback">
+                  {companyName.charAt(0).toUpperCase()}
                 </span>
               )}
             </div>
-            {domain && (
-              <a
-                href={lead.website?.startsWith('http') ? lead.website : `https://${lead.website}`}
-                target="_blank" rel="noopener noreferrer"
-                style={{
-                  display: 'inline-block',
-                  fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)',
-                  textDecoration: 'none', marginBottom: description ? 8 : 0,
-                }}
-              >
-                🌐 {domain}
-              </a>
-            )}
-            {description && (
-              <p style={{
-                fontSize: '0.8rem', color: 'rgba(255,255,255,0.48)',
-                lineHeight: 1.6, margin: 0,
-              }}>
-                {description}
-              </p>
-            )}
-            {!scraped && (
-              <p style={{ fontSize: '0.76rem', color: '#FCD34D', margin: '6px 0 0' }}>
-                ⏳ {strings[lang].scraping}
-              </p>
-            )}
+            <div className="company-info">
+              <div className="company-name-row">
+                <span className="company-name">{companyName}</span>
+                {scraped ? (
+                  <span className="ai-badge">
+                    <span className="ai-badge-dot" />
+                    {s.aiReady}
+                  </span>
+                ) : (
+                  <span className="ai-badge" style={{ color: '#FCD34D', background: 'rgba(252,211,77,0.1)', borderColor: 'rgba(252,211,77,0.2)' }}>
+                    {s.notReady}
+                  </span>
+                )}
+              </div>
+              {domain && (
+                <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="company-domain">
+                  ↗ {domain}
+                </a>
+              )}
+              {description && (
+                <p className="company-desc">{description}</p>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Voice demo */}
-        <VoiceDemo
-          token={token}
-          strings={strings[lang]}
-          companyName={companyName}
-          logoUrl={logoUrl}
-        />
+          {/* Voice demo */}
+          <VoiceDemo
+            token={token}
+            strings={s}
+            companyName={companyName}
+            logoUrl={logoUrl}
+          />
 
-        {/* CTA section */}
-        <div style={{ marginTop: 72, textAlign: 'center', maxWidth: 400, width: '100%' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28,
-          }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              of
-            </span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+          {/* CTA */}
+          <div className="divider">
+            <div className="divider-line" />
+            <span className="divider-text">of</span>
+            <div className="divider-line" />
           </div>
-          <p style={{
-            fontFamily: "'Poppins', sans-serif",
-            color: '#fff', fontSize: '1.05rem', fontWeight: 700, marginBottom: 6,
-          }}>
-            {strings[lang].cta_headline}
-          </p>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginBottom: 20 }}>
-            {strings[lang].cta_sub}
-          </p>
-          <a
-            href={strings[lang].cta_url}
-            target="_blank" rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'linear-gradient(135deg, #0D9488 0%, #2DD4BF 100%)',
-              color: '#fff', fontWeight: 700,
-              padding: '13px 28px', borderRadius: 12,
-              fontSize: '0.92rem', textDecoration: 'none',
-              boxShadow: '0 0 28px rgba(45,212,191,0.28)',
-            }}
-          >
-            📅 {strings[lang].cta_button}
-          </a>
+          <div className="cta-section">
+            <p className="cta-heading">{s.cta}</p>
+            <p className="cta-sub">{s.cta_sub}</p>
+            <a href={s.cta_url} target="_blank" rel="noopener noreferrer" className="cta-btn">
+              📅 {s.cta_btn}
+            </a>
+          </div>
+
         </div>
       </div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;500;600&display=swap');
-        @keyframes floatA {
-          0%, 100% { transform: translate(0,0) scale(1); }
-          50% { transform: translate(3%,5%) scale(1.06); }
-        }
-        @keyframes floatB {
-          0%, 100% { transform: translate(0,0) scale(1); }
-          50% { transform: translate(-4%,-3%) scale(1.08); }
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #060B14; }
-      `}</style>
-    </div>
+    </>
   )
 }
