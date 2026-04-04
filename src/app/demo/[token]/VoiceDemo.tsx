@@ -49,7 +49,7 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
     try {
       const res = await fetch(`/api/signed-url?token=${token}`)
       if (!res.ok) throw new Error('Could not connect')
-      const { agent_id, language, business_info, prospect_naam, prospect_email, prospect_telefoon, bedrijfsnaam } = await res.json()
+      const { agent_id, language, system_prompt, business_info, prospect_naam, prospect_email, prospect_telefoon, bedrijfsnaam } = await res.json()
 
       const effectiveLang = language || lang
       const firstMessageMap: Record<string, string> = {
@@ -66,6 +66,7 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
           agent: {
             language: effectiveLang,
             firstMessage,
+            prompt: system_prompt,
           },
         },
         dynamicVariables: {

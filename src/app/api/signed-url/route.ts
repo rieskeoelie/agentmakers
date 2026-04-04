@@ -50,14 +50,15 @@ export async function GET(req: NextRequest) {
     const prospect_email = lead.email || ''
     const prospect_telefoon = lead.telefoon || ''
 
+    const lang = (lead.language as string) || 'nl'
+
     const system_prompt = buildAgentPrompt({
       prospect_naam,
       prospect_email,
       prospect_telefoon,
       business_info,
+      lang,
     })
-
-    const lang = (lead.language as string) || 'nl'
 
     return NextResponse.json({
       agent_id: getAgentId(lang),
