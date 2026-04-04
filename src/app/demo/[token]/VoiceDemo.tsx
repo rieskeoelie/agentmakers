@@ -48,18 +48,15 @@ export function VoiceDemo({ token, strings, logoUrl }: Props) {
     try {
       const res = await fetch(`/api/signed-url?token=${token}`)
       if (!res.ok) throw new Error('Could not connect')
-      const { agent_id, business_info, prospect_naam, prospect_email, prospect_telefoon } = await res.json()
+      const { agent_id, business_info, system_prompt, prospect_naam, prospect_email, prospect_telefoon } = await res.json()
 
       const conv = await VoiceConversation.startSession({
         agentId: agent_id,
         connectionType: 'websocket',
-        dynamicVariables: {
-          business_info: business_info || 'Geen informatie beschikbaar.',
-          prospect_naam: prospect_naam || '',
-          prospect_email: prospect_email || '',
-          prospect_telefoon: prospect_telefoon || '',
-        },
         overrides: {
+          agent: {
+            prompt: system_prompt,
+          },
           tts: {
             voiceId: 'DXFkLCBUTmvXpp2QwZjA',
             speed: 0.88,

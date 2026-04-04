@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { buildBusinessInfo } from '@/lib/scrape'
+import { buildAgentPrompt } from '@/lib/agentPrompt'
 
 const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID!
 
@@ -37,13 +38,25 @@ export async function GET(req: NextRequest) {
         scrapedContent: null,
       })
 
+    const prospect_naam = lead.naam || ''
+    const prospect_email = lead.email || ''
+    const prospect_telefoon = lead.telefoon || ''
+
+    const system_prompt = buildAgentPrompt({
+      prospect_naam,
+      prospect_email,
+      prospect_telefoon,
+      business_info,
+    })
+
     return NextResponse.json({
       agent_id: ELEVENLABS_AGENT_ID,
       business_info,
+      system_prompt,
       scraped: !!lead.scraped_at,
-      prospect_naam: lead.naam || '',
-      prospect_email: lead.email || '',
-      prospect_telefoon: lead.telefoon || '',
+      prospect_naam,
+      prospect_email,
+      prospect_telefoon,
     })
   } catch (err) {
     console.error('Signed URL error:', err)
