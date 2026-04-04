@@ -68,6 +68,7 @@ export async function GET(req: NextRequest) {
       prospect_naam,
       prospect_email,
       prospect_telefoon,
+      bedrijfsnaam: lead.bedrijfsnaam || '',
     })
   } catch (err) {
     console.error('Signed URL error:', err)
