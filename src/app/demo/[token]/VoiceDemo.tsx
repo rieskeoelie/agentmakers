@@ -52,12 +52,6 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
       const { agent_id, language, business_info, prospect_naam, prospect_email, prospect_telefoon, bedrijfsnaam } = await res.json()
 
       const effectiveLang = language || lang
-      const firstMessageMap: Record<string, string> = {
-        nl: `Hallo, en welkom bij ${bedrijfsnaam || 'ons bedrijf'}! Waarmee kan ik u van dienst zijn?`,
-        en: `Hello, and welcome to ${bedrijfsnaam || 'our company'}! How can I assist you today?`,
-        es: `Hola, y bienvenido a ${bedrijfsnaam || 'nuestra empresa'}! ¿En qué puedo ayudarle?`,
-      }
-      const firstMessage = firstMessageMap[effectiveLang] || firstMessageMap['nl']
 
       const conv = await VoiceConversation.startSession({
         agentId: agent_id,
@@ -65,7 +59,6 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
         overrides: {
           agent: {
             language: effectiveLang,
-            firstMessage,
           },
         },
         dynamicVariables: {
