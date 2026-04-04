@@ -383,9 +383,9 @@ export default async function LandingPage({ params }: Props) {
             <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)', lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 20, maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}>
               {l === 'nl' ? 'Zie de Voice Agent in actie' : l === 'en' ? 'See the Voice Agent in action' : 'Vea el Voice Agent en acción'}
             </h2>
-            <p style={{ color: 'rgba(240,244,248,0.55)', fontSize: '1rem', maxWidth: 620, margin: '0 auto', lineHeight: 1.75 }}>
+            <p style={{ color: '#fff', fontSize: '1rem', maxWidth: 620, margin: '0 auto', lineHeight: 1.75 }}>
               {l === 'nl'
-                ? 'Per jaar bent u duizenden uren gesloten, terwijl uw potentiële klanten dan juist zoeken. Zie hoe de Voice Agent hun vragen beantwoordt, en afspraken direct in uw agenda plaatst. Vul het formulier in om de demo te starten.'
+                ? 'Per jaar bent u duizenden uren gesloten, terwijl uw potentiële klanten dan juist zoeken. Zie hoe de Voice Agent hun vragen beantwoordt en afspraken direct in uw agenda plaatst. Vul het formulier in om de demo te starten.'
                 : l === 'en'
                 ? 'Every year you are closed for thousands of hours — while your potential clients are searching. See how the Voice Agent answers their questions and books appointments directly in your calendar. Fill in the form to start the demo.'
                 : 'Cada año su negocio está cerrado miles de horas, justo cuando sus clientes potenciales buscan. Vea cómo el Voice Agent responde sus preguntas y agenda citas directamente. Complete el formulario para iniciar la demo.'}
