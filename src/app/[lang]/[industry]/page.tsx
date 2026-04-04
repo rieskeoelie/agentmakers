@@ -406,7 +406,7 @@ export default async function LandingPage({ params }: Props) {
                 website: t(l, 'form_website'),
                 company: t(l, 'form_company'),
                 diensten_label: '',
-                submit: l === 'nl' ? 'Stuur mij de demo →' : l === 'en' ? 'Send me the demo →' : 'Envíame la demo →',
+                submit: l === 'nl' ? 'Stuur mij de demo link' : l === 'en' ? 'Send me the demo link' : 'Envíame el enlace de la demo',
                 sending: t(l, 'form_sending'),
                 success: t(l, 'form_success'),
                 success_sub: t(l, 'form_success_sub'),

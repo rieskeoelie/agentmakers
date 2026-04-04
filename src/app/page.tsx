@@ -186,7 +186,7 @@ export default async function HomePage() {
                   phone: 'Telefoonnummer',
                   website: 'Website (optioneel)',
                   company: 'Bedrijfsnaam',
-                  submit: 'Stuur mij de demo →',
+                  submit: 'Stuur mij de demo link',
                   sending: 'Even geduld…',
                   error: 'Probeer het opnieuw',
                   success: 'Uw demo is onderweg!',
