@@ -418,8 +418,8 @@ export default async function LandingPage({ params }: Props) {
             {/* Orb preview */}
             <div className="demo-section-orb" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
               <OrbPreview />
-              <p style={{ color: 'rgba(240,244,248,0.38)', fontSize: '0.78rem', textAlign: 'center', maxWidth: 240, lineHeight: 1.6, margin: 0 }}>
-                {l === 'nl' ? 'Zo klinkt uw AI receptioniste — vul het formulier in en ontvang uw persoonlijke demo.' : l === 'en' ? 'This is what your AI receptionist sounds like — fill in the form and receive your personal demo.' : 'Así suena su recepcionista de IA — complete el formulario y reciba su demo personal.'}
+              <p style={{ color: '#fff', fontSize: '0.78rem', textAlign: 'center', maxWidth: 240, lineHeight: 1.6, margin: 0 }}>
+                {l === 'nl' ? 'Vul snel het formulier in en beluister de AI voice agent in actie.' : l === 'en' ? 'Fill in the form and listen to the AI voice agent in action.' : 'Complete el formulario y escuche al agente de voz de IA en acción.'}
               </p>
             </div>
 
