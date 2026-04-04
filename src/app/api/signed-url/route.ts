@@ -3,7 +3,15 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { buildBusinessInfo } from '@/lib/scrape'
 import { buildAgentPrompt } from '@/lib/agentPrompt'
 
-const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID!
+const ELEVENLABS_AGENT_ID_NL = process.env.ELEVENLABS_AGENT_ID_NL || process.env.ELEVENLABS_AGENT_ID!
+const ELEVENLABS_AGENT_ID_EN = process.env.ELEVENLABS_AGENT_ID_EN || process.env.ELEVENLABS_AGENT_ID!
+const ELEVENLABS_AGENT_ID_ES = process.env.ELEVENLABS_AGENT_ID_ES || process.env.ELEVENLABS_AGENT_ID!
+
+function getAgentId(lang: string): string {
+  if (lang === 'en') return ELEVENLABS_AGENT_ID_EN
+  if (lang === 'es') return ELEVENLABS_AGENT_ID_ES
+  return ELEVENLABS_AGENT_ID_NL
+}
 
 /**
  * GET /api/signed-url?token=xxx
@@ -20,7 +28,7 @@ export async function GET(req: NextRequest) {
     // Look up the lead by token
     const { data: lead, error } = await supabaseAdmin
       .from('leads')
-      .select('naam, email, telefoon, bedrijfsnaam, website, business_info, scraped_at')
+      .select('naam, email, telefoon, bedrijfsnaam, website, business_info, scraped_at, language')
       .eq('demo_token', token)
       .single()
 
@@ -49,8 +57,11 @@ export async function GET(req: NextRequest) {
       business_info,
     })
 
+    const lang = (lead.language as string) || 'nl'
+
     return NextResponse.json({
-      agent_id: ELEVENLABS_AGENT_ID,
+      agent_id: getAgentId(lang),
+      language: lang,
       business_info,
       system_prompt,
       scraped: !!lead.scraped_at,

@@ -705,6 +705,7 @@ export default async function DemoPage({ params }: Props) {
                 strings={s}
                 companyName={companyName}
                 logoUrl={logoUrl}
+                lang={lang}
               />
             </div>
 

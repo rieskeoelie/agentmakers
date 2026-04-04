@@ -18,11 +18,12 @@ interface Props {
   strings: Strings
   companyName: string
   logoUrl: string | null
+  lang: string
 }
 
 type Status = 'idle' | 'connecting' | 'listening' | 'talking' | 'error'
 
-export function VoiceDemo({ token, strings, logoUrl }: Props) {
+export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
   const [status, setStatus] = useState<Status>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [scheduled, setScheduled] = useState(false)
@@ -48,11 +49,16 @@ export function VoiceDemo({ token, strings, logoUrl }: Props) {
     try {
       const res = await fetch(`/api/signed-url?token=${token}`)
       if (!res.ok) throw new Error('Could not connect')
-      const { agent_id, business_info, prospect_naam, prospect_email, prospect_telefoon } = await res.json()
+      const { agent_id, language, business_info, prospect_naam, prospect_email, prospect_telefoon } = await res.json()
 
       const conv = await VoiceConversation.startSession({
         agentId: agent_id,
         connectionType: 'websocket',
+        overrides: {
+          agent: {
+            language: language || lang,
+          },
+        },
         dynamicVariables: {
           business_info: business_info || 'Geen informatie beschikbaar.',
           prospect_naam: prospect_naam || '',
