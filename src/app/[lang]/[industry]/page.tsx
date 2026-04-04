@@ -58,25 +58,20 @@ export default async function LandingPage({ params }: Props) {
       <TrackView slug={industry} lang={l} />
 
       {/* NAV */}
-      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #F1F5F9', padding: '16px 0' }}>
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #F1F5F9', padding: '14px 0' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-            <img src="/logo-transparent.png" alt="agentmakers.io" style={{ height: 36, width: 'auto', display: 'block' }} />
+            <img src="/logo-transparent.png" alt="agentmakers.io" style={{ height: 40, width: 'auto', display: 'block', maxWidth: 200 }} />
           </a>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Language switcher */}
-            <div className="nav-lang" style={{ display: 'flex', gap: 6 }}>
-              {SUPPORTED_LANGS.map((lng) => (
-                <a key={lng} href={`/${lng}/${industry}`}
-                  style={{ fontSize: '1.2rem', opacity: lng === l ? 1 : .5, textDecoration: 'none', transition: 'opacity .2s' }}
-                  title={LANG_LABELS[lng]}>
-                  {lng === 'nl' ? '🇳🇱' : lng === 'en' ? '🇬🇧' : '🇪🇸'}
-                </a>
-              ))}
-            </div>
-            <a href="#demo" className="nav-cta" style={{ background: '#0D9488', color: '#fff', padding: '10px 24px', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: '.9rem' }}>
-              {t(l, 'nav_demo')}
-            </a>
+          {/* Language switcher only — demo CTA is already in the hero */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            {SUPPORTED_LANGS.map((lng) => (
+              <a key={lng} href={`/${lng}/${industry}`}
+                style={{ fontSize: '1.35rem', opacity: lng === l ? 1 : .45, textDecoration: 'none', transition: 'opacity .2s', lineHeight: 1 }}
+                title={LANG_LABELS[lng]}>
+                {lng === 'nl' ? '🇳🇱' : lng === 'en' ? '🇬🇧' : '🇪🇸'}
+              </a>
+            ))}
           </div>
         </div>
       </nav>
