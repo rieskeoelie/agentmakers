@@ -1,7 +1,8 @@
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = process.env.RESEND_FROM_EMAIL || 'agentmakers.io <noreply@agentmakers.io>'
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@agentmakers.io'
+const FROM = FROM_EMAIL.includes('<') ? FROM_EMAIL : `agentmakers.io <${FROM_EMAIL}>`
 const ADMIN = process.env.ADMIN_EMAIL || 'richard@leadking.nl'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://agentmakers.io'
 
