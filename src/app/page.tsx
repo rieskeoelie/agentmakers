@@ -1,5 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import type { LandingPage } from '@/lib/supabase'
+import { DemoForm } from '@/components/landing/DemoForm'
+import { OrbPreview } from '@/components/landing/OrbPreview'
 
 async function getLivePages(): Promise<LandingPage[]> {
   const { data } = await supabaseAdmin
@@ -136,17 +138,76 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section id="contact" style={{ background: 'linear-gradient(160deg, #0F766E, #0D9488)', padding: '80px 0', textAlign: 'center' }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
-          <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16 }}>Klaar om uw branche te automatiseren?</h2>
-          <p style={{ color: '#CCFBF1', fontSize: '1.05rem', marginBottom: 40, maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
-            Neem contact op voor een vrijblijvend gesprek over wat AI agents voor uw bedrijf kunnen betekenen.
-          </p>
-          <a href="mailto:richard@leadking.nl" style={{ background: '#fff', color: '#0F766E', padding: '16px 36px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '1rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            📧 Neem contact op
-          </a>
+      {/* DEMO CTA */}
+      <section id="contact" style={{ background: 'linear-gradient(160deg, #0A1628 0%, #0F2A3A 50%, #0A1628 100%)', padding: '80px 0', position: 'relative', overflow: 'hidden' }}>
+        {/* Background glow blobs */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', width: '50vw', height: '50vw', maxWidth: 600, maxHeight: 600, top: '-20%', left: '-10%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(13,148,136,0.18) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+          <div style={{ position: 'absolute', width: '40vw', height: '40vw', maxWidth: 500, maxHeight: 500, bottom: '-15%', right: '-8%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(79,70,229,0.14) 0%, transparent 70%)', filter: 'blur(60px)' }} />
         </div>
+
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
+
+          {/* Section header */}
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(45,212,191,0.1)', border: '1px solid rgba(45,212,191,0.2)', borderRadius: 100, padding: '6px 16px', marginBottom: 20 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2DD4BF', display: 'inline-block', animation: 'dotPulseHome 2s ease-in-out infinite' }} />
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#2DD4BF' }}>Gratis demo</span>
+            </div>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: 20, maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}>
+              Zie direct uw AI receptioniste in actie
+            </h2>
+            <p style={{ color: 'rgba(240,244,248,0.55)', fontSize: '1.05rem', maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>
+              Per jaar bent u duizenden uren gesloten. Zie hoe uw AI receptioniste tijdens die uren uw agenda vult met afspraken.
+            </p>
+          </div>
+
+          {/* Two-column: orb left, form right */}
+          <div className="demo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center', maxWidth: 960, margin: '0 auto' }}>
+
+            {/* Left: orb preview */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <OrbPreview />
+              <p style={{ color: 'rgba(240,244,248,0.38)', fontSize: '0.78rem', textAlign: 'center', maxWidth: 240, lineHeight: 1.6, margin: 0 }}>
+                Zo klinkt uw AI receptioniste — vul het formulier in en ontvang uw persoonlijke demo.
+              </p>
+            </div>
+
+            {/* Right: form */}
+            <div>
+              <DemoForm
+                slug="homepage"
+                lang="nl"
+                strings={{
+                  cta_headline: 'Start uw persoonlijke demo',
+                  cta_sub: 'Binnen enkele minuten ontvangt u een link om uw eigen AI receptioniste te beluisteren.',
+                  name: 'Uw naam',
+                  email: 'E-mailadres',
+                  phone: 'Telefoonnummer',
+                  website: 'Website (optioneel)',
+                  company: 'Bedrijfsnaam',
+                  submit: 'Stuur mij de demo →',
+                  sending: 'Even geduld…',
+                  error: 'Probeer het opnieuw',
+                  success: 'Uw demo is onderweg!',
+                  success_sub: 'Check uw inbox voor de persoonlijke demo-link.\n\nDe AI receptioniste is al geconfigureerd op uw bedrijf.',
+                  trust: 'Geen verplichtingen. Gratis. Binnen 2 minuten in uw inbox.',
+                  diensten_label: '',
+                }}
+              />
+            </div>
+
+          </div>
+        </div>
+        <style>{`
+          @keyframes dotPulseHome {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.7); }
+          }
+          @media (max-width: 720px) {
+            #contact .demo-grid { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
       </section>
 
       {/* FOOTER */}
