@@ -11,6 +11,10 @@ interface Strings {
   status_ready: string
   scheduled_title: string
   scheduled_sub: string
+  cta_heading: string
+  cta_btn: string
+  cta_url: string
+  cta_disclaimer: string
 }
 
 interface Props {
@@ -30,6 +34,8 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
   const [scheduledEmail, setScheduledEmail] = useState('')
   const [volume, setVolume] = useState(0)
   const [logoError, setLogoError] = useState(false)
+  const [ended, setEnded] = useState(false)
+  const wasActiveRef = useRef(false)
   const convRef = useRef<VoiceConversation | null>(null)
   const rafRef = useRef<number | null>(null)
 
@@ -95,8 +101,13 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
             }
           },
         },
-        onConnect: () => { console.log('[EL] connected'); setStatus('listening') },
-        onDisconnect: () => { console.log('[EL] disconnected'); setStatus('idle'); convRef.current = null },
+        onConnect: () => { console.log('[EL] connected'); wasActiveRef.current = true; setStatus('listening') },
+        onDisconnect: () => {
+          console.log('[EL] disconnected')
+          convRef.current = null
+          if (wasActiveRef.current) { setEnded(true) } else { setStatus('idle') }
+          wasActiveRef.current = false
+        },
         onError: (msg: string) => { console.error('[EL] error:', msg); setErrorMsg(msg); setStatus('error'); convRef.current = null },
         onModeChange: ({ mode }: { mode: string }) => {
           setStatus(mode === 'speaking' ? 'talking' : 'listening')
@@ -112,7 +123,7 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
 
   const stopCall = useCallback(async () => {
     if (convRef.current) { await convRef.current.endSession(); convRef.current = null }
-    setStatus('idle')
+    // onDisconnect will fire and set ended=true if wasActiveRef is true
   }, [])
 
   const isActive = status === 'connecting' || status === 'listening' || status === 'talking'
@@ -131,6 +142,67 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
   // Dynamic glow radius based on volume
   const glowR = isActive ? (isTalking ? 55 + volume * 100 : 30) : 0
   const orbScale = isTalking ? 1 + volume * 0.055 : 1
+
+  // ── CTA screen after conversation ends ──
+  if (ended) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: 0 }}>
+        <div style={{
+          width: '100%',
+          background: 'rgba(45,212,191,0.06)',
+          border: '1.5px solid rgba(45,212,191,0.18)',
+          borderRadius: 24,
+          padding: '40px 32px',
+          textAlign: 'center',
+          backdropFilter: 'blur(20px)',
+        }}>
+          <div style={{ fontSize: '2.4rem', marginBottom: 18 }}>🎙️</div>
+          <h2 style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 800,
+            fontSize: 'clamp(1.2rem, 3vw, 1.55rem)',
+            color: '#fff',
+            lineHeight: 1.25,
+            marginBottom: 28,
+            letterSpacing: '-0.02em',
+          }}>
+            {strings.cta_heading}
+          </h2>
+          <a
+            href={strings.cta_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 9,
+              background: 'linear-gradient(135deg, #0D9488 0%, #2DD4BF 100%)',
+              color: '#fff',
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 700,
+              fontSize: '1rem',
+              padding: '15px 34px',
+              borderRadius: 14,
+              textDecoration: 'none',
+              letterSpacing: '-0.01em',
+              boxShadow: '0 0 0 1px rgba(45,212,191,0.3), 0 8px 28px rgba(13,148,136,0.4)',
+              marginBottom: 16,
+            }}
+          >
+            📅 {strings.cta_btn}
+          </a>
+          <p style={{
+            fontSize: '0.78rem',
+            color: 'rgba(240,244,248,0.38)',
+            marginTop: 16,
+            lineHeight: 1.5,
+          }}>
+            {strings.cta_disclaimer}
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>

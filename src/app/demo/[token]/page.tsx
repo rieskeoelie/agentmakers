@@ -89,6 +89,8 @@ export default async function DemoPage({ params }: Props) {
       cta_sub: 'Live binnen 48 uur.',
       cta_btn: 'Plan een gesprek',
       cta_url: 'https://calendly.com/agentmakersdemo/30min',
+      cta_heading: 'Bestel deze voice agent voor uw bedrijf',
+      cta_disclaimer: 'U zit nergens aan vast, het gesprek is vrijblijvend.',
       tips_title: 'Wat kunt u doen?',
       tips: [
         `Vraag wat ${companyName} precies doet`,
@@ -117,6 +119,8 @@ export default async function DemoPage({ params }: Props) {
       cta_sub: 'Live within 48 hours.',
       cta_btn: 'Book a call',
       cta_url: 'https://calendly.com/agentmakersdemo/30min',
+      cta_heading: 'Order this voice agent for your business',
+      cta_disclaimer: 'No commitment — the call is completely free.',
       tips_title: 'What can you do?',
       tips: [
         `Ask what ${companyName} does`,
@@ -145,6 +149,8 @@ export default async function DemoPage({ params }: Props) {
       cta_sub: 'En marcha en 48 horas.',
       cta_btn: 'Reservar una llamada',
       cta_url: 'https://calendly.com/agentmakersdemo/30min',
+      cta_heading: 'Pida este agente de voz para su empresa',
+      cta_disclaimer: 'Sin compromiso, la llamada es completamente gratuita.',
       tips_title: '¿Qué puede hacer?',
       tips: [
         `Pregunte qué hace ${companyName}`,
