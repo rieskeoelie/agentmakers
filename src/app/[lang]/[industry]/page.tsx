@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { supabaseAdmin } from '@/lib/supabase'
 import { t, SUPPORTED_LANGS, LANG_LABELS, type Lang } from '@/lib/i18n'
 import { DemoForm } from '@/components/landing/DemoForm'
+import { OrbPreview } from '@/components/landing/OrbPreview'
 import { TrackView } from '@/components/landing/TrackView'
 import { RevenueCalculator } from '@/components/landing/RevenueCalculator'
 import type { Metadata } from 'next'
@@ -362,25 +363,81 @@ export default async function LandingPage({ params }: Props) {
       </section>
 
       {/* DEMO FORM */}
-      <section id="demo" style={{ padding: '80px 0', background: 'linear-gradient(160deg, #0F766E, #0D9488)', textAlign: 'center' }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
-          <DemoForm slug={industry} lang={l} strings={{
-            cta_headline: content.cta_headline || t(l, 'cta_label'),
-            cta_sub: content.cta_sub || t(l, 'cta_sub'),
-            name: t(l, 'form_name'),
-            email: t(l, 'form_email'),
-            phone: t(l, 'form_phone'),
-            website: t(l, 'form_website'),
-            company: t(l, 'form_company'),
-            diensten_label: t(l, 'form_diensten_label'),
-            submit: t(l, 'form_submit'),
-            sending: t(l, 'form_sending'),
-            success: t(l, 'form_success'),
-            success_sub: t(l, 'form_success_sub'),
-            error: t(l, 'form_error'),
-            trust: t(l, 'form_trust'),
-          }} />
+      <section id="demo" style={{ padding: '80px 0', background: 'linear-gradient(160deg, #0A1628 0%, #0F2A3A 50%, #0A1628 100%)', position: 'relative', overflow: 'hidden' }}>
+        {/* Glow blobs */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', width: '50vw', height: '50vw', maxWidth: 600, maxHeight: 600, top: '-20%', left: '-10%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(13,148,136,0.18) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+          <div style={{ position: 'absolute', width: '40vw', height: '40vw', maxWidth: 500, maxHeight: 500, bottom: '-15%', right: '-8%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(79,70,229,0.14) 0%, transparent 70%)', filter: 'blur(60px)' }} />
         </div>
+
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
+
+          {/* Section header */}
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(45,212,191,0.1)', border: '1px solid rgba(45,212,191,0.2)', borderRadius: 100, padding: '6px 16px', marginBottom: 20 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2DD4BF', display: 'inline-block', animation: 'dotPulseLP 2s ease-in-out infinite' }} />
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#2DD4BF' }}>
+                {l === 'nl' ? 'Gratis demo' : l === 'en' ? 'Free demo' : 'Demo gratuita'}
+              </span>
+            </div>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)', lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 20, maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}>
+              {l === 'nl' ? 'Zie de Voice Agent in actie tijdens een live demo' : l === 'en' ? 'See the Voice Agent in action during a live demo' : 'Vea el Voice Agent en acción durante una demo en vivo'}
+            </h2>
+            <p style={{ color: 'rgba(240,244,248,0.55)', fontSize: '1rem', maxWidth: 620, margin: '0 auto', lineHeight: 1.75 }}>
+              {l === 'nl'
+                ? 'Per jaar bent u duizenden uren gesloten, terwijl uw potentiële klanten dan juist zoeken. Zie hoe de Voice Agent hun vragen beantwoordt, en afspraken direct in uw agenda plaatst. Vul het formulier in om de demo te starten.'
+                : l === 'en'
+                ? 'Every year you are closed for thousands of hours — while your potential clients are searching. See how the Voice Agent answers their questions and books appointments directly in your calendar. Fill in the form to start the demo.'
+                : 'Cada año su negocio está cerrado miles de horas, justo cuando sus clientes potenciales buscan. Vea cómo el Voice Agent responde sus preguntas y agenda citas directamente. Complete el formulario para iniciar la demo.'}
+            </p>
+          </div>
+
+          {/* Two-column: form + orb */}
+          <div className="demo-section-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center', maxWidth: 960, margin: '0 auto' }}>
+
+            {/* Form — order 1 on mobile so it stays above fold */}
+            <div className="demo-section-form" style={{ textAlign: 'center' }}>
+              <DemoForm slug={industry} lang={l} strings={{
+                cta_headline: l === 'nl' ? 'Start uw persoonlijke demo' : l === 'en' ? 'Start your personal demo' : 'Inicie su demo personal',
+                cta_sub: l === 'nl' ? 'Ontvang binnen enkele minuten uw persoonlijke demo-link.' : l === 'en' ? 'Receive your personal demo link within minutes.' : 'Reciba su enlace de demo personal en minutos.',
+                name: t(l, 'form_name'),
+                email: t(l, 'form_email'),
+                phone: t(l, 'form_phone'),
+                website: t(l, 'form_website'),
+                company: t(l, 'form_company'),
+                diensten_label: '',
+                submit: l === 'nl' ? 'Stuur mij de demo →' : l === 'en' ? 'Send me the demo →' : 'Envíame la demo →',
+                sending: t(l, 'form_sending'),
+                success: t(l, 'form_success'),
+                success_sub: t(l, 'form_success_sub'),
+                error: t(l, 'form_error'),
+                trust: l === 'nl' ? 'Geen verplichtingen. Gratis. Binnen 2 minuten in uw inbox.' : l === 'en' ? 'No obligations. Free. In your inbox within 2 minutes.' : 'Sin compromiso. Gratis. En su bandeja en 2 minutos.',
+              }} />
+            </div>
+
+            {/* Orb preview */}
+            <div className="demo-section-orb" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <OrbPreview />
+              <p style={{ color: 'rgba(240,244,248,0.38)', fontSize: '0.78rem', textAlign: 'center', maxWidth: 240, lineHeight: 1.6, margin: 0 }}>
+                {l === 'nl' ? 'Zo klinkt uw AI receptioniste — vul het formulier in en ontvang uw persoonlijke demo.' : l === 'en' ? 'This is what your AI receptionist sounds like — fill in the form and receive your personal demo.' : 'Así suena su recepcionista de IA — complete el formulario y reciba su demo personal.'}
+              </p>
+            </div>
+
+          </div>
+        </div>
+        <style>{`
+          @keyframes dotPulseLP {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.7); }
+          }
+          @media (max-width: 720px) {
+            .demo-section-grid {
+              grid-template-columns: 1fr !important;
+            }
+            .demo-section-form { order: 1 !important; }
+            .demo-section-orb { order: 2 !important; }
+          }
+        `}</style>
       </section>
 
       {/* FOOTER */}
