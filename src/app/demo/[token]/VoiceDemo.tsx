@@ -9,6 +9,8 @@ interface Strings {
   status_talking: string
   status_listening: string
   status_ready: string
+  scheduled_title: string
+  scheduled_sub: string
 }
 
 interface Props {
@@ -21,6 +23,8 @@ type CallStatus = 'idle' | 'connecting' | 'listening' | 'talking' | 'error'
 export function VoiceDemo({ token, strings }: Props) {
   const [status, setStatus] = useState<CallStatus>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [scheduled, setScheduled] = useState(false)
+  const [scheduledEmail, setScheduledEmail] = useState('')
   const conversationRef = useRef<VoiceConversation | null>(null)
   const volumeRef = useRef<number>(0)
   const [volume, setVolume] = useState(0)
@@ -57,6 +61,25 @@ export function VoiceDemo({ token, strings }: Props) {
         signedUrl: signed_url,
         dynamicVariables: {
           business_info: business_info || 'Geen informatie beschikbaar.',
+        },
+        clientTools: {
+          collect_lead_info: async (params: { naam?: string; email?: string; telefoon?: string }) => {
+            try {
+              const res = await fetch('/api/demo-collect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, ...params }),
+              })
+              const data = await res.json()
+              if (data.success) {
+                setScheduled(true)
+                setScheduledEmail(params.email || '')
+              }
+              return `Bedankt${params.naam ? ' ' + params.naam : ''}! Ik heb een persoonlijke meeting link gestuurd naar ${params.email}. Kijk snel in uw inbox!`
+            } catch {
+              return 'Er is iets misgegaan, maar u kunt altijd een afspraak maken via agentmakers.io.'
+            }
+          },
         },
         onConnect: () => setStatus('listening'),
         onDisconnect: () => {
@@ -214,6 +237,29 @@ export function VoiceDemo({ token, strings }: Props) {
       >
         {isConnecting ? strings.status_connecting : isActive ? strings.stop : strings.start}
       </button>
+
+      {/* Scheduled confirmation banner */}
+      {scheduled && (
+        <div
+          style={{
+            marginTop: 16,
+            background: 'rgba(45,212,191,0.12)',
+            border: '1.5px solid rgba(45,212,191,0.35)',
+            borderRadius: 14,
+            padding: '20px 24px',
+            textAlign: 'center',
+            maxWidth: 420,
+          }}
+        >
+          <div style={{ fontSize: '2rem', marginBottom: 8 }}>✅</div>
+          <p style={{ color: '#2DD4BF', fontWeight: 700, fontSize: '1rem', margin: '0 0 6px' }}>
+            {strings.scheduled_title}
+          </p>
+          <p style={{ color: '#CCFBF1', fontSize: '0.88rem', margin: 0 }}>
+            {strings.scheduled_sub}{scheduledEmail ? ` (${scheduledEmail})` : ''}
+          </p>
+        </div>
+      )}
 
       <style>{`
         @keyframes pulse {
