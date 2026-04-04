@@ -126,6 +126,7 @@ export function DemoForm({ slug, lang, strings }: Props) {
       })
       if (!res.ok) throw new Error('Failed')
       setState('success')
+      window.dispatchEvent(new CustomEvent('form:success'))
     } catch {
       setState('error')
       setTimeout(() => setState('idle'), 3000)

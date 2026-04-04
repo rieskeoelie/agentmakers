@@ -12,6 +12,13 @@ const PHRASES = [
 export function OrbPreview() {
   const [phraseIdx, setPhraseIdx] = useState(0)
   const [visible, setVisible] = useState(true)
+  const [hidden, setHidden] = useState(false)
+
+  useEffect(() => {
+    const hide = () => setHidden(true)
+    window.addEventListener('form:success', hide)
+    return () => window.removeEventListener('form:success', hide)
+  }, [])
 
   useEffect(() => {
     const cycle = () => {
@@ -24,6 +31,8 @@ export function OrbPreview() {
     const id = setInterval(cycle, 3200)
     return () => clearInterval(id)
   }, [])
+
+  if (hidden) return null
 
   return (
     <div style={{

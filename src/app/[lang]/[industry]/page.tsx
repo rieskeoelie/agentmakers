@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { t, SUPPORTED_LANGS, LANG_LABELS, type Lang } from '@/lib/i18n'
 import { DemoForm } from '@/components/landing/DemoForm'
 import { OrbPreview } from '@/components/landing/OrbPreview'
+import { OrbColumn } from '@/components/landing/OrbColumn'
 import { TrackView } from '@/components/landing/TrackView'
 import { RevenueCalculator } from '@/components/landing/RevenueCalculator'
 import type { Metadata } from 'next'
@@ -415,13 +416,15 @@ export default async function LandingPage({ params }: Props) {
               }} />
             </div>
 
-            {/* Orb preview */}
-            <div className="demo-section-orb" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-              <OrbPreview />
-              <p style={{ color: '#fff', fontSize: '0.78rem', textAlign: 'center', maxWidth: 240, lineHeight: 1.6, margin: 0 }}>
-                {l === 'nl' ? 'Vul snel het formulier in en beluister de AI voice agent in actie.' : l === 'en' ? 'Fill in the form and listen to the AI voice agent in action.' : 'Complete el formulario y escuche al agente de voz de IA en acción.'}
-              </p>
-            </div>
+            {/* Orb preview — hidden after form success */}
+            <OrbColumn>
+              <div className="demo-section-orb" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                <OrbPreview />
+                <p style={{ color: '#fff', fontSize: '0.78rem', textAlign: 'center', maxWidth: 240, lineHeight: 1.6, margin: 0 }}>
+                  {l === 'nl' ? 'Vul snel het formulier in en beluister de AI voice agent in actie.' : l === 'en' ? 'Fill in the form and listen to the AI voice agent in action.' : 'Complete el formulario y escuche al agente de voz de IA en acción.'}
+                </p>
+              </div>
+            </OrbColumn>
 
           </div>
         </div>

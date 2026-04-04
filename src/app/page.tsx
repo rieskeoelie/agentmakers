@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import type { LandingPage } from '@/lib/supabase'
 import { DemoForm } from '@/components/landing/DemoForm'
 import { OrbPreview } from '@/components/landing/OrbPreview'
+import { OrbColumn } from '@/components/landing/OrbColumn'
 
 async function getLivePages(): Promise<LandingPage[]> {
   const { data } = await supabaseAdmin
@@ -165,13 +166,15 @@ export default async function HomePage() {
           {/* Two-column: orb left, form right */}
           <div className="demo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center', maxWidth: 960, margin: '0 auto' }}>
 
-            {/* Left: orb preview */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-              <OrbPreview />
-              <p style={{ color: 'rgba(240,244,248,0.38)', fontSize: '0.78rem', textAlign: 'center', maxWidth: 240, lineHeight: 1.6, margin: 0 }}>
-                Zo klinkt uw AI receptioniste — vul het formulier in en ontvang uw persoonlijke demo.
-              </p>
-            </div>
+            {/* Left: orb preview — hidden after form success */}
+            <OrbColumn>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                <OrbPreview />
+                <p style={{ color: 'rgba(240,244,248,0.38)', fontSize: '0.78rem', textAlign: 'center', maxWidth: 240, lineHeight: 1.6, margin: 0 }}>
+                  Vul snel het formulier in en beluister de AI voice agent in actie.
+                </p>
+              </div>
+            </OrbColumn>
 
             {/* Right: form */}
             <div>
