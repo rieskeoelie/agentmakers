@@ -321,7 +321,7 @@ export default async function LandingPage({ params }: Props) {
               {l === 'nl' ? 'Vergelijking' : l === 'en' ? 'Comparison' : 'Comparación'}
             </div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)' }}>
-              {l === 'nl' ? 'Zo wint u met de inzet van AI.' : l === 'en' ? 'This is how you win with AI.' : 'Así gana usted con la IA.'}
+              {l === 'nl' ? 'Wat verandert er wanneer uw team AI inzet?' : l === 'en' ? 'What changes when your team uses AI?' : '¿Qué cambia cuando su equipo usa IA?'}
             </h2>
           </div>
           <div style={{ overflowX: 'auto', borderRadius: 16 }}>
@@ -330,10 +330,10 @@ export default async function LandingPage({ params }: Props) {
                 <tr>
                   <th style={{ padding: '20px 28px', textAlign: 'left', fontFamily: "'Nunito',sans-serif", fontSize: '.85rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em', width: '30%' }}></th>
                   <th style={{ padding: '20px 28px', textAlign: 'left', fontFamily: "'Nunito',sans-serif", fontSize: '.85rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-                    {l === 'nl' ? 'Traditionele receptie' : l === 'en' ? 'Traditional reception' : 'Recepción tradicional'}
+                    {l === 'nl' ? 'Uw team alleen' : l === 'en' ? 'Your team alone' : 'Su equipo solo'}
                   </th>
                   <th style={{ padding: '20px 28px', textAlign: 'left', fontFamily: "'Nunito',sans-serif", fontSize: '.85rem', fontWeight: 600, color: '#0F766E', textTransform: 'uppercase', letterSpacing: '.04em', background: '#F0FDFA' }}>
-                    agentmakers.io
+                    {l === 'nl' ? 'Uw team + AI receptioniste' : l === 'en' ? 'Your team + AI receptionist' : 'Su equipo + recepcionista IA'}
                   </th>
                 </tr>
               </thead>
@@ -342,7 +342,7 @@ export default async function LandingPage({ params }: Props) {
                   [l === 'nl' ? 'Beschikbaarheid' : l === 'en' ? 'Availability' : 'Disponibilidad', l === 'nl' ? 'Ma–vr, 9:00–18:00' : l === 'en' ? 'Mon–Fri, 9am–6pm' : 'Lun–Vie, 9:00–18:00', '24/7/365'],
                   [l === 'nl' ? 'Schaalbaarheid' : l === 'en' ? 'Scalability' : 'Escalabilidad', l === 'nl' ? 'Beperkt (1 lijn tegelijk)' : l === 'en' ? 'Limited (1 line at a time)' : 'Limitada (1 línea a la vez)', l === 'nl' ? 'Onbeperkt gelijktijdige oproepen' : l === 'en' ? 'Unlimited simultaneous calls' : 'Llamadas simultáneas ilimitadas'],
                   [l === 'nl' ? 'Taalondersteuning' : l === 'en' ? 'Language support' : 'Idiomas', '1–2 talen', '10+ talen'],
-                  [l === 'nl' ? 'Ziekteverzuim' : l === 'en' ? 'Sick leave' : 'Bajas por enfermedad', l === 'nl' ? 'Vervanging nodig' : l === 'en' ? 'Replacement needed' : 'Necesita reemplazo', l === 'nl' ? 'Altijd beschikbaar' : l === 'en' ? 'Always available' : 'Siempre disponible'],
+                  [l === 'nl' ? 'Buiten kantooruren' : l === 'en' ? 'Outside office hours' : 'Fuera del horario', l === 'nl' ? 'Onbereikbaar' : l === 'en' ? 'Unreachable' : 'No disponible', l === 'nl' ? 'AI neemt over, 24/7' : l === 'en' ? 'AI takes over, 24/7' : 'La IA cubre, 24/7'],
                   [l === 'nl' ? 'Consistentie' : l === 'en' ? 'Consistency' : 'Consistencia', l === 'nl' ? 'Varieert per medewerker' : l === 'en' ? 'Varies per employee' : 'Varía por empleado', l === 'nl' ? 'Altijd dezelfde kwaliteit' : l === 'en' ? 'Always same quality' : 'Siempre la misma calidad'],
                   [l === 'nl' ? 'Opschalen bij drukte' : l === 'en' ? 'Scale during peak' : 'Escalar en hora punta', l === 'nl' ? 'Extra personeel inhuren' : l === 'en' ? 'Hire extra staff' : 'Contratar más personal', l === 'nl' ? 'Automatisch, direct' : l === 'en' ? 'Automatic, instant' : 'Automático, instantáneo'],
                 ].map(([feature, traditional, ai], i) => (
