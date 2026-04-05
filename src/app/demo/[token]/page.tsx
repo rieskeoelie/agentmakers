@@ -338,6 +338,7 @@ export default async function DemoPage({ params }: Props) {
           }
           .left-col { order: 2; }
           .right-col { order: 1; }
+          .hero-sub { display: none; }
         }
 
         /* ── Left column ── */
