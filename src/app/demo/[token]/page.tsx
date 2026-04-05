@@ -102,6 +102,10 @@ export default async function DemoPage({ params }: Props) {
       ],
       tips_note: 'Aan het einde stuurt de agent u een persoonlijke meeting link.',
       configured_for: 'Geconfigureerd voor',
+      offer_scarcity: 'Nog 2 plekken vrij in april',
+      offer_scarcity_sub: 'Daarna stijgt de prijs',
+      offer_bonus: 'Gratis onboarding t.w.v. €295 inbegrepen',
+      offer_bonus_sub: 'Bij aanmelding deze maand',
     },
     en: {
       eyebrow: 'Personal AI demo',
@@ -132,6 +136,10 @@ export default async function DemoPage({ params }: Props) {
       ],
       tips_note: 'At the end, the agent will send you a personal meeting link.',
       configured_for: 'Configured for',
+      offer_scarcity: 'Only 2 spots left in April',
+      offer_scarcity_sub: 'Price increases after that',
+      offer_bonus: 'Free onboarding worth €295 included',
+      offer_bonus_sub: 'When signing up this month',
     },
     es: {
       eyebrow: 'Demo de IA personal',
@@ -162,6 +170,10 @@ export default async function DemoPage({ params }: Props) {
       ],
       tips_note: 'Al final, el agente le enviará un enlace personal de reunión.',
       configured_for: 'Configurado para',
+      offer_scarcity: 'Solo 2 plazas libres en abril',
+      offer_scarcity_sub: 'El precio sube después',
+      offer_bonus: 'Onboarding gratuito valorado en €295',
+      offer_bonus_sub: 'Al registrarse este mes',
     },
   }
 
@@ -339,6 +351,84 @@ export default async function DemoPage({ params }: Props) {
           .left-col { order: 2; }
           .right-col { order: 1; }
           .hero-sub { display: none; }
+          .company-card { display: none; }
+          .tips-card { display: none; }
+        }
+
+        /* ── Offer strip ── */
+        .offer-strip {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-top: 1px solid rgba(251,191,36,0.3);
+          border-radius: 18px;
+          padding: 16px 20px;
+          position: relative;
+          overflow: hidden;
+        }
+        .offer-strip::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 20px; right: 20px;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(251,191,36,0.4), transparent);
+        }
+        .offer-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 10px;
+        }
+        .offer-row:last-child { margin-bottom: 0; }
+        .offer-icon {
+          font-size: 0.95rem;
+          flex-shrink: 0;
+          width: 22px;
+          text-align: center;
+        }
+        .offer-label {
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: rgba(240,244,248,0.9);
+          letter-spacing: -0.01em;
+        }
+        .offer-sub {
+          font-size: 0.72rem;
+          color: rgba(240,244,248,0.38);
+          margin-top: 1px;
+        }
+        .offer-dots {
+          display: flex;
+          gap: 5px;
+          margin-left: auto;
+          flex-shrink: 0;
+        }
+        .offer-dot {
+          width: 9px; height: 9px;
+          border-radius: 50%;
+        }
+        .offer-dot-filled { background: #F59E0B; }
+        .offer-dot-empty { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); }
+        .offer-divider {
+          height: 1px;
+          background: rgba(255,255,255,0.06);
+          margin: 10px 0;
+        }
+        .offer-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 0.64rem;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: #2DD4BF;
+          background: rgba(45,212,191,0.08);
+          border: 1px solid rgba(45,212,191,0.18);
+          border-radius: 100px;
+          padding: 3px 9px;
+          margin-left: auto;
+          flex-shrink: 0;
+          white-space: nowrap;
         }
 
         /* ── Left column ── */
@@ -676,6 +766,35 @@ export default async function DemoPage({ params }: Props) {
                     {scraped ? '' : s.notReady}
                   </p>
                 )}
+              </div>
+
+              {/* Offer strip */}
+              <div className="offer-strip">
+                {/* Scarcity row */}
+                <div className="offer-row">
+                  <span className="offer-icon">🔥</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="offer-label">{s.offer_scarcity}</div>
+                    <div className="offer-sub">{s.offer_scarcity_sub}</div>
+                  </div>
+                  <div className="offer-dots">
+                    {[...Array(10)].map((_, i) => (
+                      <span key={i} className={`offer-dot ${i < 8 ? 'offer-dot-filled' : 'offer-dot-empty'}`} />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="offer-divider" />
+
+                {/* Bonus row */}
+                <div className="offer-row">
+                  <span className="offer-icon">✓</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="offer-label">{s.offer_bonus}</div>
+                    <div className="offer-sub">{s.offer_bonus_sub}</div>
+                  </div>
+                  <span className="offer-badge">Gratis</span>
+                </div>
               </div>
 
               {/* Tips card */}
