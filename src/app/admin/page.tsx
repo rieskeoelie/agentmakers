@@ -417,14 +417,14 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div style={{ background: '#fff', borderRadius: 14, overflowX: 'auto', border: '1px solid #F1F5F9' }}>
-              <table style={{ width: '100%', minWidth: 950, borderCollapse: 'collapse' }}>
+              <table style={{ width: '100%', minWidth: 850, borderCollapse: 'collapse', tableLayout: 'auto' }}>
                 <thead>
                   <tr style={{ background: '#F1F5F9' }}>
-                    <th style={{ padding: '14px 16px', width: 40 }}>
+                    <th style={{ padding: '10px 10px', width: 36 }}>
                       <input type="checkbox" checked={leads.length > 0 && selectedLeads.size === leads.length} onChange={toggleSelectAll} style={{ cursor: 'pointer', width: 16, height: 16 }} />
                     </th>
-                    {['', 'Naam', 'E-mail', 'Telefoon', 'Bedrijf', 'Pagina', 'Taal', 'Datum', 'Status'].map(h => (
-                      <th key={h} style={{ padding: '14px 16px', textAlign: 'left', fontSize: '.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em' }}>{h}</th>
+                    {['Naam', 'E-mail', 'Telefoon', 'Bedrijf', 'Pagina', 'Taal', 'Datum', 'Status'].map(h => (
+                      <th key={h} style={{ padding: '10px 10px', textAlign: 'left', fontSize: '.75rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -434,21 +434,21 @@ export default function AdminDashboard() {
                     const isHandled = handledLeads.has(lead.id)
                     return (
                       <tr key={lead.id} style={{ borderTop: '1px solid #F1F5F9', background: selectedLeads.has(lead.id) ? '#EFF6FF' : isNew ? '#F0FDF4' : i % 2 === 0 ? '#fff' : '#FAFAFA', opacity: isHandled ? 0.55 : 1, transition: 'opacity .2s, background .15s' }}>
-                        <td style={{ padding: '14px 16px' }}>
+                        <td style={{ padding: '10px 10px', width: 36 }}>
                           <input type="checkbox" checked={selectedLeads.has(lead.id)} onChange={() => toggleSelectLead(lead.id)} style={{ cursor: 'pointer', width: 16, height: 16 }} />
                         </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          {isNew && <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#22C55E', marginRight: 4 }} title="Nieuw" />}
+                        <td style={{ padding: '10px 10px', fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>
+                          {isNew && <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#22C55E', marginRight: 6 }} title="Nieuw" />}
+                          {lead.naam}
                         </td>
-                        <td style={{ padding: '14px 16px', fontWeight: 600, color: '#0F172A' }}>{lead.naam}</td>
-                        <td style={{ padding: '14px 16px' }}><a href={`mailto:${lead.email}`} style={{ color: '#0D9488' }}>{lead.email}</a></td>
-                        <td style={{ padding: '14px 16px' }}><a href={`tel:${lead.telefoon}`} style={{ color: '#334155' }}>{lead.telefoon}</a></td>
-                        <td style={{ padding: '14px 16px', color: '#64748B', fontSize: '.85rem' }}>{lead.bedrijfsnaam || lead.website || '—'}</td>
-                        <td style={{ padding: '14px 16px', color: '#0D9488', fontSize: '.85rem' }}>/{lead.landing_page_slug}</td>
-                        <td style={{ padding: '14px 16px' }}>{lead.language === 'nl' ? '🇳🇱' : lead.language === 'en' ? '🇬🇧' : '🇪🇸'}</td>
-                        <td style={{ padding: '14px 16px', fontSize: '.82rem', color: '#64748B' }}>{new Date(lead.created_at).toLocaleDateString('nl-NL')}</td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <button onClick={() => toggleHandled(lead.id)} style={{ padding: '5px 12px', borderRadius: 6, fontSize: '.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${isHandled ? '#CBD5E1' : '#22C55E'}`, background: isHandled ? '#F1F5F9' : '#F0FDF4', color: isHandled ? '#94A3B8' : '#166534' }}>
+                        <td style={{ padding: '10px 10px', fontSize: '.83rem' }}><a href={`mailto:${lead.email}`} style={{ color: '#0D9488' }}>{lead.email}</a></td>
+                        <td style={{ padding: '10px 10px', fontSize: '.83rem', whiteSpace: 'nowrap' }}><a href={`tel:${lead.telefoon}`} style={{ color: '#334155' }}>{lead.telefoon}</a></td>
+                        <td style={{ padding: '10px 10px', color: '#64748B', fontSize: '.83rem', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.bedrijfsnaam || lead.website || '—'}</td>
+                        <td style={{ padding: '10px 10px', color: '#0D9488', fontSize: '.83rem', whiteSpace: 'nowrap' }}>/{lead.landing_page_slug}</td>
+                        <td style={{ padding: '10px 10px', textAlign: 'center' }}>{lead.language === 'nl' ? '🇳🇱' : lead.language === 'en' ? '🇬🇧' : '🇪🇸'}</td>
+                        <td style={{ padding: '10px 10px', fontSize: '.8rem', color: '#64748B', whiteSpace: 'nowrap' }}>{new Date(lead.created_at).toLocaleDateString('nl-NL')}</td>
+                        <td style={{ padding: '10px 10px', whiteSpace: 'nowrap' }}>
+                          <button onClick={() => toggleHandled(lead.id)} style={{ padding: '5px 10px', borderRadius: 6, fontSize: '.75rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${isHandled ? '#CBD5E1' : '#22C55E'}`, background: isHandled ? '#F1F5F9' : '#F0FDF4', color: isHandled ? '#94A3B8' : '#166534', whiteSpace: 'nowrap' }}>
                             {isHandled ? 'Heropenen' : '✓ Afgehandeld'}
                           </button>
                         </td>
@@ -456,7 +456,7 @@ export default function AdminDashboard() {
                     )
                   })}
                   {leads.length === 0 && (
-                    <tr><td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>Nog geen aanvragen ontvangen.</td></tr>
+                    <tr><td colSpan={9} style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>Nog geen aanvragen ontvangen.</td></tr>
                   )}
                 </tbody>
               </table>
