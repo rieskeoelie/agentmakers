@@ -1,3 +1,4 @@
+import React from 'react'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import { supabaseAdmin } from '@/lib/supabase'
@@ -41,6 +42,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+/* ── Agent channel icons ── */
+const AGENT_ICONS: Record<string, React.ReactElement> = {
+  'phone-in': <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/><path d="M14.05 2a9 9 0 0 1 8 7.94"/><path d="M14.05 6A5 5 0 0 1 18 10"/></svg>,
+  'phone-out': <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94"/><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+  whatsapp: <svg width="26" height="26" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.122 1.525 5.857L.06 23.487a.5.5 0 00.608.608l5.63-1.464A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.94 9.94 0 01-5.38-1.567l-.386-.232-3.338.868.886-3.262-.254-.403A9.935 9.935 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>,
+  facebook: <svg width="26" height="26" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.04c-5.5 0-10 4.49-10 10.02 0 5 3.66 9.15 8.44 9.9v-7H7.9v-2.9h2.54V9.85c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.24.19 2.24.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.9h-2.33v7a10 10 0 008.44-9.9c0-5.53-4.5-10.02-10-10.02z"/></svg>,
+  instagram: <svg width="26" height="26" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>,
+  email: <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+}
+
 export default async function LandingPage({ params }: Props) {
   const { lang, industry } = await params
 
@@ -65,7 +76,6 @@ export default async function LandingPage({ params }: Props) {
           <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
             <img src="/logo-transparent.png" alt="agentmakers.io" style={{ height: 40, width: 'auto', display: 'block', maxWidth: 200 }} />
           </a>
-          {/* Language switcher only — demo CTA is already in the hero */}
           <div style={{ display: 'flex', gap: 8 }}>
             {SUPPORTED_LANGS.map((lng) => (
               <a key={lng} href={`/${lng}/${industry}`}
@@ -140,7 +150,7 @@ export default async function LandingPage({ params }: Props) {
                 <circle cx="130" cy="130" r="110" fill="none" stroke="#DC5858" strokeWidth="16" strokeDasharray="691.15" strokeDashoffset="186.6" strokeLinecap="round" transform="rotate(-90 130 130)" />
               </svg>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '3.6rem', fontWeight: 700, color: '#0F172A' }}>73%</div>
+                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '3.6rem', fontWeight: 700, color: '#0F172A' }}>{content.closed_percent || 73}%</div>
                 <div style={{ fontSize: '.95rem', color: '#64748B' }}>{t(l, 'percent_closed')}</div>
               </div>
             </div>
@@ -154,7 +164,7 @@ export default async function LandingPage({ params }: Props) {
                 ))}
               </div>
               <div style={{ marginTop: 12, fontSize: '1.15rem', color: '#EF4444', fontWeight: 700 }}>
-                6.420 {t(l, 'hours_closed')}
+                {(content.closed_hours || 6420).toLocaleString('nl-NL')} {t(l, 'hours_closed')}
               </div>
             </div>
           </div>
@@ -167,10 +177,10 @@ export default async function LandingPage({ params }: Props) {
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>{t(l, 'solution_label')}</div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16 }}>
-              {l === 'nl' ? 'Uw AI Receptioniste die nooit slaapt' : l === 'en' ? 'Your AI Receptionist that never sleeps' : 'Su recepcionista IA que nunca duerme'}
+              {content.solution_headline || (l === 'nl' ? 'Uw AI Receptioniste die nooit slaapt' : l === 'en' ? 'Your AI Receptionist that never sleeps' : 'Su recepcionista IA que nunca duerme')}
             </h2>
             <p style={{ color: '#64748B', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto' }}>
-              {l === 'nl' ? 'Ze beantwoordt elke oproep - dag en nacht - met een natuurlijke, warme stem. Alsof uw beste receptioniste 24/7 aan het werk is.' : l === 'en' ? 'She answers every call - day and night - with a natural, warm voice. As if your best receptionist works 24/7.' : 'Responde cada llamada, de día y de noche, con una voz natural y cálida.'}
+              {content.solution_subline || (l === 'nl' ? 'Ze beantwoordt elke oproep - dag en nacht - met een natuurlijke, warme stem.' : l === 'en' ? 'She answers every call - day and night - with a natural, warm voice.' : 'Responde cada llamada, de día y de noche, con una voz natural y cálida.')}
             </p>
           </div>
           <div className="grid-3col">
@@ -196,25 +206,22 @@ export default async function LandingPage({ params }: Props) {
       <section className="sp" style={{ background: '#0F172A' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <div style={{ color: '#CCFBF1', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>Onze AI Agents</div>
+            <div style={{ color: '#CCFBF1', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+              {content.agents_label || 'Onze AI Agents'}
+            </div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16, color: '#fff' }}>
-              {l === 'nl' ? 'Laat meerdere agenten samenwerken voor een complete 360 graden upgrade van uw kliniek.' : l === 'en' ? 'Let multiple agents work together for a complete 360-degree upgrade of your clinic.' : 'Deje que varios agentes trabajen juntos para una mejora completa de 360 grados de su clínica.'}
+              {content.agents_headline || (l === 'nl' ? 'Laat meerdere agenten samenwerken voor een complete upgrade van uw bedrijf.' : l === 'en' ? 'Let multiple agents work together for a complete upgrade of your business.' : 'Deje que varios agentes trabajen juntos para una mejora completa de su negocio.')}
             </h2>
             <p style={{ color: '#CBD5E1', fontSize: '1.05rem', maxWidth: 800, margin: '0 auto' }}>
-              {l === 'nl' ? 'Elk contactmoment geautomatiseerd - via telefoon, chat, e-mail en social media.' : l === 'en' ? 'Every touchpoint automated - phone, chat, email and social media.' : 'Cada punto de contacto automatizado - teléfono, chat, correo y redes sociales.'}
+              {content.agents_subline || (l === 'nl' ? 'Elk contactmoment geautomatiseerd - via telefoon, chat, e-mail en social media.' : l === 'en' ? 'Every touchpoint automated - phone, chat, email and social media.' : 'Cada punto de contacto automatizado - teléfono, chat, correo y redes sociales.')}
             </p>
           </div>
           <div className="grid-3col">
-            {[
-              { icon: <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/><path d="M14.05 2a9 9 0 0 1 8 7.94"/><path d="M14.05 6A5 5 0 0 1 18 10"/></svg>, title: 'AI Voice Agent - Inbound', body: l === 'nl' ? 'Beantwoordt inkomende telefoongesprekken 24/7. Beantwoordt vragen over behandelingen, prijzen en beschikbaarheid en boekt direct afspraken in uw agenda.' : 'Answers incoming calls 24/7. Answers questions about treatments, prices and availability and books appointments directly.', tag: l === 'nl' ? 'Telefonie' : 'Phone' },
-              { icon: <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94"/><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>, title: 'AI Voice Agent - Outbound', body: l === 'nl' ? 'Belt proactief klanten voor afspraakbevestigingen, no-show opvolging, nazorg na behandelingen en herinneringen. Vermindert no-shows met tot 40%.' : 'Proactively calls customers for appointment confirmations, no-show follow-up and reminders. Reduces no-shows by up to 40%.', tag: l === 'nl' ? 'Telefonie' : 'Phone' },
-              { icon: <svg width="26" height="26" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.122 1.525 5.857L.06 23.487a.5.5 0 00.608.608l5.63-1.464A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.94 9.94 0 01-5.38-1.567l-.386-.232-3.338.868.886-3.262-.254-.403A9.935 9.935 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>, title: 'WhatsApp & SMS Agent', body: l === 'nl' ? "Reageert direct op WhatsApp-berichten en sms'jes. Beantwoordt vragen, stuurt afspraakbevestigingen en behandelinformatie. Altijd beschikbaar op het favoriete kanaal van uw klant." : 'Responds instantly to WhatsApp messages and SMS. Answers questions, sends appointment confirmations and treatment information.', tag: 'Messaging' },
-              { icon: <svg width="26" height="26" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.04c-5.5 0-10 4.49-10 10.02 0 5 3.66 9.15 8.44 9.9v-7H7.9v-2.9h2.54V9.85c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.24.19 2.24.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.9h-2.33v7a10 10 0 008.44-9.9c0-5.53-4.5-10.02-10-10.02z"/></svg>, title: 'Facebook Messenger Agent', body: l === 'nl' ? 'Vangt leads op via uw Facebook-pagina. Beantwoordt vragen over behandelingen, deelt prijsinformatie en plant afspraken in - rechtstreeks vanuit Messenger.' : 'Captures leads via your Facebook page. Answers questions about treatments, shares pricing and schedules appointments.', tag: 'Social Media' },
-              { icon: <svg width="26" height="26" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>, title: 'Instagram DM Agent', body: l === 'nl' ? "Reageert automatisch op Instagram DM's. Ideaal voor klinieken en salons die leads binnenkrijgen via Instagram. Converteert volgers naar betalende klanten." : 'Automatically responds to Instagram DMs. Ideal for clinics getting leads via Instagram. Converts followers to paying customers.', tag: 'Social Media' },
-              { icon: <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>, title: l === 'nl' ? 'E-mail Agent' : 'Email Agent', body: l === 'nl' ? 'Verwerkt inkomende e-mails automatisch. Beantwoordt veelgestelde vragen, stuurt offertes voor behandelingen en routeert complexe vragen naar het juiste teamlid.' : 'Automatically processes incoming emails. Answers FAQs, sends treatment quotes and routes complex questions to the right team member.', tag: 'E-mail' },
-            ].map((agent, i) => (
+            {(content.agents || []).map((agent: { title: string; body: string; tag: string; channel?: string }, i: number) => (
               <div key={i} style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', padding: '32px 28px', borderRadius: 14 }}>
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(13,148,136,.2)', color: '#CCFBF1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>{agent.icon}</div>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(13,148,136,.2)', color: '#CCFBF1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                  {AGENT_ICONS[agent.channel || ''] || AGENT_ICONS['phone-in']}
+                </div>
                 <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.05rem', fontWeight: 700, color: '#fff', marginBottom: 8 }}>{agent.title}</h3>
                 <p style={{ fontSize: '.88rem', color: '#CBD5E1', lineHeight: 1.6 }}>{agent.body}</p>
                 <span style={{ display: 'inline-block', marginTop: 14, padding: '4px 12px', background: 'rgba(13,148,136,.15)', color: '#CCFBF1', borderRadius: 6, fontSize: '.75rem', fontWeight: 600 }}>{agent.tag}</span>
@@ -229,13 +236,13 @@ export default async function LandingPage({ params }: Props) {
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
-              {l === 'nl' ? 'Specifiek voor klinieken' : l === 'en' ? 'Specific for clinics' : 'Específico para clínicas'}
+              {content.usecases_label || (l === 'nl' ? 'Specifiek voor uw branche' : l === 'en' ? 'Specific for your industry' : 'Específico para su sector')}
             </div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16 }}>
-              {l === 'nl' ? 'Uw AI agents zijn specifiek getraind op klinieken en salons' : l === 'en' ? 'Your AI agents are specifically trained for clinics and salons' : 'Sus agentes IA están específicamente entrenados para clínicas'}
+              {content.usecases_headline || (l === 'nl' ? 'Uw AI agents zijn specifiek getraind op uw branche' : l === 'en' ? 'Your AI agents are specifically trained for your industry' : 'Sus agentes IA están específicamente entrenados para su sector')}
             </h2>
             <p style={{ color: '#64748B', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto' }}>
-              {l === 'nl' ? 'Van intake tot nazorg - Uw cliënten zijn u dankbaar.' : l === 'en' ? 'From intake to aftercare - your clients will thank you.' : 'Desde la admisión hasta el seguimiento.'}
+              {content.usecases_subline || ''}
             </p>
           </div>
           <div className="grid-2col">
@@ -288,7 +295,7 @@ export default async function LandingPage({ params }: Props) {
             )})}
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', padding: 32, background: '#F1F5F9', borderRadius: 14 }}>
-            {['Google Calendar', 'Clinicminds', 'Timify', 'Calendly', 'Microsoft 365', 'VoIP / SIP', 'Custom API'].map((badge) => (
+            {(content.integrations || ['Google Calendar', 'Calendly', 'Microsoft 365', 'VoIP / SIP', 'Custom API']).map((badge: string) => (
               <span key={badge} style={{ background: '#fff', padding: '10px 20px', borderRadius: 8, fontSize: '.88rem', fontWeight: 500, color: '#334155', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>{badge}</span>
             ))}
           </div>
@@ -321,13 +328,13 @@ export default async function LandingPage({ params }: Props) {
               </thead>
               <tbody>
                 {[
-                  [l === 'nl' ? 'Beschikbaarheid' : 'Availability', l === 'nl' ? 'Ma–vr, 9:00–18:00' : 'Mon–Fri, 9am–6pm', '24/7/365'],
-                  [l === 'nl' ? 'Kosten per maand' : 'Monthly costs', '€2.500 – €4.000+', l === 'nl' ? 'Vanaf €299' : 'From €299'],
-                  [l === 'nl' ? 'Schaalbaarheid' : 'Scalability', l === 'nl' ? 'Beperkt (1 lijn tegelijk)' : 'Limited (1 line at a time)', l === 'nl' ? 'Onbeperkt gelijktijdige oproepen' : 'Unlimited simultaneous calls'],
-                  [l === 'nl' ? 'Taalondersteuning' : 'Language support', '1–2 talen', '10+ talen'],
-                  [l === 'nl' ? 'Ziekteverzuim' : 'Sick leave', l === 'nl' ? 'Vervanging nodig' : 'Replacement needed', l === 'nl' ? 'Altijd beschikbaar' : 'Always available'],
-                  [l === 'nl' ? 'Consistentie' : 'Consistency', l === 'nl' ? 'Varieert per medewerker' : 'Varies per employee', l === 'nl' ? 'Altijd dezelfde kwaliteit' : 'Always same quality'],
-                  [l === 'nl' ? 'Opschalen bij drukte' : 'Scale during peak', l === 'nl' ? 'Extra personeel inhuren' : 'Hire extra staff', l === 'nl' ? 'Automatisch, direct' : 'Automatic, instant'],
+                  [l === 'nl' ? 'Beschikbaarheid' : l === 'en' ? 'Availability' : 'Disponibilidad', l === 'nl' ? 'Ma–vr, 9:00–18:00' : l === 'en' ? 'Mon–Fri, 9am–6pm' : 'Lun–Vie, 9:00–18:00', '24/7/365'],
+                  [l === 'nl' ? 'Kosten per maand' : l === 'en' ? 'Monthly costs' : 'Costos mensuales', '€2.500 – €4.000+', l === 'nl' ? 'Vanaf €299' : l === 'en' ? 'From €299' : 'Desde €299'],
+                  [l === 'nl' ? 'Schaalbaarheid' : l === 'en' ? 'Scalability' : 'Escalabilidad', l === 'nl' ? 'Beperkt (1 lijn tegelijk)' : l === 'en' ? 'Limited (1 line at a time)' : 'Limitada (1 línea a la vez)', l === 'nl' ? 'Onbeperkt gelijktijdige oproepen' : l === 'en' ? 'Unlimited simultaneous calls' : 'Llamadas simultáneas ilimitadas'],
+                  [l === 'nl' ? 'Taalondersteuning' : l === 'en' ? 'Language support' : 'Idiomas', '1–2 talen', '10+ talen'],
+                  [l === 'nl' ? 'Ziekteverzuim' : l === 'en' ? 'Sick leave' : 'Bajas por enfermedad', l === 'nl' ? 'Vervanging nodig' : l === 'en' ? 'Replacement needed' : 'Necesita reemplazo', l === 'nl' ? 'Altijd beschikbaar' : l === 'en' ? 'Always available' : 'Siempre disponible'],
+                  [l === 'nl' ? 'Consistentie' : l === 'en' ? 'Consistency' : 'Consistencia', l === 'nl' ? 'Varieert per medewerker' : l === 'en' ? 'Varies per employee' : 'Varía por empleado', l === 'nl' ? 'Altijd dezelfde kwaliteit' : l === 'en' ? 'Always same quality' : 'Siempre la misma calidad'],
+                  [l === 'nl' ? 'Opschalen bij drukte' : l === 'en' ? 'Scale during peak' : 'Escalar en hora punta', l === 'nl' ? 'Extra personeel inhuren' : l === 'en' ? 'Hire extra staff' : 'Contratar más personal', l === 'nl' ? 'Automatisch, direct' : l === 'en' ? 'Automatic, instant' : 'Automático, instantáneo'],
                 ].map(([feature, traditional, ai], i) => (
                   <tr key={i}>
                     <td style={{ padding: '18px 28px', borderTop: '1px solid #F1F5F9', fontSize: '.92rem', fontWeight: 600, color: '#0F172A' }}>{feature}</td>
@@ -353,10 +360,14 @@ export default async function LandingPage({ params }: Props) {
             </h2>
           </div>
           <div className="grid-3col" style={{ gap: 32 }}>
-            {[['98%', l === 'nl' ? 'van alle oproepen beantwoord' : l === 'en' ? 'of all calls answered' : 'de todas las llamadas atendidas'], ['+34%', l === 'nl' ? 'meer boekingen buiten openingstijden' : l === 'en' ? 'more bookings outside opening hours' : 'más reservas fuera del horario'], ['-40%', l === 'nl' ? 'reductie in no-shows' : l === 'en' ? 'reduction in no-shows' : 'reducción de no-shows']].map(([num, desc]) => (
-              <div key={num} style={{ textAlign: 'center', padding: '40px 24px', background: '#F0FDFA', borderRadius: 14 }}>
-                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '2.8rem', fontWeight: 700, color: '#0F766E' }}>{num}</div>
-                <div style={{ fontSize: '.9rem', color: '#64748B', marginTop: 8 }}>{desc}</div>
+            {(content.stats || [
+              { value: '98%', label: l === 'nl' ? 'van alle oproepen beantwoord' : l === 'en' ? 'of all calls answered' : 'de todas las llamadas atendidas' },
+              { value: '+34%', label: l === 'nl' ? 'meer boekingen buiten openingstijden' : l === 'en' ? 'more bookings outside opening hours' : 'más reservas fuera del horario' },
+              { value: '-40%', label: l === 'nl' ? 'reductie in no-shows' : l === 'en' ? 'reduction in no-shows' : 'reducción de no-shows' },
+            ]).map((stat: { value: string; label: string }, i: number) => (
+              <div key={i} style={{ textAlign: 'center', padding: '40px 24px', background: '#F0FDFA', borderRadius: 14 }}>
+                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '2.8rem', fontWeight: 700, color: '#0F766E' }}>{stat.value}</div>
+                <div style={{ fontSize: '.9rem', color: '#64748B', marginTop: 8 }}>{stat.label}</div>
               </div>
             ))}
           </div>

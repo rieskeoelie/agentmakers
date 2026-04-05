@@ -695,20 +695,6 @@ export default async function DemoPage({ params }: Props) {
 
           </div>
 
-          {/* CTA */}
-          <div className="divider">
-            <div className="divider-line" />
-            <span className="divider-text">{lang === 'nl' ? 'of' : lang === 'es' ? 'o' : 'or'}</span>
-            <div className="divider-line" />
-          </div>
-          <div className="cta-section">
-            <p className="cta-heading">{s.cta}</p>
-            <p className="cta-sub">{s.cta_sub}</p>
-            <a href={s.cta_url} target="_blank" rel="noopener noreferrer" className="cta-btn">
-              📅 {s.cta_btn}
-            </a>
-          </div>
-
         </div>
       </div>
     </>

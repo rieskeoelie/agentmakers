@@ -14,13 +14,35 @@ export interface LangContent {
   meta_description: string
   hero_headline: string
   hero_subline: string
+  hero_badge: string
   problem_headline: string
   problem_body: string
   closed_hours: number
   closed_percent: number
   timeline: { time: string; scenario: string }[]
   features: { icon: string; title: string; body: string }[]
+  solution_headline: string
+  solution_subline: string
+  usecases_label: string
+  usecases_headline: string
+  usecases_subline: string
   usecases: { title: string; body: string }[]
+  agents_label: string
+  agents_headline: string
+  agents_subline: string
+  agents: {
+    title: string
+    body: string
+    tag: string
+    channel: 'phone-in' | 'phone-out' | 'whatsapp' | 'facebook' | 'instagram' | 'email'
+  }[]
+  integrations: string[]
+  steps_title: string
+  steps_sub: string
+  steps: { title: string; body: string }[]
+  stats_label: string
+  stats_title: string
+  stats: { value: string; label: string }[]
   revenue_calls: number
   revenue_per_call: number
   cta_headline: string
@@ -33,52 +55,93 @@ Generate landing page content for the industry: "${industry}"
 
 The product is "agentmakers.io" — an AI receptionist/agent that works 24/7, answers phone calls, books appointments, and handles customer inquiries automatically. It replaces or supplements a human receptionist.
 
+CRITICAL: All content must use industry-specific terminology. For example:
+- Clinics/medical: "consult", "behandeling", "patiënt", "intake", "nazorg"
+- Real estate: "bezichtiging", "woning", "koper", "verkoper", "taxatie"
+- Automotive/garages: "afspraak", "APK", "reparatie", "werkplaats"
+- Legal: "dossier", "cliënt", "zaak", "consult", "intake"
+- Restaurants: "reservering", "tafel", "gast", "menu"
+- Salons/beauty: "behandeling", "cliënt", "afspraak"
+Adapt ALL text to use the natural vocabulary of "${industry}". Never use generic placeholder text.
+
 Return ONLY valid JSON matching this exact structure (no markdown, no explanation):
 {
   "nl": {
     "title": "SEO page title in Dutch (max 60 chars)",
     "meta_description": "Meta description in Dutch (max 155 chars)",
-    "hero_headline": "Powerful hero headline in Dutch showing the problem (mention hours closed)",
-    "hero_subline": "Supporting subtitle in Dutch (1-2 sentences)",
-    "problem_headline": "Section headline about the problem in Dutch",
-    "problem_body": "2-3 sentences explaining how clients call when the business is closed in Dutch",
+    "hero_headline": "Powerful hero headline in Dutch showing the problem (mention hours closed). Use <em>emphasis</em> for key phrase.",
+    "hero_subline": "Supporting subtitle in Dutch (1-2 sentences) using industry-specific terms",
+    "hero_badge": "Short badge text like 'AI Receptioniste voor [industry]' in Dutch",
+    "problem_headline": "Section headline about the problem in Dutch, industry-specific",
+    "problem_body": "2-3 sentences explaining how clients/customers call when the business is closed, using industry terminology",
     "closed_hours": 6420,
     "closed_percent": 73,
     "timeline": [
       {"time": "18:30", "scenario": "Industry-specific missed call scenario in Dutch"},
-      {"time": "Zaterdag 10:00", "scenario": "Weekend scenario in Dutch"},
-      {"time": "Elke gemiste oproep", "scenario": "Cost of missed calls in Dutch"}
+      {"time": "Zaterdag 10:00", "scenario": "Weekend scenario in Dutch using industry terms"},
+      {"time": "Elke gemiste oproep", "scenario": "Cost of missed calls using industry revenue terms"}
     ],
+    "solution_headline": "Headline for the features/solution section in Dutch, industry-specific (e.g. 'Uw AI Receptioniste die nooit slaapt')",
+    "solution_subline": "Subline for solution section in Dutch, referencing how the AI handles this industry's specific tasks",
     "features": [
-      {"icon": "clock", "title": "Feature title", "body": "Feature description"},
-      {"icon": "calendar", "title": "Feature title", "body": "Feature description"},
-      {"icon": "chat", "title": "Feature title", "body": "Feature description"},
-      {"icon": "clipboard", "title": "Feature title", "body": "Feature description"},
-      {"icon": "globe", "title": "Feature title", "body": "Feature description"},
-      {"icon": "shield", "title": "Feature title", "body": "Feature description"}
+      {"icon": "clock", "title": "Feature title", "body": "Feature description using industry terms"},
+      {"icon": "calendar", "title": "Feature title", "body": "Feature description using industry terms"},
+      {"icon": "chat", "title": "Feature title", "body": "Feature description using industry terms"},
+      {"icon": "clipboard", "title": "Feature title", "body": "Feature description using industry terms"},
+      {"icon": "globe", "title": "Feature title", "body": "Feature description using industry terms"},
+      {"icon": "shield", "title": "Feature title", "body": "Feature description using industry terms"}
     ],
+    "agents_label": "Short uppercase label for agents section, e.g. 'Onze AI Agents'",
+    "agents_headline": "Headline about multiple agents working together for this SPECIFIC industry in Dutch (NOT 'kliniek' unless it IS a clinic)",
+    "agents_subline": "Subline about every touchpoint being automated, industry-specific",
+    "agents": [
+      {"title": "AI Voice Agent - Inbound", "body": "Description of inbound voice agent tailored to this industry's specific use case", "tag": "Telefonie", "channel": "phone-in"},
+      {"title": "AI Voice Agent - Outbound", "body": "Description of outbound calling tailored to this industry (e.g. appointment reminders, follow-ups)", "tag": "Telefonie", "channel": "phone-out"},
+      {"title": "WhatsApp & SMS Agent", "body": "Description tailored to how this industry uses messaging", "tag": "Messaging", "channel": "whatsapp"},
+      {"title": "Facebook Messenger Agent", "body": "Description tailored to this industry's Facebook usage", "tag": "Social Media", "channel": "facebook"},
+      {"title": "Instagram DM Agent", "body": "Description tailored to this industry's Instagram presence", "tag": "Social Media", "channel": "instagram"},
+      {"title": "E-mail Agent", "body": "Description of email automation for this industry", "tag": "E-mail", "channel": "email"}
+    ],
+    "usecases_label": "Short uppercase label, industry-specific (e.g. 'Specifiek voor klinieken')",
+    "usecases_headline": "Headline mentioning the AI is specifically trained for this industry",
+    "usecases_subline": "Subline using industry workflow terms (e.g. 'Van intake tot nazorg' for clinics, 'Van bezichtiging tot overdracht' for real estate)",
     "usecases": [
-      {"title": "Use case title", "body": "Use case description"},
-      {"title": "Use case title", "body": "Use case description"},
-      {"title": "Use case title", "body": "Use case description"},
-      {"title": "Use case title", "body": "Use case description"},
-      {"title": "Use case title", "body": "Use case description"},
-      {"title": "Use case title", "body": "Use case description"}
+      {"title": "Use case title", "body": "Description using industry terms"},
+      {"title": "Use case title", "body": "Description using industry terms"},
+      {"title": "Use case title", "body": "Description using industry terms"},
+      {"title": "Use case title", "body": "Description using industry terms"},
+      {"title": "Use case title", "body": "Description using industry terms"},
+      {"title": "Use case title", "body": "Description using industry terms"}
+    ],
+    "integrations": ["List of 5-7 software/tools commonly used in this industry, e.g. for clinics: Google Calendar, Clinicminds, Timify etc. For real estate: Realworks, Funda, Google Calendar etc."],
+    "steps_title": "Title for 'how it works' section, industry-specific (e.g. 'De AI Voice Agent wordt getraind met kennis over uw [industry term].')",
+    "steps_sub": "Subline for steps section",
+    "steps": [
+      {"title": "Step 1 title", "body": "Step 1 description using industry context"},
+      {"title": "Step 2 title", "body": "Step 2 description using industry context"},
+      {"title": "Step 3 title", "body": "Step 3 description using industry context"}
+    ],
+    "stats_label": "Short label like 'Resultaten'",
+    "stats_title": "Headline about results with agentmakers.io, industry-specific",
+    "stats": [
+      {"value": "98%", "label": "of all calls answered — phrased for this industry"},
+      {"value": "+34%", "label": "more bookings/appointments outside hours — phrased for this industry"},
+      {"value": "-40%", "label": "reduction in no-shows/missed appointments — phrased for this industry"}
     ],
     "revenue_calls": 5,
     "revenue_per_call": 500,
     "cta_headline": "Strong closing CTA headline in Dutch"
   },
-  "en": { ... same structure but in English ... },
-  "es": { ... same structure but in Spanish ... },
-  "hero_image_query": "Unsplash search query for a professional ${industry} photo (in English, 3-5 words)"
+  "en": { ... same structure but in English, with industry-specific English terminology ... },
+  "es": { ... same structure but in Spanish, with industry-specific Spanish terminology ... },
+  "hero_image_query": "Unsplash search query for a professional ${industry} photo (in English, 3-5 words, e.g. 'modern dental clinic interior' or 'real estate luxury home')"
 }
 
-Make all content highly specific and relevant to the "${industry}" industry. Use realistic numbers for revenue_calls and revenue_per_call based on the industry's typical appointment/transaction value. Features and usecases should be tailored to this specific industry's workflows.`
+Make ALL content highly specific and relevant to the "${industry}" industry. Use realistic numbers for revenue_calls and revenue_per_call based on the industry's typical appointment/transaction value. Every single text string must use the natural vocabulary and jargon of this industry — never use generic business terms when an industry-specific term exists.`
 
   const message = await anthropic.messages.create({
     model: 'claude-opus-4-6',
-    max_tokens: 4096,
+    max_tokens: 8192,
     messages: [{ role: 'user', content: prompt }],
   })
 
@@ -91,11 +154,26 @@ Make all content highly specific and relevant to the "${industry}" industry. Use
   return JSON.parse(jsonMatch[0]) as GeneratedContent
 }
 
-// Fetch a relevant Unsplash image URL
+// Fetch a relevant Unsplash image URL using source redirect (no API key needed)
 export async function getUnsplashImage(query: string): Promise<string> {
-  // Use Unsplash source (no API key needed for basic usage)
+  // Unsplash source URL redirects to a random relevant photo
+  // We fetch to get the final redirect URL, then append sizing params
   const encoded = encodeURIComponent(query)
+  const sourceUrl = `https://source.unsplash.com/1920x1080/?${encoded}`
+
+  try {
+    const res = await fetch(sourceUrl, { redirect: 'follow' })
+    const finalUrl = res.url
+    // If we got a valid unsplash image URL, use it
+    if (finalUrl && finalUrl.includes('unsplash.com')) {
+      // Strip any existing params and add our own
+      const base = finalUrl.split('?')[0]
+      return `${base}?w=1920&q=80&auto=format&fit=crop`
+    }
+  } catch {
+    // Fall through to fallback
+  }
+
+  // Fallback: use direct unsplash photo URL with query
   return `https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=1920&q=80&auto=format&fit=crop`
-  // Note: For production, use the Unsplash API with a key for relevant images
-  // Fallback for now — replace with: https://api.unsplash.com/photos/random?query=${encoded}&client_id=YOUR_KEY
 }

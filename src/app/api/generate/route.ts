@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { generateLandingPageContent } from '@/lib/generate'
+import { generateLandingPageContent, getUnsplashImage } from '@/lib/generate'
 
 // Protect this route with a secret key
 function isAuthorized(req: NextRequest) {
@@ -37,6 +37,9 @@ export async function POST(req: NextRequest) {
     // Generate content with Claude
     const content = await generateLandingPageContent(industry)
 
+    // Fetch industry-specific hero image from Unsplash
+    const heroImageUrl = await getUnsplashImage(content.hero_image_query)
+
     // Insert into Supabase
     const { data, error } = await supabaseAdmin.from('landing_pages').insert([{
       slug: cleanSlug,
@@ -57,7 +60,7 @@ export async function POST(req: NextRequest) {
       hero_headline_es: content.es.hero_headline,
       hero_subline_es: content.es.hero_subline,
       body_content_es: content.es,
-      hero_image_url: `https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=1920&q=80`,
+      hero_image_url: heroImageUrl,
     }]).select().single()
 
     if (error) throw error
