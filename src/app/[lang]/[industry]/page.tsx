@@ -327,10 +327,10 @@ export default async function LandingPage({ params }: Props) {
               <thead>
                 <tr>
                   <th style={{ padding: '20px 28px', textAlign: 'left', fontFamily: "'Nunito',sans-serif", fontSize: '.85rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em', width: '30%' }}></th>
-                  <th style={{ padding: '20px 28px', textAlign: 'left', fontFamily: "'Nunito',sans-serif", fontSize: '.85rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                  <th style={{ padding: '20px 28px', textAlign: 'left', fontFamily: "'Nunito',sans-serif", fontSize: '.85rem', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '.04em' }}>
                     {l === 'nl' ? 'Uw team alleen' : l === 'en' ? 'Your team alone' : 'Su equipo solo'}
                   </th>
-                  <th style={{ padding: '20px 28px', textAlign: 'left', fontFamily: "'Nunito',sans-serif", fontSize: '.85rem', fontWeight: 600, color: '#0F766E', textTransform: 'uppercase', letterSpacing: '.04em', background: '#F0FDFA' }}>
+                  <th style={{ padding: '20px 28px', textAlign: 'left', fontFamily: "'Nunito',sans-serif", fontSize: '.85rem', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '.04em', background: '#F0FDFA' }}>
                     {l === 'nl' ? 'Uw team + AI receptioniste' : l === 'en' ? 'Your team + AI receptionist' : 'Su equipo + recepcionista IA'}
                   </th>
                 </tr>
