@@ -152,8 +152,8 @@ export default async function LandingPage({ params }: Props) {
                 <circle cx="130" cy="130" r="110" fill="none" stroke="#0D9488" strokeWidth="16" />
                 <circle cx="130" cy="130" r="110" fill="none" stroke="#DC5858" strokeWidth="16" strokeDasharray="691.15" strokeDashoffset="186.6" strokeLinecap="round" transform="rotate(-90 130 130)" />
               </svg>
-              {/* Floating label on green arc (left middle) */}
-              <div style={{ position: 'absolute', top: '50%', left: -24, transform: 'translateY(-50%)', background: '#fff', border: '1.5px solid #0D9488', borderRadius: 10, padding: '6px 14px', fontSize: '.85rem', fontWeight: 600, color: '#0D9488', boxShadow: '0 2px 10px rgba(0,0,0,.1)', whiteSpace: 'nowrap' }}>
+              {/* Floating label on green arc (left upper) */}
+              <div style={{ position: 'absolute', top: '25%', left: -24, transform: 'translateY(-50%)', background: '#fff', border: '1.5px solid #0D9488', borderRadius: 10, padding: '6px 14px', fontSize: '.85rem', fontWeight: 600, color: '#0D9488', boxShadow: '0 2px 10px rgba(0,0,0,.1)', whiteSpace: 'nowrap' }}>
                 {l === 'nl' ? 'Ja, we zijn geopend' : l === 'en' ? 'Yes, we are open' : 'Sí, estamos abiertos'}
               </div>
               {/* Floating label on red arc (right middle) */}
