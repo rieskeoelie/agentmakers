@@ -10,9 +10,6 @@ import { TrackView } from '@/components/landing/TrackView'
 import { RevenueCalculator } from '@/components/landing/RevenueCalculator'
 import type { Metadata } from 'next'
 
-// Revalidate every 60 seconds so DB content changes show up quickly
-export const revalidate = 60
-
 interface Props {
   params: Promise<{ lang: string; industry: string }>
 }
