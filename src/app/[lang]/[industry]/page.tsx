@@ -10,6 +10,9 @@ import { TrackView } from '@/components/landing/TrackView'
 import { RevenueCalculator } from '@/components/landing/RevenueCalculator'
 import type { Metadata } from 'next'
 
+// Always fetch fresh data from DB so content changes appear immediately
+export const dynamic = 'force-dynamic'
+
 interface Props {
   params: Promise<{ lang: string; industry: string }>
 }
