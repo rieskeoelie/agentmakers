@@ -407,10 +407,10 @@ export default async function LandingPage({ params }: Props) {
             </h2>
             <p style={{ color: '#fff', fontSize: '1rem', maxWidth: 620, margin: '0 auto', lineHeight: 1.75 }}>
               {l === 'nl'
-                ? 'Per jaar bent u duizenden uren gesloten, terwijl uw potentiële klanten dan juist zoeken. Zie hoe de Voice Agent hun vragen beantwoordt en afspraken direct in uw agenda plaatst. Vul het formulier in om de demo te starten.'
+                ? 'Start een gesprek met uw toekomstige AI receptioniste. Stel vragen over een consult, een behandeling en boek een afspraak.'
                 : l === 'en'
-                ? 'Every year you are closed for thousands of hours — while your potential clients are searching. See how the Voice Agent answers their questions and books appointments directly in your calendar. Fill in the form to start the demo.'
-                : 'Cada año su negocio está cerrado miles de horas, justo cuando sus clientes potenciales buscan. Vea cómo el Voice Agent responde sus preguntas y agenda citas directamente. Complete el formulario para iniciar la demo.'}
+                ? 'Start a conversation with your future AI receptionist. Ask about a consultation, a treatment and book an appointment.'
+                : 'Inicie una conversación con su futura recepcionista IA. Haga preguntas sobre una consulta, un tratamiento y reserve una cita.'}
             </p>
           </div>
 
