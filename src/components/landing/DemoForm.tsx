@@ -49,7 +49,7 @@ function Field({ icon, children }: { icon: React.ReactNode; children: React.Reac
 }
 
 // Confetti canvas component
-function Confetti() {
+export function Confetti() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {

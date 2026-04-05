@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { DemoForm } from './DemoForm'
+import { DemoForm, Confetti } from './DemoForm'
 import { OrbColumn } from './OrbColumn'
 import { OrbPreview } from './OrbPreview'
 
@@ -40,6 +40,7 @@ export function DemoSection({ slug, lang, strings, badge, headline, sub, orbLabe
       {/* Success state — full width centered */}
       {submitted ? (
         <div style={{ textAlign: 'center', padding: '48px 24px', width: '100%' }}>
+          <Confetti />
           <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>🎉</div>
           <h3 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', marginBottom: 16, fontSize: '1.6rem', fontWeight: 700 }}>
             {strings.success}
