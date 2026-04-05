@@ -152,6 +152,14 @@ export default async function LandingPage({ params }: Props) {
                 <circle cx="130" cy="130" r="110" fill="none" stroke="#0D9488" strokeWidth="16" />
                 <circle cx="130" cy="130" r="110" fill="none" stroke="#DC5858" strokeWidth="16" strokeDasharray="691.15" strokeDashoffset="186.6" strokeLinecap="round" transform="rotate(-90 130 130)" />
               </svg>
+              {/* Floating label on green arc (top-left) */}
+              <div style={{ position: 'absolute', top: -8, left: -12, background: '#fff', border: '1.5px solid #0D9488', borderRadius: 8, padding: '4px 10px', fontSize: '.7rem', fontWeight: 600, color: '#0D9488', boxShadow: '0 2px 8px rgba(0,0,0,.08)', whiteSpace: 'nowrap' }}>
+                {l === 'nl' ? 'Ja, we zijn geopend' : l === 'en' ? 'Yes, we are open' : 'Sí, estamos abiertos'}
+              </div>
+              {/* Floating label on red arc (top-right) */}
+              <div style={{ position: 'absolute', top: -8, right: -12, background: '#fff', border: '1.5px solid #DC5858', borderRadius: 8, padding: '4px 10px', fontSize: '.7rem', fontWeight: 600, color: '#DC5858', boxShadow: '0 2px 8px rgba(0,0,0,.08)', whiteSpace: 'nowrap' }}>
+                {l === 'nl' ? 'Sorry, we zijn gesloten' : l === 'en' ? 'Sorry, we are closed' : 'Lo sentimos, estamos cerrados'}
+              </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '3.6rem', fontWeight: 700, color: '#0F172A' }}>{content.closed_percent || 73}%</div>
                 <div style={{ fontSize: '.95rem', color: '#64748B' }}>{t(l, 'percent_closed')}</div>
