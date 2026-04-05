@@ -3,9 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import { supabaseAdmin } from '@/lib/supabase'
 import { t, SUPPORTED_LANGS, LANG_LABELS, type Lang } from '@/lib/i18n'
-import { DemoForm } from '@/components/landing/DemoForm'
-import { DemoSectionHeader } from '@/components/landing/DemoSectionHeader'
-import { DemoGridWrapper } from '@/components/landing/DemoGridWrapper'
+import { DemoSection } from '@/components/landing/DemoSection'
 import { TrackView } from '@/components/landing/TrackView'
 import { RevenueCalculator } from '@/components/landing/RevenueCalculator'
 import type { Metadata } from 'next'
@@ -393,9 +391,9 @@ export default async function LandingPage({ params }: Props) {
         </div>
 
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
-
-          {/* Section header — hides after form submit */}
-          <DemoSectionHeader
+          <DemoSection
+            slug={industry}
+            lang={l}
             badge={l === 'nl' ? 'Gratis demo' : l === 'en' ? 'Free demo' : 'Demo gratuita'}
             headline={l === 'nl' ? 'Zie de Voice Agent in actie' : l === 'en' ? 'See the Voice Agent in action' : 'Vea el Voice Agent en acción'}
             sub={l === 'nl'
@@ -403,12 +401,6 @@ export default async function LandingPage({ params }: Props) {
               : l === 'en'
               ? 'Start a conversation with your future AI receptionist. Ask about a consultation, a treatment and book an appointment. (Note: this demo runs on information from your website. The LIVE agent is trained on complete data)'
               : 'Inicie una conversación con su futura recepcionista IA. Haga preguntas sobre una consulta, un tratamiento y reserve una cita. (Nota: esta demo funciona con información de su sitio web. El agente LIVE se entrena con datos completos)'}
-          />
-
-          {/* Two-column: form + orb — collapses to centered success on submit */}
-          <DemoGridWrapper
-            slug={industry}
-            lang={l}
             orbLabel={l === 'nl' ? 'Vul snel het formulier in en beluister de AI voice agent in actie.' : l === 'en' ? 'Fill in the form and listen to the AI voice agent in action.' : 'Complete el formulario y escuche al agente de voz de IA en acción.'}
             strings={{
               cta_headline: '',
@@ -434,9 +426,7 @@ export default async function LandingPage({ params }: Props) {
             50% { opacity: 0.4; transform: scale(0.7); }
           }
           @media (max-width: 720px) {
-            .demo-section-grid {
-              grid-template-columns: 1fr !important;
-            }
+            .demo-section-grid { grid-template-columns: 1fr !important; }
             .demo-section-form { order: 1 !important; }
             .demo-section-orb { order: 2 !important; }
           }

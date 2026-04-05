@@ -7,6 +7,7 @@ interface Props {
   lang: Lang
   strings: Record<string, string>
   suppressSuccess?: boolean
+  onSuccess?: () => void
 }
 
 
@@ -108,7 +109,7 @@ function Confetti() {
   )
 }
 
-export function DemoForm({ slug, lang, strings, suppressSuccess }: Props) {
+export function DemoForm({ slug, lang, strings, suppressSuccess, onSuccess }: Props) {
   const [state, setState] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [form, setForm] = useState({ naam: '', email: '', telefoon: '', website: 'https://', bedrijfsnaam: '' })
 
@@ -128,6 +129,7 @@ export function DemoForm({ slug, lang, strings, suppressSuccess }: Props) {
       if (!res.ok) throw new Error('Failed')
       setState('success')
       window.dispatchEvent(new CustomEvent('form:success'))
+      onSuccess?.()
     } catch {
       setState('error')
       setTimeout(() => setState('idle'), 3000)
