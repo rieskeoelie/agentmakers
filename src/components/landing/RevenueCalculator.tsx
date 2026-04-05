@@ -18,7 +18,7 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
   const l = {
     nl: {
       label: 'DE IMPACT',
-      title: 'Hoeveel omzet loopt u mis?',
+      title: 'Zie de omzet die u misloopt',
       callsLabel: 'Gemiste boekingen / week',
       valueLabel: 'Gem. orderwaarde',
       perYear: 'gemiste omzet per jaar',
