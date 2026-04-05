@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { supabaseAdmin } from '@/lib/supabase'
 import { t, SUPPORTED_LANGS, LANG_LABELS, type Lang } from '@/lib/i18n'
 import { DemoForm } from '@/components/landing/DemoForm'
+import { DemoSectionHeader } from '@/components/landing/DemoSectionHeader'
 import { OrbPreview } from '@/components/landing/OrbPreview'
 import { OrbColumn } from '@/components/landing/OrbColumn'
 import { TrackView } from '@/components/landing/TrackView'
@@ -394,25 +395,16 @@ export default async function LandingPage({ params }: Props) {
 
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
 
-          {/* Section header */}
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(45,212,191,0.1)', border: '1px solid rgba(45,212,191,0.2)', borderRadius: 100, padding: '6px 16px', marginBottom: 20 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2DD4BF', display: 'inline-block', animation: 'dotPulseLP 2s ease-in-out infinite' }} />
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#2DD4BF' }}>
-                {l === 'nl' ? 'Gratis demo' : l === 'en' ? 'Free demo' : 'Demo gratuita'}
-              </span>
-            </div>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)', lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 20, maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}>
-              {l === 'nl' ? 'Zie de Voice Agent in actie' : l === 'en' ? 'See the Voice Agent in action' : 'Vea el Voice Agent en acción'}
-            </h2>
-            <p style={{ color: '#fff', fontSize: '1rem', maxWidth: 620, margin: '0 auto', lineHeight: 1.75 }}>
-              {l === 'nl'
-                ? 'Start een gesprek met uw toekomstige AI receptioniste. Stel vragen over een consult, een behandeling en boek een afspraak. (Let op: deze demo werkt op informatie van uw website. De LIVE agent wordt getraind op volledige data)'
-                : l === 'en'
-                ? 'Start a conversation with your future AI receptionist. Ask about a consultation, a treatment and book an appointment. (Note: this demo runs on information from your website. The LIVE agent is trained on complete data)'
-                : 'Inicie una conversación con su futura recepcionista IA. Haga preguntas sobre una consulta, un tratamiento y reserve una cita. (Nota: esta demo funciona con información de su sitio web. El agente LIVE se entrena con datos completos)'}
-            </p>
-          </div>
+          {/* Section header — hides after form submit */}
+          <DemoSectionHeader
+            badge={l === 'nl' ? 'Gratis demo' : l === 'en' ? 'Free demo' : 'Demo gratuita'}
+            headline={l === 'nl' ? 'Zie de Voice Agent in actie' : l === 'en' ? 'See the Voice Agent in action' : 'Vea el Voice Agent en acción'}
+            sub={l === 'nl'
+              ? 'Start een gesprek met uw toekomstige AI receptioniste. Stel vragen over een consult, een behandeling en boek een afspraak. (Let op: deze demo werkt op informatie van uw website. De LIVE agent wordt getraind op volledige data)'
+              : l === 'en'
+              ? 'Start a conversation with your future AI receptionist. Ask about a consultation, a treatment and book an appointment. (Note: this demo runs on information from your website. The LIVE agent is trained on complete data)'
+              : 'Inicie una conversación con su futura recepcionista IA. Haga preguntas sobre una consulta, un tratamiento y reserve una cita. (Nota: esta demo funciona con información de su sitio web. El agente LIVE se entrena con datos completos)'}
+          />
 
           {/* Two-column: form + orb */}
           <div className="demo-section-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center', maxWidth: 960, margin: '0 auto' }}>

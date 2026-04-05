@@ -25,7 +25,7 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
     form_company: 'Bedrijfsnaam',
     form_submit: 'Boek mijn demo',
     form_sending: 'Verzenden...',
-    form_success: 'Geweldig, je demo wordt nu voorbereid.',
+    form_success: 'Geweldig, uw demo wordt nu voorbereid.',
     form_success_sub: 'Check snel uw email en klik op de link om de demo te starten.',
     form_error: 'Fout — probeer opnieuw',
     form_diensten_label: 'Waarvoor wilt u een demo? (Kies er minimaal 1)',

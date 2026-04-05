@@ -150,7 +150,7 @@ export function DemoForm({ slug, lang, strings }: Props) {
     return (
       <>
         <Confetti />
-        <div style={{ textAlign: 'center', padding: '16px 0' }}>
+        <div style={{ textAlign: 'center', padding: '48px 24px', maxWidth: 520, margin: '0 auto' }}>
           <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>🎉</div>
           <h3 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', marginBottom: 16, fontSize: '1.6rem', fontWeight: 700 }}>
             {strings.success}
