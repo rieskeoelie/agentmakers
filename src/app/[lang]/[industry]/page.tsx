@@ -197,8 +197,8 @@ export default async function LandingPage({ params }: Props) {
                   {i === 4 && <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>}
                   {i === 5 && <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
                 </div>
-                <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.05rem', fontWeight: 600, marginBottom: 8, color: '#0F172A' }}>{f.title}</h3>
-                <p style={{ fontSize: '.9rem', color: '#64748B' }}>{f.body}</p>
+                <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.08rem', fontWeight: 600, marginBottom: 8, color: '#0F172A' }}>{f.title}</h3>
+                <p style={{ fontSize: '1rem', color: '#64748B', lineHeight: 1.6 }}>{f.body}</p>
               </div>
             ))}
           </div>
@@ -255,8 +255,8 @@ export default async function LandingPage({ params }: Props) {
                     <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
                 <div>
-                  <h4 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '.95rem', fontWeight: 600, color: '#0F172A' }}>{uc.title}</h4>
-                  <p style={{ fontSize: '.85rem', color: '#64748B', marginTop: 4 }}>{uc.body}</p>
+                  <h4 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.05rem', fontWeight: 600, color: '#0F172A' }}>{uc.title}</h4>
+                  <p style={{ fontSize: '1rem', color: '#64748B', marginTop: 4, lineHeight: 1.6 }}>{uc.body}</p>
                 </div>
               </div>
             ))}
@@ -292,8 +292,8 @@ export default async function LandingPage({ params }: Props) {
               const title = step.title; const desc = step.body; return (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#0D9488', color: '#fff', fontWeight: 700, fontSize: '1.3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>{i + 1}</div>
-                <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.05rem', fontWeight: 600, marginBottom: 8 }}>{title}</h3>
-                <p style={{ fontSize: '.9rem', color: '#64748B', maxWidth: 280, margin: '0 auto' }}>{desc}</p>
+                <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.08rem', fontWeight: 600, marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontSize: '1rem', color: '#64748B', maxWidth: 300, margin: '0 auto', lineHeight: 1.6 }}>{desc}</p>
               </div>
             )})}
           </div>
