@@ -40,10 +40,16 @@ interface ConversationDetail {
   }
 }
 
-function parseCompanyName(detail: ConversationDetail): string {
+function parseBusinessInfo(detail: ConversationDetail): { company: string; contact: string; website: string } {
   const biz = detail.conversation_initiation_client_data?.dynamic_variables?.business_info ?? ''
-  const m = biz.match(/Bedrijfsnaam:\s*(.+)/i)
-  return m ? m[1].trim() : ''
+  const cMatch = biz.match(/Bedrijfsnaam:\s*(.+)/i)
+  const nMatch = biz.match(/Contactpersoon:\s*(.+)/i)
+  const wMatch = biz.match(/Website:\s*(.+)/i)
+  return {
+    company: cMatch ? cMatch[1].trim() : '',
+    contact: nMatch ? nMatch[1].trim() : '',
+    website: wMatch ? wMatch[1].trim() : '',
+  }
 }
 
 function fmtDuration(secs: number): string {
@@ -109,7 +115,25 @@ export default function AdminDashboard() {
     const res = await fetch('/api/conversations', { headers: { 'x-admin-key': k } })
     if (res.ok) {
       const data = await res.json()
-      setConversations(data.conversations ?? [])
+      const convs: Conversation[] = data.conversations ?? []
+      setConversations(convs)
+      // Auto-fetch details for all conversations (parallel, max 5 at a time)
+      const batchSize = 5
+      for (let i = 0; i < convs.length; i += batchSize) {
+        const batch = convs.slice(i, i + batchSize)
+        const results = await Promise.all(
+          batch.map(c =>
+            fetch(`/api/conversations/${c.conversation_id}`, { headers: { 'x-admin-key': k } })
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
+          )
+        )
+        setConvDetails(prev => {
+          const next = { ...prev }
+          results.forEach((d, idx) => { if (d) next[batch[idx].conversation_id] = d })
+          return next
+        })
+      }
     }
     setConvLoading(false)
   }, [])
@@ -589,7 +613,7 @@ export default function AdminDashboard() {
                 const isOpen = openConvId === conv.conversation_id
                 const detail = convDetails[conv.conversation_id]
                 const startDate = new Date(conv.start_time_unix_secs * 1000)
-                const company = detail ? parseCompanyName(detail) : ''
+                const info = detail ? parseBusinessInfo(detail) : null
                 const statusColor = conv.status === 'done' ? '#166534' : conv.status === 'failed' ? '#991B1B' : '#92400E'
                 const statusBg   = conv.status === 'done' ? '#DCFCE7' : conv.status === 'failed' ? '#FEE2E2'  : '#FEF3C7'
 
@@ -617,9 +641,24 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      {/* Company name if loaded */}
-                      <div style={{ flex: 1, fontSize: '.88rem', color: company ? '#0F172A' : '#CBD5E1', fontWeight: company ? 600 : 400 }}>
-                        {company || conv.conversation_id.slice(0, 16) + '…'}
+                      {/* Contact & company info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {info && (info.contact || info.company) ? (
+                          <>
+                            <div style={{ fontWeight: 600, fontSize: '.88rem', color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {info.contact || info.company}
+                            </div>
+                            {info.contact && info.company && (
+                              <div style={{ fontSize: '.76rem', color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {info.company}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div style={{ fontSize: '.85rem', color: '#CBD5E1' }}>
+                            {detail ? 'Onbekend' : 'Laden…'}
+                          </div>
+                        )}
                       </div>
 
                       {/* Duration */}
