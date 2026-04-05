@@ -16,10 +16,8 @@ interface Lead {
 interface Conversation {
   conversation_id: string
   status: string
-  metadata: {
-    start_time_unix_secs: number
-    call_duration_secs: number
-  }
+  start_time_unix_secs: number
+  call_duration_secs: number
   has_audio: boolean
   has_user_audio: boolean
   has_response_audio: boolean
@@ -32,7 +30,9 @@ interface TranscriptTurn {
 interface ConversationDetail {
   conversation_id: string
   status: string
-  metadata: { start_time_unix_secs: number; call_duration_secs: number; cost?: number }
+  start_time_unix_secs: number
+  call_duration_secs: number
+  cost?: number
   has_audio: boolean
   transcript: TranscriptTurn[]
   conversation_initiation_client_data?: {
@@ -540,7 +540,7 @@ export default function AdminDashboard() {
               {conversations.map(conv => {
                 const isOpen = openConvId === conv.conversation_id
                 const detail = convDetails[conv.conversation_id]
-                const startDate = new Date(conv.metadata.start_time_unix_secs * 1000)
+                const startDate = new Date(conv.start_time_unix_secs * 1000)
                 const company = detail ? parseCompanyName(detail) : ''
                 const statusColor = conv.status === 'done' ? '#166534' : conv.status === 'failed' ? '#991B1B' : '#92400E'
                 const statusBg   = conv.status === 'done' ? '#DCFCE7' : conv.status === 'failed' ? '#FEE2E2'  : '#FEF3C7'
@@ -576,7 +576,7 @@ export default function AdminDashboard() {
 
                       {/* Duration */}
                       <div style={{ fontSize: '.82rem', color: '#64748B', minWidth: 60, textAlign: 'right' }}>
-                        {fmtDuration(conv.metadata.call_duration_secs)}
+                        {fmtDuration(conv.call_duration_secs)}
                       </div>
 
                       {/* Status */}
@@ -615,8 +615,8 @@ export default function AdminDashboard() {
                                   Uw browser ondersteunt geen audio element.
                                 </audio>
                                 <div style={{ fontSize: '.72rem', color: '#94A3B8', marginTop: 6 }}>
-                                  Duur: {fmtDuration(detail.metadata.call_duration_secs)}
-                                  {detail.metadata.cost != null && ` · Kosten: $${detail.metadata.cost.toFixed(4)}`}
+                                  Duur: {fmtDuration(detail.call_duration_secs)}
+                                  {detail.cost != null && ` · Kosten: $${detail.cost.toFixed(4)}`}
                                 </div>
                               </div>
                             )}
