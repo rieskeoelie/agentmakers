@@ -229,13 +229,13 @@ export default async function LandingPage({ params }: Props) {
           </div>
           <div className="grid-3col">
             {(content.agents || []).map((agent: { title: string; body: string; tag: string; channel?: string }, i: number) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', padding: '32px 28px', borderRadius: 14 }}>
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(13,148,136,.2)', color: '#CCFBF1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+              <div key={i} style={{ background: 'linear-gradient(135deg, rgba(13,148,136,.18) 0%, rgba(15,23,42,.6) 100%)', border: '1px solid rgba(13,148,136,.25)', padding: '32px 28px', borderRadius: 16, backdropFilter: 'blur(8px)' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg, #0D9488, #0F766E)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, boxShadow: '0 4px 16px rgba(13,148,136,.35)' }}>
                   {AGENT_ICONS[agent.channel || ''] || AGENT_ICONS['phone-in']}
                 </div>
                 <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.05rem', fontWeight: 700, color: '#fff', marginBottom: 8 }}>{agent.title}</h3>
-                <p style={{ fontSize: '.88rem', color: '#CBD5E1', lineHeight: 1.6 }}>{agent.body}</p>
-                <span style={{ display: 'inline-block', marginTop: 14, padding: '4px 12px', background: 'rgba(13,148,136,.15)', color: '#CCFBF1', borderRadius: 6, fontSize: '.75rem', fontWeight: 600 }}>{agent.tag}</span>
+                <p style={{ fontSize: '.9rem', color: '#94A3B8', lineHeight: 1.65 }}>{agent.body}</p>
+                <span style={{ display: 'inline-block', marginTop: 16, padding: '5px 14px', background: 'rgba(13,148,136,.2)', color: '#5EEAD4', borderRadius: 20, fontSize: '.75rem', fontWeight: 700, letterSpacing: '.03em', border: '1px solid rgba(13,148,136,.3)' }}>{agent.tag}</span>
               </div>
             ))}
           </div>
