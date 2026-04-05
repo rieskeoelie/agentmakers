@@ -71,6 +71,9 @@ export default function AdminDashboard() {
   const [seenLeadIds, setSeenLeadIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
+  // leads selection & delete state
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set())
+  const [deleteLeadsLoading, setDeleteLeadsLoading] = useState(false)
   // conversations state
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [convLoading, setConvLoading] = useState(false)
@@ -196,6 +199,38 @@ export default function AdminDashboard() {
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
+  }
+
+  const toggleSelectLead = (id: string) => {
+    setSelectedLeads(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+  const toggleSelectAll = () => {
+    if (selectedLeads.size === leads.length) {
+      setSelectedLeads(new Set())
+    } else {
+      setSelectedLeads(new Set(leads.map(l => l.id)))
+    }
+  }
+  const deleteSelectedLeads = async () => {
+    if (selectedLeads.size === 0) return
+    if (!confirm(`Weet je zeker dat je ${selectedLeads.size} aanvra${selectedLeads.size === 1 ? 'ag' : 'gen'} wilt verwijderen? Dit kan niet ongedaan worden.`)) return
+    setDeleteLeadsLoading(true)
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'DELETE',
+        headers: { 'x-admin-key': savedKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedLeads) }),
+      })
+      if (res.ok) {
+        setLeads(prev => prev.filter(l => !selectedLeads.has(l.id)))
+        setSelectedLeads(new Set())
+      }
+    } catch (e) { console.error('Delete failed', e) }
+    setDeleteLeadsLoading(false)
   }
 
   const exportCSV = () => {
@@ -346,14 +381,24 @@ export default function AdminDashboard() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Demo-aanvragen ({leads.length})</h2>
-              <button onClick={exportCSV} style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                ⬇ Exporteer CSV
-              </button>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {selectedLeads.size > 0 && (
+                  <button onClick={deleteSelectedLeads} disabled={deleteLeadsLoading} style={{ background: '#FEF2F2', border: '1.5px solid #EF4444', color: '#DC2626', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: deleteLeadsLoading ? 0.5 : 1 }}>
+                    🗑 Verwijder ({selectedLeads.size})
+                  </button>
+                )}
+                <button onClick={exportCSV} style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                  ⬇ Exporteer CSV
+                </button>
+              </div>
             </div>
             <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #F1F5F9' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: '#F1F5F9' }}>
+                    <th style={{ padding: '14px 16px', width: 40 }}>
+                      <input type="checkbox" checked={leads.length > 0 && selectedLeads.size === leads.length} onChange={toggleSelectAll} style={{ cursor: 'pointer', width: 16, height: 16 }} />
+                    </th>
                     {['', 'Naam', 'E-mail', 'Telefoon', 'Bedrijf', 'Pagina', 'Taal', 'Datum', 'Status'].map(h => (
                       <th key={h} style={{ padding: '14px 16px', textAlign: 'left', fontSize: '.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em' }}>{h}</th>
                     ))}
@@ -364,7 +409,10 @@ export default function AdminDashboard() {
                     const isNew = !seenLeadIds.has(lead.id)
                     const isHandled = handledLeads.has(lead.id)
                     return (
-                      <tr key={lead.id} style={{ borderTop: '1px solid #F1F5F9', background: isNew ? '#F0FDF4' : i % 2 === 0 ? '#fff' : '#FAFAFA', opacity: isHandled ? 0.55 : 1, transition: 'opacity .2s' }}>
+                      <tr key={lead.id} style={{ borderTop: '1px solid #F1F5F9', background: selectedLeads.has(lead.id) ? '#EFF6FF' : isNew ? '#F0FDF4' : i % 2 === 0 ? '#fff' : '#FAFAFA', opacity: isHandled ? 0.55 : 1, transition: 'opacity .2s, background .15s' }}>
+                        <td style={{ padding: '14px 16px' }}>
+                          <input type="checkbox" checked={selectedLeads.has(lead.id)} onChange={() => toggleSelectLead(lead.id)} style={{ cursor: 'pointer', width: 16, height: 16 }} />
+                        </td>
                         <td style={{ padding: '14px 16px' }}>
                           {isNew && <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#22C55E', marginRight: 4 }} title="Nieuw" />}
                         </td>
@@ -384,7 +432,7 @@ export default function AdminDashboard() {
                     )
                   })}
                   {leads.length === 0 && (
-                    <tr><td colSpan={9} style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>Nog geen aanvragen ontvangen.</td></tr>
+                    <tr><td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>Nog geen aanvragen ontvangen.</td></tr>
                   )}
                 </tbody>
               </table>
