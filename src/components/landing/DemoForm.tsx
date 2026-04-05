@@ -187,10 +187,31 @@ export function DemoForm({ slug, lang, strings }: Props) {
           <input required type="tel" name="telefoon" value={form.telefoon} onChange={handleChange} placeholder={strings.phone} style={inputStyle} />
         </Field>
         <Field icon={<IconGlobe />}>
-          <input type="url" name="website" value={form.website} onChange={handleChange} placeholder={strings.website} style={inputStyle} />
+          <input
+            required
+            type="url"
+            name="website"
+            value={form.website}
+            onChange={handleChange}
+            placeholder={strings.website}
+            style={inputStyle}
+            onInvalid={e => {
+              const el = e.target as HTMLInputElement
+              if (!el.value || el.value === 'https://') {
+                el.setCustomValidity(lang === 'en'
+                  ? 'The AI agent reads your website for the demo. That is why this field is required.'
+                  : lang === 'es'
+                  ? 'El agente IA lee su sitio web para la demo. Por eso este campo es obligatorio.'
+                  : 'De AI agent leest uw website voor de demo. Daarom is dit veld verplicht.')
+              } else {
+                el.setCustomValidity('')
+              }
+            }}
+            onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+          />
         </Field>
         <Field icon={<IconBuilding />}>
-          <input name="bedrijfsnaam" value={form.bedrijfsnaam} onChange={handleChange} placeholder={strings.company} style={inputStyle} />
+          <input required name="bedrijfsnaam" value={form.bedrijfsnaam} onChange={handleChange} placeholder={strings.company} style={inputStyle} />
         </Field>
 
         <button
