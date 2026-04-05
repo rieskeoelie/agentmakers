@@ -407,10 +407,10 @@ export default async function LandingPage({ params }: Props) {
             </h2>
             <p style={{ color: '#fff', fontSize: '1rem', maxWidth: 620, margin: '0 auto', lineHeight: 1.75 }}>
               {l === 'nl'
-                ? 'Start een gesprek met uw toekomstige AI receptioniste. Stel vragen over een consult, een behandeling en boek een afspraak.'
+                ? 'Start een gesprek met uw toekomstige AI receptioniste. Stel vragen over een consult, een behandeling en boek een afspraak. (Let op: deze demo werkt op informatie van uw website. De LIVE agent wordt getraind op volledige data)'
                 : l === 'en'
-                ? 'Start a conversation with your future AI receptionist. Ask about a consultation, a treatment and book an appointment.'
-                : 'Inicie una conversación con su futura recepcionista IA. Haga preguntas sobre una consulta, un tratamiento y reserve una cita.'}
+                ? 'Start a conversation with your future AI receptionist. Ask about a consultation, a treatment and book an appointment. (Note: this demo runs on information from your website. The LIVE agent is trained on complete data)'
+                : 'Inicie una conversación con su futura recepcionista IA. Haga preguntas sobre una consulta, un tratamiento y reserve una cita. (Nota: esta demo funciona con información de su sitio web. El agente LIVE se entrena con datos completos)'}
             </p>
           </div>
 
