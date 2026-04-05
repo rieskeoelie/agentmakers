@@ -321,7 +321,7 @@ export default async function LandingPage({ params }: Props) {
               {l === 'nl' ? 'Vergelijking' : l === 'en' ? 'Comparison' : 'Comparación'}
             </div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)' }}>
-              {l === 'nl' ? 'Traditioneel vs. agentmakers.io Receptioniste' : l === 'en' ? 'Traditional vs. agentmakers.io Receptionist' : 'Tradicional vs. Recepcionista agentmakers.io'}
+              {l === 'nl' ? 'Zo wint u met de inzet van AI.' : l === 'en' ? 'This is how you win with AI.' : 'Así gana usted con la IA.'}
             </h2>
           </div>
           <div style={{ overflowX: 'auto', borderRadius: 16 }}>
@@ -340,7 +340,6 @@ export default async function LandingPage({ params }: Props) {
               <tbody>
                 {[
                   [l === 'nl' ? 'Beschikbaarheid' : l === 'en' ? 'Availability' : 'Disponibilidad', l === 'nl' ? 'Ma–vr, 9:00–18:00' : l === 'en' ? 'Mon–Fri, 9am–6pm' : 'Lun–Vie, 9:00–18:00', '24/7/365'],
-                  [l === 'nl' ? 'Kosten per maand' : l === 'en' ? 'Monthly costs' : 'Costos mensuales', '€2.500 – €4.000+', l === 'nl' ? 'Vanaf €299' : l === 'en' ? 'From €299' : 'Desde €299'],
                   [l === 'nl' ? 'Schaalbaarheid' : l === 'en' ? 'Scalability' : 'Escalabilidad', l === 'nl' ? 'Beperkt (1 lijn tegelijk)' : l === 'en' ? 'Limited (1 line at a time)' : 'Limitada (1 línea a la vez)', l === 'nl' ? 'Onbeperkt gelijktijdige oproepen' : l === 'en' ? 'Unlimited simultaneous calls' : 'Llamadas simultáneas ilimitadas'],
                   [l === 'nl' ? 'Taalondersteuning' : l === 'en' ? 'Language support' : 'Idiomas', '1–2 talen', '10+ talen'],
                   [l === 'nl' ? 'Ziekteverzuim' : l === 'en' ? 'Sick leave' : 'Bajas por enfermedad', l === 'nl' ? 'Vervanging nodig' : l === 'en' ? 'Replacement needed' : 'Necesita reemplazo', l === 'nl' ? 'Altijd beschikbaar' : l === 'en' ? 'Always available' : 'Siempre disponible'],
