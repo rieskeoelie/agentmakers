@@ -5,12 +5,17 @@ export const metadata: Metadata = {
   title: 'Algemene Voorwaarden – Agentmakers.io',
 }
 
-const sub: CSSProperties = { fontFamily: "'Poppins', sans-serif", color: '#0F172A', fontSize: '1rem', fontWeight: 600, marginBottom: 8, marginTop: 20 }
-const highlight: CSSProperties = { background: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: 10, padding: '14px 20px', color: '#0F766E', fontWeight: 700, fontSize: '.95rem', marginTop: 16 }
-const warning: CSSProperties = { background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 10, padding: '14px 20px', color: '#C2410C', fontWeight: 700, fontSize: '.95rem', marginTop: 16 }
-const lnk: CSSProperties = { color: '#0D9488' }
+export default async function VoorwaardenLangPage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params
+  const l: 'nl' | 'en' | 'es' = (lang === 'en' || lang === 'es') ? lang : 'nl'
 
-const data = {
+  // Styles defined inside component to avoid any module-level evaluation ordering issues
+  const sub: CSSProperties = { fontFamily: "'Poppins', sans-serif", color: '#0F172A', fontSize: '1rem', fontWeight: 600, marginBottom: 8, marginTop: 20 }
+  const hl: CSSProperties = { background: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: 10, padding: '14px 20px', color: '#0F766E', fontWeight: 700, fontSize: '.95rem', marginTop: 16 }
+  const warn: CSSProperties = { background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 10, padding: '14px 20px', color: '#C2410C', fontWeight: 700, fontSize: '.95rem', marginTop: 16 }
+  const lnk: CSSProperties = { color: '#0D9488' }
+
+  const data = {
   nl: {
     back: '← Terug naar agentmakers.io',
     label: 'Algemene Voorwaarden',
@@ -35,7 +40,7 @@ const data = {
           <li>bevestigt u dat u bevoegd bent om namens uw organisatie te handelen</li>
           <li>ontstaat een juridisch bindende overeenkomst</li>
         </ul>
-        <div style={warning}>Indien u niet akkoord gaat met deze voorwaarden: maak geen gebruik van onze diensten.</div>
+        <div style={warn}>Indien u niet akkoord gaat met deze voorwaarden: maak geen gebruik van onze diensten.</div>
       </> },
       { num: '3', title: 'Scope van de dienst', body: <>
         <p>Agentmakers.io levert:</p>
@@ -44,7 +49,7 @@ const data = {
           <li>Automatisering en integraties</li>
           <li>Data-verwerking en AI-output</li>
         </ul>
-        <div style={highlight}>Wij verlenen toegang tot software — geen gegarandeerd resultaat. Onze diensten betreffen een inspanningsverplichting, geen resultaatsverplichting.</div>
+        <div style={hl}>Wij verlenen toegang tot software — geen gegarandeerd resultaat. Onze diensten betreffen een inspanningsverplichting, geen resultaatsverplichting.</div>
       </> },
       { num: '4', title: 'Licentie', body: <>
         <p>Wij verlenen u een niet-exclusieve, niet-overdraagbare en herroepbare licentie voor gebruik van onze diensten binnen uw eigen organisatie.</p>
@@ -86,7 +91,7 @@ const data = {
           <li>Discriminerende of schadelijke content</li>
           <li>Automatisering van fraude of oplichting</li>
         </ul>
-        <div style={warning}>Bij overtreding van deze bepalingen behouden wij ons het recht voor de dienst per direct te beëindigen zonder restitutie.</div>
+        <div style={warn}>Bij overtreding van deze bepalingen behouden wij ons het recht voor de dienst per direct te beëindigen zonder restitutie.</div>
       </> },
       { num: '7', title: 'Betaling en abonnementen', body: <>
         <ul>
@@ -114,7 +119,7 @@ const data = {
       </> },
       { num: '10', title: 'Data en privacy', body: <>
         <p>Wij verwerken data conform de AVG/GDPR en onze <a href="/nl/privacy" style={lnk}>Privacy Policy</a>.</p>
-        <div style={highlight}>Voor zakelijke klanten is een Data Processing Agreement (DPA) vereist.</div>
+        <div style={hl}>Voor zakelijke klanten is een Data Processing Agreement (DPA) vereist.</div>
       </> },
       { num: '11', title: 'Diensten van derden', body: <>
         <p>Wij maken gebruik van externe diensten zoals AI providers, cloud infrastructuur en externe tools. Wij zijn niet aansprakelijk voor:</p>
@@ -132,7 +137,7 @@ const data = {
           <li>Verlies van data</li>
           <li>Schade als gevolg van AI output</li>
         </ul>
-        <div style={highlight}>Onze maximale aansprakelijkheid is beperkt tot het bedrag dat de klant in de afgelopen 12 maanden heeft betaald.</div>
+        <div style={hl}>Onze maximale aansprakelijkheid is beperkt tot het bedrag dat de klant in de afgelopen 12 maanden heeft betaald.</div>
       </> },
       { num: '13', title: 'Vrijwaring', body: <>
         <p>De klant vrijwaart Agentmakers.io voor alle claims van derden die voortvloeien uit:</p>
@@ -159,7 +164,7 @@ const data = {
         </ul>
       </> },
       { num: '16', title: 'Disclaimer', body: <>
-        <div style={warning}>Onze diensten worden geleverd "AS IS", zonder enige garantie — uitdrukkelijk noch impliciet. Dit omvat geen garantie op resultaat en geen garantie op foutloze werking.</div>
+        <div style={warn}>Onze diensten worden geleverd "AS IS", zonder enige garantie — uitdrukkelijk noch impliciet. Dit omvat geen garantie op resultaat en geen garantie op foutloze werking.</div>
       </> },
       { num: '17', title: 'Toepasselijk recht', body: <>
         <p>Deze overeenkomst valt onder Nederlands recht. Geschillen worden voorgelegd aan de bevoegde rechter te [plaats invullen].</p>
@@ -173,7 +178,7 @@ const data = {
         </ul>
       </> },
       { num: '19', title: 'Volledige overeenkomst', body: <>
-        <div style={highlight}>Deze voorwaarden vormen samen met onze <a href="/nl/privacy" style={lnk}>Privacy Policy</a> de volledige overeenkomst tussen u en Agentmakers.io.</div>
+        <div style={hl}>Deze voorwaarden vormen samen met onze <a href="/nl/privacy" style={lnk}>Privacy Policy</a> de volledige overeenkomst tussen u en Agentmakers.io.</div>
         <p style={{ marginTop: 16 }}>Voor vragen: <a href="mailto:info@agentmakers.io" style={lnk}>info@agentmakers.io</a></p>
       </> },
     ],
@@ -202,7 +207,7 @@ const data = {
           <li>confirm that you are authorised to act on behalf of your organisation</li>
           <li>enter into a legally binding agreement</li>
         </ul>
-        <div style={warning}>If you do not agree with these terms, do not use our services.</div>
+        <div style={warn}>If you do not agree with these terms, do not use our services.</div>
       </> },
       { num: '3', title: 'Scope of Service', body: <>
         <p>Agentmakers.io provides:</p>
@@ -211,7 +216,7 @@ const data = {
           <li>Automation and integrations</li>
           <li>Data processing and AI output</li>
         </ul>
-        <div style={highlight}>We provide access to software — not a guaranteed result. Our services constitute a best-efforts obligation, not a results obligation.</div>
+        <div style={hl}>We provide access to software — not a guaranteed result. Our services constitute a best-efforts obligation, not a results obligation.</div>
       </> },
       { num: '4', title: 'Licence', body: <>
         <p>We grant you a non-exclusive, non-transferable and revocable licence to use our services within your own organisation.</p>
@@ -253,7 +258,7 @@ const data = {
           <li>Discriminatory or harmful content</li>
           <li>Automation of fraud or scams</li>
         </ul>
-        <div style={warning}>In case of violation, we reserve the right to terminate the service immediately without refund.</div>
+        <div style={warn}>In case of violation, we reserve the right to terminate the service immediately without refund.</div>
       </> },
       { num: '7', title: 'Payment and Subscriptions', body: <>
         <ul>
@@ -281,7 +286,7 @@ const data = {
       </> },
       { num: '10', title: 'Data and Privacy', body: <>
         <p>We process data in accordance with the GDPR and our <a href="/en/privacy" style={lnk}>Privacy Policy</a>.</p>
-        <div style={highlight}>For business customers, a Data Processing Agreement (DPA) is required.</div>
+        <div style={hl}>For business customers, a Data Processing Agreement (DPA) is required.</div>
       </> },
       { num: '11', title: 'Third-party Services', body: <>
         <p>We use external services such as AI providers, cloud infrastructure and external tools. We are not liable for:</p>
@@ -299,7 +304,7 @@ const data = {
           <li>Loss of data</li>
           <li>Damages resulting from AI output</li>
         </ul>
-        <div style={highlight}>Our maximum liability is limited to the amount the customer has paid in the past 12 months.</div>
+        <div style={hl}>Our maximum liability is limited to the amount the customer has paid in the past 12 months.</div>
       </> },
       { num: '13', title: 'Indemnification', body: <>
         <p>The customer indemnifies Agentmakers.io against all third-party claims arising from:</p>
@@ -326,7 +331,7 @@ const data = {
         </ul>
       </> },
       { num: '16', title: 'Disclaimer', body: <>
-        <div style={warning}>Our services are provided "AS IS", without any warranty — express or implied. This includes no guarantee of results and no guarantee of error-free operation.</div>
+        <div style={warn}>Our services are provided "AS IS", without any warranty — express or implied. This includes no guarantee of results and no guarantee of error-free operation.</div>
       </> },
       { num: '17', title: 'Governing Law', body: <>
         <p>This agreement is governed by Dutch law. Disputes shall be submitted to the competent court in [place to be filled in].</p>
@@ -340,7 +345,7 @@ const data = {
         </ul>
       </> },
       { num: '19', title: 'Entire Agreement', body: <>
-        <div style={highlight}>These terms, together with our <a href="/en/privacy" style={lnk}>Privacy Policy</a>, constitute the entire agreement between you and Agentmakers.io.</div>
+        <div style={hl}>These terms, together with our <a href="/en/privacy" style={lnk}>Privacy Policy</a>, constitute the entire agreement between you and Agentmakers.io.</div>
         <p style={{ marginTop: 16 }}>Questions: <a href="mailto:info@agentmakers.io" style={lnk}>info@agentmakers.io</a></p>
       </> },
     ],
@@ -369,7 +374,7 @@ const data = {
           <li>confirma que está autorizado para actuar en nombre de su organización</li>
           <li>celebra un acuerdo jurídicamente vinculante</li>
         </ul>
-        <div style={warning}>Si no está de acuerdo con estos términos, no utilice nuestros servicios.</div>
+        <div style={warn}>Si no está de acuerdo con estos términos, no utilice nuestros servicios.</div>
       </> },
       { num: '3', title: 'Alcance del servicio', body: <>
         <p>Agentmakers.io proporciona:</p>
@@ -378,7 +383,7 @@ const data = {
           <li>Automatización e integraciones</li>
           <li>Procesamiento de datos y salida de IA</li>
         </ul>
-        <div style={highlight}>Proporcionamos acceso al software, no un resultado garantizado. Nuestros servicios constituyen una obligación de medios, no una obligación de resultado.</div>
+        <div style={hl}>Proporcionamos acceso al software, no un resultado garantizado. Nuestros servicios constituyen una obligación de medios, no una obligación de resultado.</div>
       </> },
       { num: '4', title: 'Licencia', body: <>
         <p>Le otorgamos una licencia no exclusiva, intransferible y revocable para utilizar nuestros servicios dentro de su propia organización.</p>
@@ -420,7 +425,7 @@ const data = {
           <li>Contenido discriminatorio o perjudicial</li>
           <li>Automatización de fraudes o estafas</li>
         </ul>
-        <div style={warning}>En caso de infracción, nos reservamos el derecho de resolver el servicio de forma inmediata sin reembolso.</div>
+        <div style={warn}>En caso de infracción, nos reservamos el derecho de resolver el servicio de forma inmediata sin reembolso.</div>
       </> },
       { num: '7', title: 'Pago y suscripciones', body: <>
         <ul>
@@ -448,7 +453,7 @@ const data = {
       </> },
       { num: '10', title: 'Datos y privacidad', body: <>
         <p>Tratamos los datos de conformidad con el RGPD y nuestra <a href="/es/privacy" style={lnk}>Política de Privacidad</a>.</p>
-        <div style={highlight}>Para clientes empresariales se requiere un Acuerdo de Tratamiento de Datos (DPA).</div>
+        <div style={hl}>Para clientes empresariales se requiere un Acuerdo de Tratamiento de Datos (DPA).</div>
       </> },
       { num: '11', title: 'Servicios de terceros', body: <>
         <p>Utilizamos servicios externos como proveedores de IA, infraestructura en la nube y herramientas externas. No somos responsables de:</p>
@@ -466,7 +471,7 @@ const data = {
           <li>Pérdida de datos</li>
           <li>Daños derivados de la salida de IA</li>
         </ul>
-        <div style={highlight}>Nuestra responsabilidad máxima se limita al importe pagado por el cliente en los últimos 12 meses.</div>
+        <div style={hl}>Nuestra responsabilidad máxima se limita al importe pagado por el cliente en los últimos 12 meses.</div>
       </> },
       { num: '13', title: 'Indemnización', body: <>
         <p>El cliente indemnizará a Agentmakers.io frente a cualquier reclamación de terceros derivada de:</p>
@@ -493,7 +498,7 @@ const data = {
         </ul>
       </> },
       { num: '16', title: 'Aviso legal', body: <>
-        <div style={warning}>Nuestros servicios se prestan "TAL CUAL", sin garantía alguna, expresa o implícita. Esto incluye ninguna garantía de resultado ni de funcionamiento sin errores.</div>
+        <div style={warn}>Nuestros servicios se prestan "TAL CUAL", sin garantía alguna, expresa o implícita. Esto incluye ninguna garantía de resultado ni de funcionamiento sin errores.</div>
       </> },
       { num: '17', title: 'Ley aplicable', body: <>
         <p>Este acuerdo se rige por la legislación neerlandesa. Las controversias se someterán al tribunal competente en [lugar a completar].</p>
@@ -507,16 +512,13 @@ const data = {
         </ul>
       </> },
       { num: '19', title: 'Acuerdo completo', body: <>
-        <div style={highlight}>Estos términos, junto con nuestra <a href="/es/privacy" style={lnk}>Política de Privacidad</a>, constituyen el acuerdo completo entre usted y Agentmakers.io.</div>
+        <div style={hl}>Estos términos, junto con nuestra <a href="/es/privacy" style={lnk}>Política de Privacidad</a>, constituyen el acuerdo completo entre usted y Agentmakers.io.</div>
         <p style={{ marginTop: 16 }}>Preguntas: <a href="mailto:info@agentmakers.io" style={lnk}>info@agentmakers.io</a></p>
       </> },
     ],
   },
 }
 
-export default async function VoorwaardenLangPage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params
-  const l: 'nl' | 'en' | 'es' = (lang === 'en' || lang === 'es') ? lang : 'nl'
   const c = data[l]
 
   return (
