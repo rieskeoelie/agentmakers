@@ -103,7 +103,7 @@ export default async function DemoPage({ params }: Props) {
       tips_note: 'Aan het einde stuurt de agent u een persoonlijke meeting link.',
       configured_for: 'Geconfigureerd voor',
       offer_scarcity: 'Nog 2 plekken vrij in april',
-      offer_scarcity_sub: 'Daarna stijgt de prijs',
+      offer_scarcity_sub: '',
       offer_bonus: 'Gratis onboarding t.w.v. €295 inbegrepen',
       offer_bonus_sub: 'Bij aanmelding deze maand',
     },
@@ -775,7 +775,7 @@ export default async function DemoPage({ params }: Props) {
                   <span className="offer-icon">🔥</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="offer-label">{s.offer_scarcity}</div>
-                    <div className="offer-sub">{s.offer_scarcity_sub}</div>
+                    {s.offer_scarcity_sub && <div className="offer-sub">{s.offer_scarcity_sub}</div>}
                   </div>
                   <div className="offer-dots">
                     {[...Array(10)].map((_, i) => (
