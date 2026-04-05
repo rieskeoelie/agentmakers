@@ -435,7 +435,7 @@ export default async function LandingPage({ params }: Props) {
 
       {/* FOOTER */}
       <footer style={{ background: '#0F172A', color: '#CBD5E1', padding: '40px 0', textAlign: 'center', fontSize: '.85rem' }}>
-        <p>© 2026 agentmakers.io. Alle rechten voorbehouden. &nbsp;|&nbsp; <a href="/privacy" style={{ color: '#CBD5E1', textDecoration: 'none' }}>Privacy</a> &nbsp;|&nbsp; <a href="/voorwaarden" style={{ color: '#CBD5E1', textDecoration: 'none' }}>Voorwaarden</a></p>
+        <p>© 2026 agentmakers.io. {l === 'nl' ? 'Alle rechten voorbehouden.' : l === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'} &nbsp;|&nbsp; <a href={`/${l}/privacy`} style={{ color: '#CBD5E1', textDecoration: 'none' }}>Privacy</a> &nbsp;|&nbsp; <a href="/voorwaarden" style={{ color: '#CBD5E1', textDecoration: 'none' }}>Voorwaarden</a></p>
       </footer>
     </div>
   )
