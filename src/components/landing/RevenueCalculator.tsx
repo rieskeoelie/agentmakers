@@ -18,7 +18,8 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
   const l = {
     nl: {
       label: 'DE IMPACT',
-      title: 'Zie de omzet die u misloopt',
+      title: 'Zie hoeveel omzet u per jaar misloopt',
+      subtitle: 'De cijfers liegen niet. Door reguliere sluitingstijden te hanteren loopt u schrikbarend veel omzet mis.',
       callsLabel: 'Gemiste boekingen / week',
       valueLabel: 'Gem. orderwaarde',
       perYear: 'gemiste omzet per jaar',
@@ -33,7 +34,8 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
     },
     en: {
       label: 'THE IMPACT',
-      title: 'How much revenue are you missing?',
+      title: 'See how much revenue you miss per year',
+      subtitle: 'The numbers don\'t lie. By keeping regular closing hours, you\'re missing out on a shocking amount of revenue.',
       callsLabel: 'Missed bookings / week',
       valueLabel: 'Avg. order value',
       perYear: 'missed revenue per year',
@@ -48,7 +50,8 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
     },
     es: {
       label: 'EL IMPACTO',
-      title: '¿Cuántos ingresos está perdiendo?',
+      title: 'Vea cuántos ingresos pierde al año',
+      subtitle: 'Los números no mienten. Al mantener horarios regulares de cierre, está perdiendo una cantidad asombrosa de ingresos.',
       callsLabel: 'Reservas perdidas / semana',
       valueLabel: 'Valor medio del pedido',
       perYear: 'ingresos perdidos al año',
@@ -72,9 +75,12 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
           <div style={{ color: '#0D9488', fontWeight: 700, fontSize: '.72rem', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 10 }}>
             {s.label}
           </div>
-          <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.3rem, 2.5vw, 1.8rem)', color: '#0F172A', margin: 0 }}>
+          <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.3rem, 2.5vw, 1.8rem)', color: '#0F172A', margin: '0 0 12px' }}>
             {s.title}
           </h2>
+          <p style={{ color: '#64748B', fontSize: '1rem', lineHeight: 1.6, maxWidth: 560, margin: '0 auto' }}>
+            {s.subtitle}
+          </p>
         </div>
 
         {/* Card */}
