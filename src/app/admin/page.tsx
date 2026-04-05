@@ -392,8 +392,8 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </div>
-            <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #F1F5F9' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div style={{ background: '#fff', borderRadius: 14, overflowX: 'auto', border: '1px solid #F1F5F9' }}>
+              <table style={{ width: '100%', minWidth: 950, borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: '#F1F5F9' }}>
                     <th style={{ padding: '14px 16px', width: 40 }}>
