@@ -5,8 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { t, SUPPORTED_LANGS, LANG_LABELS, type Lang } from '@/lib/i18n'
 import { DemoForm } from '@/components/landing/DemoForm'
 import { DemoSectionHeader } from '@/components/landing/DemoSectionHeader'
-import { OrbPreview } from '@/components/landing/OrbPreview'
-import { OrbColumn } from '@/components/landing/OrbColumn'
+import { DemoGridWrapper } from '@/components/landing/DemoGridWrapper'
 import { TrackView } from '@/components/landing/TrackView'
 import { RevenueCalculator } from '@/components/landing/RevenueCalculator'
 import type { Metadata } from 'next'
@@ -406,40 +405,28 @@ export default async function LandingPage({ params }: Props) {
               : 'Inicie una conversación con su futura recepcionista IA. Haga preguntas sobre una consulta, un tratamiento y reserve una cita. (Nota: esta demo funciona con información de su sitio web. El agente LIVE se entrena con datos completos)'}
           />
 
-          {/* Two-column: form + orb */}
-          <div className="demo-section-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center', maxWidth: 960, margin: '0 auto' }}>
-
-            {/* Form — order 1 on mobile so it stays above fold */}
-            <div className="demo-section-form" style={{ textAlign: 'center' }}>
-              <DemoForm slug={industry} lang={l} strings={{
-                cta_headline: '',
-                cta_sub: '',
-                name: t(l, 'form_name'),
-                email: t(l, 'form_email'),
-                phone: t(l, 'form_phone'),
-                website: t(l, 'form_website'),
-                company: t(l, 'form_company'),
-                diensten_label: '',
-                submit: l === 'nl' ? 'Stuur mij de demo link' : l === 'en' ? 'Send me the demo link' : 'Envíame el enlace de la demo',
-                sending: t(l, 'form_sending'),
-                success: t(l, 'form_success'),
-                success_sub: t(l, 'form_success_sub'),
-                error: t(l, 'form_error'),
-                trust: l === 'nl' ? 'Geen verplichtingen. Gratis. Binnen 2 minuten in uw inbox.' : l === 'en' ? 'No obligations. Free. In your inbox within 2 minutes.' : 'Sin compromiso. Gratis. En su bandeja en 2 minutos.',
-              }} />
-            </div>
-
-            {/* Orb preview — hidden after form success */}
-            <OrbColumn>
-              <div className="demo-section-orb" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                <OrbPreview />
-                <p style={{ color: '#fff', fontSize: '0.78rem', textAlign: 'center', maxWidth: 240, lineHeight: 1.6, margin: 0 }}>
-                  {l === 'nl' ? 'Vul snel het formulier in en beluister de AI voice agent in actie.' : l === 'en' ? 'Fill in the form and listen to the AI voice agent in action.' : 'Complete el formulario y escuche al agente de voz de IA en acción.'}
-                </p>
-              </div>
-            </OrbColumn>
-
-          </div>
+          {/* Two-column: form + orb — collapses to centered success on submit */}
+          <DemoGridWrapper
+            slug={industry}
+            lang={l}
+            orbLabel={l === 'nl' ? 'Vul snel het formulier in en beluister de AI voice agent in actie.' : l === 'en' ? 'Fill in the form and listen to the AI voice agent in action.' : 'Complete el formulario y escuche al agente de voz de IA en acción.'}
+            strings={{
+              cta_headline: '',
+              cta_sub: '',
+              name: t(l, 'form_name'),
+              email: t(l, 'form_email'),
+              phone: t(l, 'form_phone'),
+              website: t(l, 'form_website'),
+              company: t(l, 'form_company'),
+              diensten_label: '',
+              submit: l === 'nl' ? 'Stuur mij de demo link' : l === 'en' ? 'Send me the demo link' : 'Envíame el enlace de la demo',
+              sending: t(l, 'form_sending'),
+              success: t(l, 'form_success'),
+              success_sub: t(l, 'form_success_sub'),
+              error: t(l, 'form_error'),
+              trust: l === 'nl' ? 'Geen verplichtingen. Gratis. Binnen 2 minuten in uw inbox.' : l === 'en' ? 'No obligations. Free. In your inbox within 2 minutes.' : 'Sin compromiso. Gratis. En su bandeja en 2 minutos.',
+            }}
+          />
         </div>
         <style>{`
           @keyframes dotPulseLP {

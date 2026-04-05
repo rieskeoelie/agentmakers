@@ -6,6 +6,7 @@ interface Props {
   slug: string
   lang: Lang
   strings: Record<string, string>
+  suppressSuccess?: boolean
 }
 
 
@@ -107,7 +108,7 @@ function Confetti() {
   )
 }
 
-export function DemoForm({ slug, lang, strings }: Props) {
+export function DemoForm({ slug, lang, strings, suppressSuccess }: Props) {
   const [state, setState] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [form, setForm] = useState({ naam: '', email: '', telefoon: '', website: 'https://', bedrijfsnaam: '' })
 
@@ -147,6 +148,7 @@ export function DemoForm({ slug, lang, strings }: Props) {
   }
 
   if (state === 'success') {
+    if (suppressSuccess) return <Confetti />
     return (
       <>
         <Confetti />
