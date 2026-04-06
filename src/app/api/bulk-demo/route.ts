@@ -28,7 +28,7 @@ export interface BulkResult {
 }
 
 async function processLead(lead: BulkLead, userId: string): Promise<BulkResult> {
-  const naam = lead.naam || lead.bedrijfsnaam
+  const naam = lead.naam || ""
   const email = lead.email || ''
   const demo_token = nanoid(24)
   const demo_url = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://agentmakers.io'}/demo/${demo_token}`
