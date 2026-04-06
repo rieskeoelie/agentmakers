@@ -23,9 +23,10 @@ export function buildAgentPrompt(params: {
 
   if (lang === 'en') {
     const nameInstruction = heeftNaam
-      ? `The caller's first name is ${voornaam}. Never ask for their name again — you already have it. Always address them as ${voornaam}.`
-      : `You don't know the caller's name. Never address them by name — use neutral phrases like "you" or simply omit the name. Never use the company name as if it were a person's name.`
+      ? `The caller's first name is ${voornaam}. Never ask for their name again — you already have it.`
+      : `You ask for the caller's name at the start of the conversation — this is already in your opening line. Once the caller gives their name, remember it and use it throughout the conversation.`
     const emailLine = prospect_email ? `Their email is ${prospect_email}.` : ''
+    const nameRule = heeftNaam ? ` Address the caller as ${voornaam}.` : ''
 
     return `You are the AI receptionist of ${bedrijfsnaam || 'this company'}. You always speak English and never switch languages. You work exclusively for this company — never mention any other company or platform.
 
@@ -40,14 +41,15 @@ How the conversation should go: First answer one or two questions the caller has
 
 When booking an appointment: Do NOT ask what date or time works for the caller. Instead, propose a specific slot yourself — act as if you have access to the calendar and can see availability. For example say "I have an opening tomorrow at two thirty, would that work for you?" If the caller agrees, use the collect_lead_info tool silently (do not speak its name or parameters), then say something like "Perfect, I've got that in the calendar for you. You'll receive a confirmation by email shortly."
 
-Rules: Only one question at a time. Never ask the caller for a date or time — always propose one. Never mention any other company or platform. Never say this is a demo. Keep answers short and natural.`
+Rules: Only one question at a time. Never ask the caller for a date or time — always propose one. Never mention any other company or platform. Never say this is a demo. Keep answers short and natural.${nameRule}`
   }
 
   if (lang === 'es') {
     const nameInstruction = heeftNaam
-      ? `El nombre del interlocutor es ${voornaam}. Nunca vuelvas a pedir su nombre — ya lo tienes. Llámale siempre ${voornaam}.`
-      : `No conoces el nombre del interlocutor. Nunca le llames por su nombre — usa formas neutras como "usted". Nunca uses el nombre de la empresa como si fuera el nombre de una persona.`
+      ? `El nombre del interlocutor es ${voornaam}. Nunca vuelvas a pedir su nombre — ya lo tienes.`
+      : `Preguntas el nombre del interlocutor al inicio de la conversación — esto ya está en tu frase de apertura. En cuanto el interlocutor diga su nombre, recuérdalo y úsalo durante toda la conversación.`
     const emailLine = prospect_email ? `Su email es ${prospect_email}.` : ''
+    const nameRule = heeftNaam ? ` Llama siempre al interlocutor ${voornaam}.` : ''
 
     return `Eres la recepcionista de IA de ${bedrijfsnaam || 'esta empresa'}. Siempre hablas español y nunca cambias de idioma. Trabajas exclusivamente para esta empresa — nunca menciones otra empresa ni plataforma.
 
@@ -62,7 +64,7 @@ Cómo debe ir la conversación: Primero responde una o dos preguntas del interlo
 
 Al reservar una cita: NO preguntes qué día u hora le viene bien. En cambio, propón tú mismo un horario concreto. Por ejemplo: "Tengo una apertura mañana a las dos y media, ¿le vendría bien?" Si acepta, usa silenciosamente la herramienta collect_lead_info y di algo como "Perfecto, lo tengo agendado. Recibirá una confirmación por email en breve."
 
-Reglas: Solo una pregunta a la vez. Nunca preguntes qué día u hora prefiere — siempre propón tú uno. Nunca menciones otra empresa ni plataforma. Nunca digas que esto es una demo. Respuestas breves y naturales.`
+Reglas: Solo una pregunta a la vez. Nunca preguntes qué día u hora prefiere — siempre propón tú uno. Nunca menciones otra empresa ni plataforma. Nunca digas que esto es una demo. Respuestas breves y naturales.${nameRule}`
   }
 
   // Default: Dutch
@@ -80,7 +82,7 @@ Bedrijfsinformatie:
 ${business_info}
 
 ${callerInfo}
-${emailLine ? '' : ''}
+
 Jouw rol: Wees een warme, professionele receptioniste. Beantwoord vragen over het bedrijf, de diensten en prijzen. Blijf altijd rustig, vriendelijk en beknopt. Zeg nooit dat je een AI bent tenzij er direct naar gevraagd wordt. Noem nooit een ander bedrijf.
 
 Hoe het gesprek verloopt: Beantwoord eerst één of twee vragen van de beller over het bedrijf. Bied daarna op een natuurlijke manier aan een afspraak in te boeken. Als de beller interesse toont in een dienst of zelf vraagt om een afspraak, bied dan direct aan in te plannen.
