@@ -10,11 +10,19 @@ export async function scrapeWebsite(url: string): Promise<string> {
   try {
     const normalised = url.startsWith('http') ? url : `https://${url}`
     const app = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY })
-    const result = await app.scrape(normalised, {
-      formats: ['markdown'],
-    }) as { success: boolean; markdown?: string }
 
-    if (!result.success || !result.markdown) return ''
+    // Race the Firecrawl call against a 30s timeout so we never hang indefinitely
+    const scrapePromise = app.scrape(normalised, {
+      formats: ['markdown'],
+      timeout: 25000, // 25s request timeout to Firecrawl
+    }) as Promise<{ success: boolean; markdown?: string }>
+
+    const timeoutPromise = new Promise<null>((_, reject) =>
+      setTimeout(() => reject(new Error('Firecrawl timeout')), 30000)
+    )
+
+    const result = await Promise.race([scrapePromise, timeoutPromise]) as { success: boolean; markdown?: string } | null
+    if (!result || !result.success || !result.markdown) return ''
 
     // Trim to ~2 000 chars so the system prompt stays concise
     return result.markdown.substring(0, 2000).trim()

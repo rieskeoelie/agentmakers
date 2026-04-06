@@ -186,6 +186,7 @@ export default function AdminDashboard() {
     setScrapeDone(false)
     setScrapeProgress(null)
     setScrapeQueueResult(null)
+    setScrapeTimedOut(false)
     try {
       const res = await fetch('/api/bulk-demo', {
         method: 'POST',
@@ -197,15 +198,18 @@ export default function AdminDashboard() {
       const results: BulkResult[] = data.results
       setBulkResults(results)
 
-      // Start polling: check every 5s whether the leads are scraped in the background
       const tokens = results.filter(r => r.status === 'ok').map(r => r.demo_token)
       if (tokens.length === 0) { setScrapeDone(true); return }
 
       setScrapeLoading(true)
       setScrapeProgress({ scraped: 0, total: tokens.length })
 
+      // Also trigger the scrape-queue as a safety net in case after() doesn't fire
+      // (e.g. very short-lived function invocations). This ensures scraping starts.
+      fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } }).catch(() => {})
+
       let attempts = 0
-      const MAX_ATTEMPTS = 12 // 12 × 5s = 60s max wait
+      const MAX_ATTEMPTS = 24 // 24 × 5s = 2 min max wait
 
       const poll = async () => {
         attempts++
@@ -215,35 +219,82 @@ export default function AdminDashboard() {
             { headers: { 'x-admin-key': savedKey } }
           )
           const d = await r.json()
-          setScrapeProgress({ scraped: d.scraped ?? 0, total: d.total ?? tokens.length })
-          if ((d.scraped ?? 0) >= tokens.length) {
-            setScrapeQueueResult({ processed: d.scraped, total: d.total })
+          const scraped = d.scraped ?? 0
+          setScrapeProgress({ scraped, total: d.total ?? tokens.length })
+
+          if (scraped >= tokens.length) {
+            // All done!
+            setScrapeQueueResult({ processed: scraped, total: tokens.length })
             setScrapeLoading(false)
             setScrapeDone(true)
           } else if (attempts >= MAX_ATTEMPTS) {
-            // Timeout — unlock buttons anyway, scraping continues in background via cron
+            // 2-minute timeout — scraping is taking too long or failed
+            // Keep buttons LOCKED (scrapeDone stays false), show error + retry option
             setScrapeLoading(false)
-            setScrapeDone(true)
             setScrapeTimedOut(true)
           } else {
+            // Every 6 polls (30s), kick off the cron queue again to pick up remaining leads
+            if (attempts % 6 === 0) {
+              fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } }).catch(() => {})
+            }
             setTimeout(poll, 5000)
           }
         } catch {
           if (attempts >= MAX_ATTEMPTS) {
             setScrapeLoading(false)
-            setScrapeDone(true)
             setScrapeTimedOut(true)
           } else {
             setTimeout(poll, 5000)
           }
         }
       }
-      setTimeout(poll, 3000) // First check after 3s
+      setTimeout(poll, 5000) // First check after 5s
     } catch {
       setBulkError('Netwerkfout. Probeer opnieuw.')
     } finally {
       setBulkLoading(false)
     }
+  }
+
+  // Retry scraping after a timeout — re-trigger the queue and resume polling
+  const handleRetryScrapin = async (tokens: string[]) => {
+    setScrapeTimedOut(false)
+    setScrapeLoading(true)
+    setScrapeProgress(prev => prev)
+    fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } }).catch(() => {})
+
+    let attempts = 0
+    const MAX_ATTEMPTS = 24
+
+    const poll = async () => {
+      attempts++
+      try {
+        const r = await fetch(
+          `/api/admin/scrape-status?tokens=${tokens.join(',')}`,
+          { headers: { 'x-admin-key': savedKey } }
+        )
+        const d = await r.json()
+        const scraped = d.scraped ?? 0
+        setScrapeProgress({ scraped, total: d.total ?? tokens.length })
+        if (scraped >= tokens.length) {
+          setScrapeQueueResult({ processed: scraped, total: tokens.length })
+          setScrapeLoading(false)
+          setScrapeDone(true)
+        } else if (attempts >= MAX_ATTEMPTS) {
+          setScrapeLoading(false)
+          setScrapeTimedOut(true)
+        } else {
+          if (attempts % 6 === 0) {
+            fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } }).catch(() => {})
+          }
+          setTimeout(poll, 5000)
+        }
+      } catch {
+        if (attempts >= MAX_ATTEMPTS) { setScrapeLoading(false); setScrapeTimedOut(true) }
+        else { setTimeout(poll, 5000) }
+      }
+    }
+    setTimeout(poll, 5000)
   }
 
   const copyLink = (url: string, idx: number) => {
@@ -1539,9 +1590,19 @@ Agentmakers.io`)
                   </div>
                 </div>
               )}
-              {scrapeDone && scrapeTimedOut && (
-                <div style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 10, padding: '12px 18px', marginBottom: 16, fontSize: '.85rem', color: '#92400E' }}>
-                  ⚠️ De website-personalisatie duurt langer dan verwacht. De links zijn al klaar om te versturen — de AI-agent wordt op de achtergrond verder gepersonaliseerd via de automatische cron job (elke 10 minuten).
+              {scrapeTimedOut && !scrapeDone && (
+                <div style={{ background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: 10, padding: '14px 18px', marginBottom: 16, fontSize: '.85rem', color: '#9F1239', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <span>
+                    ❌ Website-scraping duurde langer dan 2 minuten. De knoppen blijven geblokkeerd tot de personalisatie klaar is.
+                    {scrapeProgress && scrapeProgress.scraped < scrapeProgress.total && (
+                      <> ({scrapeProgress.scraped}/{scrapeProgress.total} klaar)</>
+                    )}
+                  </span>
+                  <button
+                    onClick={() => handleRetryScrapin(bulkResults.filter(r => r.status === 'ok').map(r => r.demo_token))}
+                    style={{ background: '#9F1239', color: '#fff', border: 'none', borderRadius: 7, padding: '7px 16px', fontWeight: 700, fontSize: '.8rem', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: "'Nunito',sans-serif" }}>
+                    ↺ Opnieuw proberen
+                  </button>
                 </div>
               )}
               {scrapeDone && !scrapeTimedOut && scrapeQueueResult && (

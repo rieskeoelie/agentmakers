@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { scrapeWebsite, buildBusinessInfo } from '@/lib/scrape'
 
+// Allow up to 60s — Firecrawl can be slow; we process 5 leads per call (~10s each = 50s max)
+export const maxDuration = 60
+
 // Called by Vercel Cron every 10 minutes — also callable manually from admin
 // Auth: Authorization: Bearer {CRON_SECRET}  OR  x-admin-key: {ADMIN_SECRET_KEY}
 function isAuthorized(req: NextRequest) {
@@ -27,7 +30,7 @@ export async function GET(req: NextRequest) {
     .neq('website', '')
     .neq('website', 'https://')
     .order('created_at', { ascending: true })
-    .limit(15)
+    .limit(5) // Keep small: 5 leads × ~10s each ≈ 50s, safely within maxDuration=60
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

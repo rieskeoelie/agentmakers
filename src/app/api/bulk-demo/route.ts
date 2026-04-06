@@ -1,7 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { scrapeWebsite, buildBusinessInfo } from '@/lib/scrape'
 import { nanoid } from 'nanoid'
+
+// Allow up to 60 seconds so after() callbacks have time to finish scraping
+export const maxDuration = 60
 
 export interface BulkLead {
   bedrijfsnaam: string
@@ -51,9 +54,11 @@ async function processLead(lead: BulkLead): Promise<BulkResult> {
       return { bedrijfsnaam: lead.bedrijfsnaam, website: lead.website, naam, email, demo_token, demo_url, status: 'error', error: dbError.message }
     }
 
-    // Scrape in background — don't wait, return demo_url immediately
+    // Schedule scraping to run after the response is sent (uses Next.js after())
+    // This is the correct way to do post-response work on Vercel — unlike .catch(()=>{})
+    // which gets killed when the function returns, after() properly keeps the task alive
     if (lead.website) {
-      scrapeAndUpdate(lead, naam, demo_token).catch(() => {/* ignore */})
+      after(() => scrapeAndUpdate(lead, naam, demo_token).catch(() => {/* ignore */}))
     }
 
     return { bedrijfsnaam: lead.bedrijfsnaam, website: lead.website, naam, email, demo_token, demo_url, status: 'ok' }
