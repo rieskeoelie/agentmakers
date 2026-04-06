@@ -114,31 +114,195 @@ ${demoButtonHtmlEs}
   })
 }
 
-// Email #2: Notification to admin
+// Email #2: Notification to admin (enhanced with demo link + quick actions)
 export async function sendAdminNotification(lead: LeadData) {
-  const subject = `🆕 Nieuwe demo-aanvraag: ${lead.naam} (${lead.landing_page_slug})`
-  const body = `
-Hoi,
+  const subject = `🆕 Nieuwe lead: ${lead.naam}${lead.bedrijfsnaam ? ` — ${lead.bedrijfsnaam}` : ''}`
+  const demoUrl = lead.demo_token ? `${SITE_URL}/demo/${lead.demo_token}` : null
+  const adminUrl = `${SITE_URL}/admin`
 
-Je hebt een lead ontvangen via agentmakers.io
+  const html = `
+<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1E293B;line-height:1.7">
+  <h2 style="font-family:'Poppins',sans-serif;color:#0D9488;margin-bottom:4px">🆕 Nieuwe lead!</h2>
+  <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:.9rem">
+    <tr><td style="padding:6px 0;color:#64748B;width:110px">Naam</td><td style="padding:6px 0;font-weight:600">${lead.naam}</td></tr>
+    <tr><td style="padding:6px 0;color:#64748B">E-mail</td><td style="padding:6px 0"><a href="mailto:${lead.email}" style="color:#0D9488">${lead.email}</a></td></tr>
+    <tr><td style="padding:6px 0;color:#64748B">Telefoon</td><td style="padding:6px 0"><a href="tel:${lead.telefoon}" style="color:#0D9488">${lead.telefoon}</a></td></tr>
+    ${lead.bedrijfsnaam ? `<tr><td style="padding:6px 0;color:#64748B">Bedrijf</td><td style="padding:6px 0">${lead.bedrijfsnaam}</td></tr>` : ''}
+    ${lead.website ? `<tr><td style="padding:6px 0;color:#64748B">Website</td><td style="padding:6px 0"><a href="${lead.website}" style="color:#0D9488">${lead.website}</a></td></tr>` : ''}
+    <tr><td style="padding:6px 0;color:#64748B">Pagina</td><td style="padding:6px 0">/${lead.landing_page_slug}</td></tr>
+    <tr><td style="padding:6px 0;color:#64748B">Tijdstip</td><td style="padding:6px 0">${new Date().toLocaleString('nl-NL')}</td></tr>
+  </table>
+  <div style="display:flex;gap:12px;margin:24px 0;flex-wrap:wrap">
+    ${demoUrl ? `<a href="${demoUrl}" style="background:#0D9488;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.9rem">🎤 Beluister demo</a>` : ''}
+    <a href="${adminUrl}" style="background:#F1F5F9;color:#334155;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.9rem;border:1px solid #E2E8F0">📊 Open admin</a>
+    <a href="tel:${lead.telefoon}" style="background:#F1F5F9;color:#334155;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.9rem;border:1px solid #E2E8F0">📞 Bel nu</a>
+  </div>
+</div>`.trim()
 
-Naam:       ${lead.naam}
-E-mail:     ${lead.email}
-Telefoon:   ${lead.telefoon}
-Bedrijf:    ${lead.bedrijfsnaam || '—'}
-Website:    ${lead.website || '—'}
-Diensten:   ${lead.diensten && lead.diensten.length > 0 ? lead.diensten.join(', ') : '—'}
-Pagina:     /${lead.landing_page_slug}
-Taal:       ${lead.language}
-Timestamp:  ${new Date().toLocaleString('nl-NL')}
-
-Bekijk alle leads via https://agentmakers.io/admin/leads
-  `.trim()
+  const text = `Nieuwe lead!\n\nNaam:      ${lead.naam}\nE-mail:    ${lead.email}\nTelefoon:  ${lead.telefoon}\nBedrijf:   ${lead.bedrijfsnaam || '—'}\nWebsite:   ${lead.website || '—'}\nPagina:    /${lead.landing_page_slug}\nTijdstip:  ${new Date().toLocaleString('nl-NL')}${demoUrl ? `\n\nDemo: ${demoUrl}` : ''}\n\nAdmin: ${adminUrl}`
 
   await resend.emails.send({
     from: FROM,
     to: ADMIN,
     subject,
-    text: body,
+    html,
+    text,
+  })
+}
+
+// Email #3: Cold outreach to prospect (sent manually from admin)
+export async function sendOutreachEmail({
+  naam,
+  email,
+  bedrijfsnaam,
+  demo_url,
+}: {
+  naam: string
+  email: string
+  bedrijfsnaam: string
+  demo_url: string
+}) {
+  const voornaam = naam.split(' ')[0]
+  const subject = `${bedrijfsnaam} — uw persoonlijke AI receptioniste staat klaar`
+
+  const html = `
+<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1E293B;line-height:1.7">
+  <p>Hallo${voornaam ? ` ${voornaam}` : ''},</p>
+  <p>Ik ben Richard van <strong>Agentmakers.io</strong> — wij bouwen AI receptionistes voor Nederlandse bedrijven.</p>
+  <p>Ik heb alvast een persoonlijke demo gemaakt voor <strong>${bedrijfsnaam}</strong>. Ze is getraind op jullie website en staat klaar om vragen van klanten te beantwoorden, 24/7.</p>
+  <p style="margin:28px 0;">
+    <a href="${demo_url}"
+       style="background:#0D9488;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:1rem;display:inline-block;">
+      🎤 Beluister uw persoonlijke AI demo
+    </a>
+  </p>
+  <p>Ze kan nu al uw bedrijf voorstellen, vragen over diensten en prijzen beantwoorden, en direct een afspraak inplannen.</p>
+  <p>Geen verplichtingen — het is gewoon leuk om te zien wat er al mogelijk is.</p>
+  <p>Met vriendelijke groet,<br><strong>Richard</strong><br>Agentmakers.io</p>
+  <hr style="border:none;border-top:1px solid #E2E8F0;margin:24px 0">
+  <p style="font-size:.78rem;color:#94A3B8;">U ontvangt deze mail omdat wij een demo hebben gemaakt voor ${bedrijfsnaam}. Wilt u geen mails meer ontvangen? Laat het ons weten via dit e-mailadres.</p>
+</div>`.trim()
+
+  const text = `Hallo${voornaam ? ` ${voornaam}` : ''},
+
+Ik ben Richard van Agentmakers.io — wij bouwen AI receptionistes voor Nederlandse bedrijven.
+
+Ik heb alvast een persoonlijke demo gemaakt voor ${bedrijfsnaam}. Ze is getraind op jullie website en staat klaar om vragen van klanten te beantwoorden, 24/7.
+
+👉 Beluister uw persoonlijke AI demo: ${demo_url}
+
+Ze kan nu al uw bedrijf voorstellen, vragen over diensten en prijzen beantwoorden, en direct een afspraak inplannen.
+
+Geen verplichtingen — het is gewoon leuk om te zien wat er al mogelijk is.
+
+Met vriendelijke groet,
+Richard
+Agentmakers.io`
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject,
+    html,
+    text,
+  })
+}
+
+// Email #4: Follow-up (3 days after demo link, no booking yet)
+export async function sendFollowUpEmail({
+  naam,
+  email,
+  bedrijfsnaam,
+  demo_url,
+}: {
+  naam: string
+  email: string
+  bedrijfsnaam: string
+  demo_url: string
+}) {
+  const voornaam = naam.split(' ')[0]
+  const subject = `Heeft u de demo al geprobeerd? — ${bedrijfsnaam}`
+
+  const html = `
+<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1E293B;line-height:1.7">
+  <p>Hallo${voornaam ? ` ${voornaam}` : ''},</p>
+  <p>Een paar dagen geleden stuurde ik u de persoonlijke AI demo voor <strong>${bedrijfsnaam}</strong>. Heeft u hem al kunnen beluisteren?</p>
+  <p>De demo duurt minder dan 2 minuten en geeft een goed beeld van hoe de AI receptioniste uw klanten te woord staat.</p>
+  <p style="margin:28px 0;">
+    <a href="${demo_url}"
+       style="background:#0D9488;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:1rem;display:inline-block;">
+      🎤 Open mijn persoonlijke demo
+    </a>
+  </p>
+  <p>Heeft u vragen of wilt u direct een gesprek inplannen? Dat kan via de demo-pagina zelf.</p>
+  <p>Met vriendelijke groet,<br><strong>Richard</strong><br>Agentmakers.io</p>
+  <hr style="border:none;border-top:1px solid #E2E8F0;margin:24px 0">
+  <p style="font-size:.78rem;color:#94A3B8;">Wilt u geen mails meer ontvangen? Laat het ons weten via dit e-mailadres.</p>
+</div>`.trim()
+
+  const text = `Hallo${voornaam ? ` ${voornaam}` : ''},
+
+Een paar dagen geleden stuurde ik u de persoonlijke AI demo voor ${bedrijfsnaam}. Heeft u hem al kunnen beluisteren?
+
+De demo duurt minder dan 2 minuten en geeft een goed beeld van hoe de AI receptioniste uw klanten te woord staat.
+
+👉 Open mijn persoonlijke demo: ${demo_url}
+
+Heeft u vragen of wilt u direct een gesprek inplannen? Dat kan via de demo-pagina zelf.
+
+Met vriendelijke groet,
+Richard
+Agentmakers.io`
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject,
+    html,
+    text,
+  })
+}
+
+// Email #5: Weekly report to admin
+export async function sendWeeklyReport({
+  newLeads,
+  totalLeads,
+  conversations,
+  topPage,
+}: {
+  newLeads: number
+  totalLeads: number
+  conversations: number
+  topPage: string
+}) {
+  const weekStr = new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  const html = `
+<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1E293B;line-height:1.7">
+  <h2 style="font-family:'Poppins',sans-serif;color:#0D9488;margin-bottom:4px">📊 Weekoverzicht Agentmakers.io</h2>
+  <p style="color:#94A3B8;margin-top:0;font-size:.88rem">Week van ${weekStr}</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0">
+    ${[
+      ['🆕 Nieuwe leads', newLeads],
+      ['📥 Totaal leads', totalLeads],
+      ['🎙 Gesprekken', conversations],
+      ['🏆 Beste pagina', topPage || '—'],
+    ].map(([label, val]) => `
+    <div style="background:#F8FAFC;border-radius:10px;padding:16px;border:1px solid #E2E8F0">
+      <div style="font-size:.78rem;color:#64748B;margin-bottom:4px">${label}</div>
+      <div style="font-size:1.4rem;font-weight:700;color:#0D9488">${val}</div>
+    </div>`).join('')}
+  </div>
+  <p><a href="https://agentmakers.io/admin" style="color:#0D9488;font-weight:700">→ Open admin panel</a></p>
+  <hr style="border:none;border-top:1px solid #E2E8F0;margin:24px 0">
+  <p style="font-size:.75rem;color:#94A3B8">Automatisch rapport van Agentmakers.io</p>
+</div>`.trim()
+
+  await resend.emails.send({
+    from: FROM,
+    to: ADMIN,
+    subject: `📊 Weekoverzicht Agentmakers.io — ${weekStr}`,
+    html,
+    text: `Weekoverzicht Agentmakers.io\n\nNieuwe leads: ${newLeads}\nTotaal leads: ${totalLeads}\nGesprekken: ${conversations}\nBeste pagina: ${topPage || '—'}\n\nOpen admin: https://agentmakers.io/admin`,
   })
 }

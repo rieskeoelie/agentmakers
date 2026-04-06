@@ -122,6 +122,18 @@ export default function AdminDashboard() {
   const [scrapeQueueLoading, setScrapeQueueLoading] = useState(false)
   const [scrapeQueueResult, setScrapeQueueResult]   = useState<{ processed: number; total: number } | null>(null)
 
+  // Prospect finder
+  interface ProspectResult { bedrijfsnaam: string; website: string; adres: string; telefoon: string; rating?: number; reviews?: number }
+  const [prospectQuery, setProspectQuery]       = useState('')
+  const [prospectLoading, setProspectLoading]   = useState(false)
+  const [prospectResults, setProspectResults]   = useState<ProspectResult[]>([])
+  const [prospectError, setProspectError]       = useState('')
+  const [selectedProspects, setSelectedProspects] = useState<Set<number>>(new Set())
+  const [prospectNoApiKey, setProspectNoApiKey] = useState(false)
+  const [sendingIdx, setSendingIdx]     = useState<Set<number>>(new Set())
+  const [sentIdx, setSentIdx]           = useState<Set<number>>(new Set())
+  const [sendErrors, setSendErrors]     = useState<Record<number, string>>({})
+
   const parseCsv = (raw: string): BulkRow[] => {
     const lines = raw.trim().split('\n').filter(l => l.trim())
     if (lines.length === 0) return []
@@ -194,6 +206,69 @@ Met vriendelijke groet,
 Richard
 Agentmakers.io`)
     return `mailto:${r.email}?subject=${subject}&body=${body}`
+  }
+
+  const sendOutreach = async (r: BulkResult, idx: number) => {
+    if (!r.email) return
+    setSendingIdx(prev => new Set(prev).add(idx))
+    setSendErrors(prev => { const n = { ...prev }; delete n[idx]; return n })
+    try {
+      const res = await fetch('/api/admin/send-outreach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+        body: JSON.stringify({ naam: r.naam, email: r.email, bedrijfsnaam: r.bedrijfsnaam, demo_url: r.demo_url }),
+      })
+      if (res.ok) {
+        setSentIdx(prev => new Set(prev).add(idx))
+      } else {
+        const d = await res.json()
+        setSendErrors(prev => ({ ...prev, [idx]: d.error || 'Fout' }))
+      }
+    } catch {
+      setSendErrors(prev => ({ ...prev, [idx]: 'Netwerkfout' }))
+    } finally {
+      setSendingIdx(prev => { const n = new Set(prev); n.delete(idx); return n })
+    }
+  }
+
+  const searchProspects = async () => {
+    if (!prospectQuery.trim()) return
+    setProspectLoading(true)
+    setProspectError('')
+    setProspectResults([])
+    setSelectedProspects(new Set())
+    setProspectNoApiKey(false)
+    try {
+      const res = await fetch(`/api/admin/prospects?q=${encodeURIComponent(prospectQuery)}`, {
+        headers: { 'x-admin-key': savedKey },
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        if (data.error?.includes('GOOGLE_MAPS_API_KEY')) setProspectNoApiKey(true)
+        else setProspectError(data.error || 'Zoeken mislukt')
+        return
+      }
+      setProspectResults(data.results)
+      if (data.results.length === 0) setProspectError('Geen resultaten met website gevonden. Probeer een andere zoekopdracht.')
+    } catch {
+      setProspectError('Netwerkfout. Probeer opnieuw.')
+    } finally {
+      setProspectLoading(false)
+    }
+  }
+
+  const importSelectedProspects = () => {
+    const toImport = prospectResults.filter((_, i) => selectedProspects.has(i))
+    const csv = toImport.map(p =>
+      `"${p.bedrijfsnaam}","${p.website}","","","${p.telefoon}"`
+    ).join('\n')
+    setBulkCsv(csv)
+    setBulkParsed([])
+    setBulkResults([])
+    // Scroll / switch focus to CSV section
+    setTimeout(() => {
+      document.getElementById('csv-textarea')?.focus()
+    }, 100)
   }
 
   const handleScrapeQueue = async () => {
@@ -1075,6 +1150,94 @@ Agentmakers.io`)
             </button>
           </div>
 
+          {/* Prospect finder */}
+          <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 20 }}>
+            <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem', marginBottom: 6 }}>🔍 Prospect finder</h3>
+            <p style={{ color: '#64748B', fontSize: '.82rem', marginBottom: 16 }}>Zoek bedrijven direct via Google Maps. Selecteer prospects en importeer ze in één klik.</p>
+
+            {prospectNoApiKey ? (
+              <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 16, fontSize: '.85rem', color: '#92400E' }}>
+                <strong>GOOGLE_MAPS_API_KEY ontbreekt.</strong> Voeg deze toe in je Vercel project → Settings → Environment Variables. Vraag een gratis sleutel aan via <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" style={{ color: '#0D9488' }}>Google Cloud Console</a> en activeer de &quot;Places API&quot;.
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                  <input
+                    value={prospectQuery}
+                    onChange={e => setProspectQuery(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && searchProspects()}
+                    placeholder='bijv. "loodgieter amsterdam" of "tandarts rotterdam"'
+                    style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.88rem', color: '#1E293B', outline: 'none' }}
+                  />
+                  <button onClick={searchProspects} disabled={prospectLoading}
+                    style={{ background: '#0D9488', color: '#fff', padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '.88rem', cursor: prospectLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", whiteSpace: 'nowrap', opacity: prospectLoading ? 0.7 : 1 }}>
+                    {prospectLoading ? '⏳ Zoeken…' : '🔍 Zoek'}
+                  </button>
+                </div>
+
+                {prospectError && <div style={{ color: '#DC2626', fontSize: '.83rem', marginBottom: 12 }}>{prospectError}</div>}
+
+                {prospectResults.length > 0 && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                      <span style={{ fontSize: '.82rem', color: '#64748B' }}>{prospectResults.length} bedrijven gevonden met website</span>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => setSelectedProspects(new Set(prospectResults.map((_, i) => i)))}
+                          style={{ fontSize: '.75rem', padding: '5px 12px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#F8FAFC', cursor: 'pointer', color: '#334155' }}>
+                          Alles selecteren
+                        </button>
+                        {selectedProspects.size > 0 && (
+                          <button onClick={importSelectedProspects}
+                            style={{ fontSize: '.75rem', padding: '5px 12px', borderRadius: 6, border: '1px solid #7C3AED', background: '#7C3AED', cursor: 'pointer', color: '#fff', fontWeight: 700 }}>
+                            ↓ Importeer {selectedProspects.size} geselecteerd
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.82rem' }}>
+                        <thead>
+                          <tr style={{ background: '#F8FAFC' }}>
+                            <th style={{ padding: '8px 10px', width: 32 }}></th>
+                            {['Bedrijf', 'Website', 'Adres', '⭐'].map(h => (
+                              <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #F1F5F9' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {prospectResults.map((p, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid #F8FAFC', background: selectedProspects.has(i) ? '#F0FDFA' : 'transparent', cursor: 'pointer' }}
+                              onClick={() => setSelectedProspects(prev => {
+                                const n = new Set(prev)
+                                n.has(i) ? n.delete(i) : n.add(i)
+                                return n
+                              })}>
+                              <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                <input type="checkbox" checked={selectedProspects.has(i)} readOnly style={{ cursor: 'pointer' }} />
+                              </td>
+                              <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1E293B' }}>{p.bedrijfsnaam}</td>
+                              <td style={{ padding: '8px 10px' }}>
+                                <a href={p.website.startsWith('http') ? p.website : `https://${p.website}`} target="_blank" rel="noopener noreferrer"
+                                  onClick={e => e.stopPropagation()}
+                                  style={{ color: '#0D9488', fontSize: '.78rem' }}>
+                                  {p.website.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
+                                </a>
+                              </td>
+                              <td style={{ padding: '8px 10px', color: '#94A3B8', fontSize: '.75rem' }}>{p.adres?.split(',')[1]?.trim() || '—'}</td>
+                              <td style={{ padding: '8px 10px', color: '#64748B', whiteSpace: 'nowrap' }}>
+                                {p.rating ? `${p.rating} (${p.reviews})` : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+
           {/* Step 1: CSV input */}
           <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -1085,6 +1248,7 @@ Agentmakers.io`)
               </button>
             </div>
             <textarea
+              id="csv-textarea"
               value={bulkCsv}
               onChange={e => setBulkCsv(e.target.value)}
               placeholder={'bedrijfsnaam,website,naam,email,telefoon\nLoodgieter Jansen,loodgieterjansen.nl,Kees,kees@test.nl,\nTandarts Smit,tandartsmit.nl,,,'}
@@ -1180,11 +1344,18 @@ Agentmakers.io`)
                                 {copiedIdx === i ? '✓ Gekopieerd' : '📋 Kopieer link'}
                               </button>
                               {r.email && (
-                                <a href={makeOutreachMailto(r)}
-                                  style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #0D9488', background: '#F0FDFA', color: '#0D9488', fontWeight: 700, fontSize: '.75rem', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                                  ✉ Mail openen
-                                </a>
+                                sentIdx.has(i) ? (
+                                  <span style={{ padding: '6px 12px', borderRadius: 7, background: '#DCFCE7', color: '#166534', fontWeight: 700, fontSize: '.75rem', whiteSpace: 'nowrap' }}>✓ Verstuurd</span>
+                                ) : (
+                                  <button
+                                    onClick={() => sendOutreach(r, i)}
+                                    disabled={sendingIdx.has(i)}
+                                    style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #0D9488', background: sendingIdx.has(i) ? '#F0FDFA' : '#0D9488', color: sendingIdx.has(i) ? '#0D9488' : '#fff', fontWeight: 700, fontSize: '.75rem', cursor: sendingIdx.has(i) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: sendingIdx.has(i) ? 0.7 : 1 }}>
+                                    {sendingIdx.has(i) ? '⏳ Verzenden…' : '✉ Verstuur mail'}
+                                  </button>
+                                )
                               )}
+                              {sendErrors[i] && <span style={{ fontSize: '.7rem', color: '#DC2626' }}>{sendErrors[i]}</span>}
                             </div>
                           )}
                         </td>

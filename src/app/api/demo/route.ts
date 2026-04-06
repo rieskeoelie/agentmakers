@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     // Send emails only after scraping is done
     await Promise.allSettled([
       sendConfirmationEmail({ ...lead, demo_token }),
-      sendAdminNotification(lead),
+      sendAdminNotification({ ...lead, demo_token }),
     ])
 
     return NextResponse.json({ success: true })
