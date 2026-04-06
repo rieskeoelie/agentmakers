@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { autoTranslatePage } from '@/lib/translate'
-
-function isAuthorized(req: NextRequest) {
-  const key = req.headers.get('x-admin-key')
-  return key === process.env.ADMIN_SECRET_KEY
-}
+import { getSessionFromRequest } from '@/lib/auth'
 
 // Fields that, when changed, should trigger auto-translation of EN+ES
 const NL_CONTENT_FIELDS = [
@@ -13,9 +9,10 @@ const NL_CONTENT_FIELDS = [
   'title_nl', 'meta_description_nl',
 ]
 
-// GET all pages (admin)
+// GET all pages (admin only)
 export async function GET(req: NextRequest) {
-  if (!isAuthorized(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const session = getSessionFromRequest(req)
+  if (!session?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { data, error } = await supabaseAdmin
     .from('landing_pages')
     .select('*')
@@ -26,7 +23,8 @@ export async function GET(req: NextRequest) {
 
 // PATCH update a page (status or content)
 export async function PATCH(req: NextRequest) {
-  if (!isAuthorized(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const session = getSessionFromRequest(req)
+  if (!session?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id, ...updates } = await req.json()
   if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
 
@@ -52,7 +50,8 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE a page
 export async function DELETE(req: NextRequest) {
-  if (!isAuthorized(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const session = getSessionFromRequest(req)
+  if (!session?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
   const { error } = await supabaseAdmin.from('landing_pages').delete().eq('id', id)

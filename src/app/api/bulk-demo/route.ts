@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { scrapeWebsite, fetchPlacesInfo, buildBusinessInfo } from '@/lib/scrape'
+import { getSessionFromRequest } from '@/lib/auth'
 import { nanoid } from 'nanoid'
 
 // Allow up to 60 seconds so after() callbacks have time to finish scraping
@@ -26,7 +27,7 @@ export interface BulkResult {
   error?: string
 }
 
-async function processLead(lead: BulkLead): Promise<BulkResult> {
+async function processLead(lead: BulkLead, userId: string): Promise<BulkResult> {
   const naam = lead.naam || lead.bedrijfsnaam
   const email = lead.email || ''
   const demo_token = nanoid(24)
@@ -48,6 +49,7 @@ async function processLead(lead: BulkLead): Promise<BulkResult> {
         ip_address: '',
         user_agent: 'bulk-import',
         referrer: '',
+        user_id: userId,
       }])
 
     if (dbError) {
@@ -100,6 +102,11 @@ async function scrapeAndUpdate(lead: BulkLead, naam: string, demo_token: string)
 }
 
 export async function POST(req: NextRequest) {
+  const session = getSessionFromRequest(req)
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const { leads }: { leads: BulkLead[] } = await req.json()
 
@@ -123,7 +130,7 @@ export async function POST(req: NextRequest) {
     const batchSize = 10
     for (let i = 0; i < leads.length; i += batchSize) {
       const batch = leads.slice(i, i + batchSize)
-      const batchResults = await Promise.all(batch.map(processLead))
+      const batchResults = await Promise.all(batch.map(lead => processLead(lead, session.userId)))
       results.push(...batchResults)
     }
 

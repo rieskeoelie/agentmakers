@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { generateLandingPageContent, getUnsplashImage } from '@/lib/generate'
-
-// Protect this route with a secret key
-function isAuthorized(req: NextRequest) {
-  const key = req.headers.get('x-admin-key')
-  return key === process.env.ADMIN_SECRET_KEY
-}
+import { getSessionFromRequest } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
-  if (!isAuthorized(req)) {
+  const session = getSessionFromRequest(req)
+  if (!session?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

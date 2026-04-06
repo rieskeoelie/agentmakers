@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSessionFromRequest } from '@/lib/auth'
 
 const SYSTEM_PROMPT = `Je spreekt altijd in de taal van de prospect — detecteer dit automatisch en wissel nooit van taal.
 
@@ -54,8 +55,8 @@ Vul naam = {{prospect_naam}}, email = {{prospect_email}}, telefoon = {{prospect_
 Roep aan bij interesse. Niet wachten.`
 
 export async function POST(req: NextRequest) {
-  const key = req.headers.get('x-admin-key')
-  if (key !== process.env.ADMIN_SECRET_KEY) {
+  const session = getSessionFromRequest(req)
+  if (!session?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

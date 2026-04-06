@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSessionFromRequest } from '@/lib/auth'
 
 const EL_BASE = 'https://api.elevenlabs.io/v1/convai'
-
-function checkAdmin(req: NextRequest) {
-  return req.headers.get('x-admin-key') === process.env.ADMIN_SECRET_KEY
-}
 
 /** GET /api/conversations/[id]  — transcript + metadata for one conversation */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!checkAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const session = getSessionFromRequest(req)
+  if (!session?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
   const apiKey = process.env.ELEVENLABS_API_KEY

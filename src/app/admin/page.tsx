@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
-const ADMIN_KEY_STORAGE    = 'agentmakers_admin_key'
 const SEEN_LEADS_STORAGE   = 'agentmakers_seen_leads'
 const LEAD_STATUS_STORAGE  = 'agentmakers_lead_status'
 const LEAD_NOTES_STORAGE   = 'agentmakers_lead_notes'
@@ -73,10 +72,13 @@ const GENERATION_STEPS = [
 ]
 
 export default function AdminDashboard() {
-  const [key, setKey]           = useState('')
-  const [savedKey, setSavedKey] = useState('')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [loginError, setLoginError] = useState('')
+  interface CurrentUser { displayName: string; isAdmin: boolean }
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [authed, setAuthed]     = useState(false)
-  const [tab, setTab]           = useState<'pages' | 'leads' | 'analytics' | 'conversations' | 'outreach'>('pages')
+  const [tab, setTab]           = useState<'pages' | 'leads' | 'analytics' | 'conversations' | 'outreach'>('leads')
   const [pages, setPages]       = useState<Page[]>([])
   const [leads, setLeads]       = useState<Lead[]>([])
   const [loading, setLoading]   = useState(false)
@@ -207,7 +209,7 @@ export default function AdminDashboard() {
 
       // Also trigger the scrape-queue as a safety net in case after() doesn't fire
       // (e.g. very short-lived function invocations). This ensures scraping starts.
-      fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } }).catch(() => {})
+      fetch('/api/cron/scrape-queue').catch(() => {})
 
       let attempts = 0
       const MAX_ATTEMPTS = 24 // 24 × 5s = 2 min max wait
@@ -216,8 +218,7 @@ export default function AdminDashboard() {
         attempts++
         try {
           const r = await fetch(
-            `/api/admin/scrape-status?tokens=${tokens.join(',')}`,
-            { headers: { 'x-admin-key': savedKey } }
+            `/api/admin/scrape-status?tokens=${tokens.join(',')}`
           )
           const d = await r.json()
           const scraped = d.scraped ?? 0
@@ -236,7 +237,7 @@ export default function AdminDashboard() {
           } else {
             // Every 6 polls (30s), kick off the cron queue again to pick up remaining leads
             if (attempts % 6 === 0) {
-              fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } }).catch(() => {})
+              fetch('/api/cron/scrape-queue').catch(() => {})
             }
             setTimeout(poll, 5000)
           }
@@ -262,7 +263,7 @@ export default function AdminDashboard() {
     setScrapeTimedOut(false)
     setScrapeLoading(true)
     setScrapeProgress(prev => prev)
-    fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } }).catch(() => {})
+    fetch('/api/cron/scrape-queue').catch(() => {})
 
     let attempts = 0
     const MAX_ATTEMPTS = 24
@@ -271,8 +272,7 @@ export default function AdminDashboard() {
       attempts++
       try {
         const r = await fetch(
-          `/api/admin/scrape-status?tokens=${tokens.join(',')}`,
-          { headers: { 'x-admin-key': savedKey } }
+          `/api/admin/scrape-status?tokens=${tokens.join(',')}`
         )
         const d = await r.json()
         const scraped = d.scraped ?? 0
@@ -286,7 +286,7 @@ export default function AdminDashboard() {
           setScrapeTimedOut(true)
         } else {
           if (attempts % 6 === 0) {
-            fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } }).catch(() => {})
+            fetch('/api/cron/scrape-queue').catch(() => {})
           }
           setTimeout(poll, 5000)
         }
@@ -340,13 +340,13 @@ Agentmakers.io`)
       let business_info = ''
       if (modal.demo_token) {
         try {
-          const siRes = await fetch(`/api/admin/lead-info?token=${modal.demo_token}`, { headers: { 'x-admin-key': savedKey } })
+          const siRes = await fetch(`/api/admin/lead-info?token=${modal.demo_token}`)
           if (siRes.ok) { const d = await siRes.json(); business_info = d.business_info || '' }
         } catch { /* ignore */ }
       }
       const res = await fetch('/api/admin/generate-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bedrijfsnaam: modal.bedrijfsnaam, naam: modal.naam, demo_url: modal.demo_url, business_info, language: modal.language ?? 'nl' }),
       })
       const data = await res.json()
@@ -377,7 +377,7 @@ Agentmakers.io`)
     try {
       const res = await fetch('/api/admin/send-outreach', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ naam: emailModal.naam, email: emailModal.email, bedrijfsnaam: emailModal.bedrijfsnaam, demo_url: emailModal.demo_url, subject: emailSubject, body: emailBody }),
       })
       if (res.ok) {
@@ -404,7 +404,7 @@ Agentmakers.io`)
     try {
       const res = await fetch('/api/admin/send-outreach', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ naam: r.naam, email: r.email, bedrijfsnaam: r.bedrijfsnaam, demo_url: r.demo_url }),
       })
       if (res.ok) {
@@ -428,9 +428,7 @@ Agentmakers.io`)
     setSelectedProspects(new Set())
     setProspectNoApiKey(false)
     try {
-      const res = await fetch(`/api/admin/prospects?q=${encodeURIComponent(prospectQuery)}`, {
-        headers: { 'x-admin-key': savedKey },
-      })
+      const res = await fetch(`/api/admin/prospects?q=${encodeURIComponent(prospectQuery)}`)
       const data = await res.json()
       if (!res.ok) {
         if (data.error?.includes('GOOGLE_MAPS_API_KEY')) setProspectNoApiKey(true)
@@ -464,7 +462,7 @@ Agentmakers.io`)
     setScrapeQueueLoading(true)
     setScrapeQueueResult(null)
     try {
-      const res = await fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } })
+      const res = await fetch('/api/cron/scrape-queue')
       const data = await res.json()
       setScrapeQueueResult({ processed: data.processed ?? 0, total: data.total ?? 0 })
     } catch {
@@ -475,11 +473,11 @@ Agentmakers.io`)
   }
 
   // ─── Data fetching ─────────────────────────────────────────────
-  const fetchData = useCallback(async (k: string) => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     const [pRes, lRes] = await Promise.all([
-      fetch('/api/pages',  { headers: { 'x-admin-key': k } }),
-      fetch('/api/leads',  { headers: { 'x-admin-key': k } }),
+      fetch('/api/pages'),
+      fetch('/api/leads'),
     ])
     if (pRes.ok) setPages(await pRes.json())
     if (lRes.ok) {
@@ -492,9 +490,9 @@ Agentmakers.io`)
     setLoading(false)
   }, [])
 
-  const fetchConversations = useCallback(async (k: string) => {
+  const fetchConversations = useCallback(async () => {
     setConvLoading(true)
-    const res = await fetch('/api/conversations', { headers: { 'x-admin-key': k } })
+    const res = await fetch('/api/conversations')
     if (res.ok) {
       const data = await res.json()
       const convs: Conversation[] = data.conversations ?? []
@@ -504,7 +502,7 @@ Agentmakers.io`)
         const batch = convs.slice(i, i + batchSize)
         const results = await Promise.all(
           batch.map(c =>
-            fetch(`/api/conversations/${c.conversation_id}`, { headers: { 'x-admin-key': k } })
+            fetch(`/api/conversations/${c.conversation_id}`)
               .then(r => r.ok ? r.json() : null).catch(() => null)
           )
         )
@@ -520,25 +518,30 @@ Agentmakers.io`)
 
   const fetchConversationDetail = useCallback(async (id: string) => {
     if (convDetails[id]) return
-    const res = await fetch(`/api/conversations/${id}`, { headers: { 'x-admin-key': savedKey } })
+    const res = await fetch(`/api/conversations/${id}`)
     if (res.ok) {
       const data: ConversationDetail = await res.json()
       setConvDetails(prev => ({ ...prev, [id]: data }))
     }
-  }, [convDetails, savedKey])
+  }, [convDetails])
 
   // ─── Lifecycle ─────────────────────────────────────────────────
   useEffect(() => {
-    const stored = localStorage.getItem(ADMIN_KEY_STORAGE)
-    if (stored) {
-      setSavedKey(stored); setAuthed(true); fetchData(stored)
-      const st = localStorage.getItem(LEAD_STATUS_STORAGE)
-      if (st) setLeadStatus(JSON.parse(st))
-      const sn = localStorage.getItem(LEAD_NOTES_STORAGE)
-      if (sn) setLeadNotes(JSON.parse(sn))
-      const os = localStorage.getItem(OUTREACH_SENT_STORAGE)
-      if (os) setOutreachSent(JSON.parse(os))
-    }
+    // Check if already logged in via session cookie
+    fetch('/api/auth/me').then(async res => {
+      if (res.ok) {
+        const user = await res.json()
+        setCurrentUser({ displayName: user.displayName, isAdmin: user.isAdmin })
+        setAuthed(true)
+        fetchData()
+        const st = localStorage.getItem(LEAD_STATUS_STORAGE)
+        if (st) setLeadStatus(JSON.parse(st))
+        const sn = localStorage.getItem(LEAD_NOTES_STORAGE)
+        if (sn) setLeadNotes(JSON.parse(sn))
+        const os = localStorage.getItem(OUTREACH_SENT_STORAGE)
+        if (os) setOutreachSent(JSON.parse(os))
+      }
+    }).catch(() => {})
   }, [fetchData])
 
   useEffect(() => {
@@ -608,18 +611,31 @@ Agentmakers.io`)
   }
 
   // ─── Handlers ──────────────────────────────────────────────────
-  const login = () => {
-    localStorage.setItem(ADMIN_KEY_STORAGE, key)
-    setSavedKey(key); setAuthed(true); fetchData(key)
-    const st = localStorage.getItem(LEAD_STATUS_STORAGE)
-    if (st) setLeadStatus(JSON.parse(st))
-    const sn = localStorage.getItem(LEAD_NOTES_STORAGE)
-    if (sn) setLeadNotes(JSON.parse(sn))
+  const login = async () => {
+    setLoginError('')
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setLoginError(data.error || 'Inloggen mislukt'); return }
+      setCurrentUser({ displayName: data.user.displayName, isAdmin: data.user.isAdmin })
+      setAuthed(true)
+      fetchData()
+      const st = localStorage.getItem(LEAD_STATUS_STORAGE)
+      if (st) setLeadStatus(JSON.parse(st))
+      const sn = localStorage.getItem(LEAD_NOTES_STORAGE)
+      if (sn) setLeadNotes(JSON.parse(sn))
+      const os = localStorage.getItem(OUTREACH_SENT_STORAGE)
+      if (os) setOutreachSent(JSON.parse(os))
+    } catch { setLoginError('Netwerkfout. Probeer opnieuw.') }
   }
 
-  const logout = () => {
-    localStorage.removeItem(ADMIN_KEY_STORAGE)
-    setAuthed(false); setSavedKey(''); setKey('')
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+    setAuthed(false); setCurrentUser(null); setUsername(''); setPassword('')
   }
 
   const markAllSeen = useCallback(() => {
@@ -633,7 +649,7 @@ Agentmakers.io`)
     setPages(prev => prev.map(p => p.id === page.id ? { ...p, status: next } : p))
     await fetch('/api/pages', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: page.id, status: next })
     })
   }
@@ -644,7 +660,7 @@ Agentmakers.io`)
     setDeleteModal(null)
     await fetch('/api/pages', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: deleteModal.id })
     })
   }
@@ -673,7 +689,7 @@ Agentmakers.io`)
     updates.body_content_nl = bodyContent
     const res = await fetch('/api/pages', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates)
     })
     if (res.ok) {
@@ -689,12 +705,12 @@ Agentmakers.io`)
     setCreating(true)
     const res = await fetch('/api/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ industry: newIndustry, slug: newSlug, status: 'draft' })
     })
     const data = await res.json()
     setCreating(false)
-    if (data.success) { setShowCreate(false); setNewIndustry(''); setNewSlug(''); fetchData(savedKey) }
+    if (data.success) { setShowCreate(false); setNewIndustry(''); setNewSlug(''); fetchData() }
     else alert('Fout: ' + data.error)
   }
 
@@ -715,7 +731,7 @@ Agentmakers.io`)
     try {
       const res = await fetch('/api/leads', {
         method: 'DELETE',
-        headers: { 'x-admin-key': savedKey, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: Array.from(selectedLeads) }),
       })
       if (res.ok) { setLeads(prev => prev.filter(l => !selectedLeads.has(l.id))); setSelectedLeads(new Set()) }
@@ -759,11 +775,12 @@ Agentmakers.io`)
   if (!authed) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F1F5F9' }}>
       <div style={{ background: '#fff', padding: '48px 40px', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,.08)', maxWidth: 400, width: '100%' }}>
-        <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.5rem', marginBottom: 8 }}>Admin Dashboard</h1>
-        <p style={{ color: '#64748B', fontSize: '.92rem', marginBottom: 32 }}>Voer uw admin sleutel in om in te loggen.</p>
-        <input type="password" value={key} onChange={e => setKey(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="Admin sleutel" style={{ ...inp, marginBottom: 16 }} />
+        <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.5rem', marginBottom: 8 }}>Agentmakers.io</h1>
+        <p style={{ color: '#64748B', fontSize: '.92rem', marginBottom: 32 }}>Log in om door te gaan naar het dashboard.</p>
+        <input type="text" value={username} onChange={e => setUsername(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="Gebruikersnaam" autoComplete="username" style={{ ...inp, marginBottom: 12 }} />
+        <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="Wachtwoord" autoComplete="current-password" style={{ ...inp, marginBottom: 16 }} />
+        {loginError && <p style={{ color: '#EF4444', fontSize: '.84rem', marginBottom: 12, textAlign: 'center' }}>{loginError}</p>}
         <button onClick={login} style={{ width: '100%', padding: 14, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>Inloggen</button>
-        <p style={{ textAlign: 'center', marginTop: 16, fontSize: '.78rem', color: '#64748B' }}>Sleutel instellen in Vercel onder ADMIN_SECRET_KEY</p>
       </div>
     </div>
   )
@@ -779,7 +796,8 @@ Agentmakers.io`)
           agentmakers.io <span style={{ fontSize: '.75rem', color: '#64748B', fontWeight: 400, marginLeft: 8 }}>admin</span>
         </span>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button onClick={() => fetchData(savedKey)} title="Herlaad alle data (pagina's, leads en gesprekken)" style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>↻ Verversen</button>
+          {currentUser && <span style={{ fontSize: '.84rem', color: '#64748B' }}>{currentUser.displayName}</span>}
+          <button onClick={() => fetchData()} title="Herlaad alle data (pagina's, leads en gesprekken)" style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>↻ Verversen</button>
           <button onClick={logout} title="Uitloggen uit het admin dashboard" style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>Uitloggen</button>
         </div>
       </div>
@@ -807,15 +825,15 @@ Agentmakers.io`)
 
         {/* ── Tabs ── */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          {(['pages', 'leads', 'analytics', 'conversations', 'outreach'] as const).map(t2 => (
+          {(['leads', 'analytics', 'outreach', ...(currentUser?.isAdmin ? ['pages', 'conversations'] : [])] as const).map(t2 => (
             <button key={t2} onClick={() => {
               setTab(t2 as typeof tab)
               if (t2 === 'leads') markAllSeen()
-              if (t2 === 'conversations' && conversations.length === 0) fetchConversations(savedKey)
+              if (t2 === 'conversations' && conversations.length === 0) fetchConversations()
             }}
               title={t2 === 'pages' ? "Beheer uw landingspagina's" : t2 === 'leads' ? 'Bekijk en beheer demo-aanvragen van prospects' : t2 === 'analytics' ? "Statistieken: bezoekers, conversies en ratio's" : t2 === 'conversations' ? 'Beluister en lees AI-gesprekken met prospects' : 'Verstuur gepersonaliseerde demo-links naar prospects'}
               style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: tab === t2 ? '#0D9488' : '#fff', color: tab === t2 ? '#fff' : '#64748B', position: 'relative' }}>
-              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📥 Aanvragen' : t2 === 'analytics' ? '📊 Analytics' : t2 === 'conversations' ? '🎙 Gesprekken' : '🚀 Outreach'}
+              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📥 Aanvragen' : t2 === 'analytics' ? '📊 Analytics' : t2 === 'conversations' ? '🎙 Gesprekken' : t2 === 'outreach' ? '🚀 Outreach' : t2}
               {t2 === 'leads' && newLeadsCount > 0 && (
                 <span style={{ position: 'absolute', top: -6, right: -6, background: '#EF4444', color: '#fff', borderRadius: '50%', width: 20, height: 20, fontSize: '.7rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {newLeadsCount}
@@ -1165,7 +1183,7 @@ Agentmakers.io`)
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>🎙 Gesprekken ({conversations.length})</h2>
-              <button onClick={() => fetchConversations(savedKey)} disabled={convLoading} title="Herlaad de lijst met AI-gesprekken van de ElevenLabs agent" style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: convLoading ? 0.6 : 1 }}>
+              <button onClick={() => fetchConversations()} disabled={convLoading} title="Herlaad de lijst met AI-gesprekken van de ElevenLabs agent" style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: convLoading ? 0.6 : 1 }}>
                 {convLoading ? 'Laden…' : '↻ Vernieuwen'}
               </button>
             </div>
@@ -1252,7 +1270,7 @@ Agentmakers.io`)
                             {detail.has_audio && (
                               <div style={{ marginBottom: 24, background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #E2E8F0' }}>
                                 <div style={{ fontSize: '.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>🔊 Geluidsopname</div>
-                                <audio controls preload="none" style={{ width: '100%', height: 40 }} src={`/api/conversations/${detail.conversation_id}/audio?key=${encodeURIComponent(savedKey)}`}>
+                                <audio controls preload="none" style={{ width: '100%', height: 40 }} src={`/api/conversations/${detail.conversation_id}/audio`}>
                                   Uw browser ondersteunt geen audio element.
                                 </audio>
                                 <div style={{ fontSize: '.72rem', color: '#94A3B8', marginTop: 6 }}>

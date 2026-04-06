@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-function isAuthorized(req: NextRequest) {
-  return req.headers.get('x-admin-key') === process.env.ADMIN_SECRET_KEY
-}
+import { getSessionFromRequest } from '@/lib/auth'
 
 export interface ProspectResult {
   bedrijfsnaam: string
@@ -14,7 +11,7 @@ export interface ProspectResult {
 }
 
 export async function GET(req: NextRequest) {
-  if (!isAuthorized(req)) {
+  if (!getSessionFromRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
