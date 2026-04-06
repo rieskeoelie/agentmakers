@@ -1574,10 +1574,6 @@ Agentmakers.io`)
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                     <span style={{ padding: '6px 12px', borderRadius: 7, background: '#DCFCE7', color: '#166534', fontWeight: 700, fontSize: '.75rem', whiteSpace: 'nowrap' }}>✓ Outreach verstuurd</span>
                                     {sentDate && <span style={{ fontSize: '.68rem', color: '#94A3B8', paddingLeft: 4 }}>{sentDate}</span>}
-                                    <button onClick={() => openEmailModal(r, i)}
-                                      style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #E2E8F0', background: 'transparent', color: '#94A3B8', fontSize: '.7rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                                      ↺ Opnieuw sturen
-                                    </button>
                                   </div>
                                 ) : (
                                   <button
