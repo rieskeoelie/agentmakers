@@ -119,6 +119,8 @@ export default function AdminDashboard() {
   const [bulkLoading, setBulkLoading]   = useState(false)
   const [bulkError, setBulkError]       = useState('')
   const [copiedIdx, setCopiedIdx]       = useState<number | null>(null)
+  const [scrapeQueueLoading, setScrapeQueueLoading] = useState(false)
+  const [scrapeQueueResult, setScrapeQueueResult]   = useState<{ processed: number; total: number } | null>(null)
 
   const parseCsv = (raw: string): BulkRow[] => {
     const lines = raw.trim().split('\n').filter(l => l.trim())
@@ -192,6 +194,20 @@ Met vriendelijke groet,
 Richard
 Agentmakers.io`)
     return `mailto:${r.email}?subject=${subject}&body=${body}`
+  }
+
+  const handleScrapeQueue = async () => {
+    setScrapeQueueLoading(true)
+    setScrapeQueueResult(null)
+    try {
+      const res = await fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } })
+      const data = await res.json()
+      setScrapeQueueResult({ processed: data.processed ?? 0, total: data.total ?? 0 })
+    } catch {
+      setScrapeQueueResult({ processed: 0, total: 0 })
+    } finally {
+      setScrapeQueueLoading(false)
+    }
   }
 
   // ─── Data fetching ─────────────────────────────────────────────
@@ -1038,6 +1054,25 @@ Agentmakers.io`)
             <p style={{ color: '#64748B', fontSize: '.88rem' }}>
               Plak een CSV met prospects. Systeem genereert voor iedereen een gepersonaliseerde demo-link. Minimale kolommen: <code style={{ background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>bedrijfsnaam, website</code> — optioneel: <code style={{ background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>naam, email, telefoon</code>
             </p>
+          </div>
+
+          {/* Auto-scraper status */}
+          <div style={{ background: '#F0FDFA', borderRadius: 14, padding: 20, border: '1px solid #CCFBF1', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#0D9488', marginBottom: 3 }}>🤖 Auto-scraper actief</div>
+              <div style={{ fontSize: '.8rem', color: '#64748B' }}>
+                Vercel Cron scrapet elke 10 minuten alle onverwerkte leads automatisch.
+                {scrapeQueueResult && (
+                  <span style={{ marginLeft: 8, color: '#166534', fontWeight: 600 }}>
+                    ✓ Laatste run: {scrapeQueueResult.processed}/{scrapeQueueResult.total} verwerkt
+                  </span>
+                )}
+              </div>
+            </div>
+            <button onClick={handleScrapeQueue} disabled={scrapeQueueLoading}
+              style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '9px 18px', borderRadius: 9, fontWeight: 700, fontSize: '.82rem', cursor: scrapeQueueLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", whiteSpace: 'nowrap', opacity: scrapeQueueLoading ? 0.7 : 1 }}>
+              {scrapeQueueLoading ? '⏳ Scrapen…' : '▶ Scrape nu'}
+            </button>
           </div>
 
           {/* Step 1: CSV input */}
