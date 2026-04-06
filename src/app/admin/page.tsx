@@ -1527,8 +1527,8 @@ Agentmakers.io`)
             )}
           </div>
 
-          {/* Step 1: CSV input */}
-          <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0', marginBottom: 20 }}>
+          {/* Step 1: CSV input — verborgen als prospects al geïmporteerd zijn */}
+          <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0', marginBottom: 20, display: bulkParsed.length > 0 && bulkResults.length === 0 ? 'none' : 'block' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ background: '#0D9488', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>2</span>
@@ -1561,8 +1561,9 @@ Agentmakers.io`)
             <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0', marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ background: '#7C3AED', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>3</span>
+                  <span style={{ background: '#7C3AED', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>2</span>
                   <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>Controleer de lijst ({bulkParsed.length} prospects)</h3>
+                  <button onClick={() => { setBulkParsed([]); setBulkCsv('') }} style={{ fontSize: '.75rem', color: '#64748B', background: 'none', border: '1px solid #CBD5E1', borderRadius: 6, padding: '3px 10px', cursor: 'pointer' }}>← Terug</button>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {/* Language selector — mandatory */}
