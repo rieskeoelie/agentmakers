@@ -79,7 +79,7 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
         dynamicVariables: {
           business_info: business_info || 'Geen informatie beschikbaar.',
           // Only pass naam if we actually have one — empty string confuses the agent
-          prospect_naam: prospect_naam || 'ONBEKEND',
+          prospect_naam: prospect_naam || '',
           prospect_email: prospect_email || '',
           prospect_telefoon: prospect_telefoon || '',
         },
