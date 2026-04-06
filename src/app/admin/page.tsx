@@ -587,8 +587,8 @@ Agentmakers.io`)
           agentmakers.io <span style={{ fontSize: '.75rem', color: '#64748B', fontWeight: 400, marginLeft: 8 }}>admin</span>
         </span>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button onClick={() => fetchData(savedKey)} style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>↻ Verversen</button>
-          <button onClick={logout} style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>Uitloggen</button>
+          <button onClick={() => fetchData(savedKey)} title="Herlaad alle data (pagina's, leads en gesprekken)" style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>↻ Verversen</button>
+          <button onClick={logout} title="Uitloggen uit het admin dashboard" style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>Uitloggen</button>
         </div>
       </div>
 
@@ -621,6 +621,7 @@ Agentmakers.io`)
               if (t2 === 'leads') markAllSeen()
               if (t2 === 'conversations' && conversations.length === 0) fetchConversations(savedKey)
             }}
+              title={t2 === 'pages' ? "Beheer uw landingspagina's" : t2 === 'leads' ? 'Bekijk en beheer demo-aanvragen van prospects' : t2 === 'analytics' ? "Statistieken: bezoekers, conversies en ratio's" : t2 === 'conversations' ? 'Beluister en lees AI-gesprekken met prospects' : 'Verstuur gepersonaliseerde demo-links naar prospects'}
               style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: tab === t2 ? '#0D9488' : '#fff', color: tab === t2 ? '#fff' : '#64748B', position: 'relative' }}>
               {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📥 Aanvragen' : t2 === 'analytics' ? '📊 Analytics' : t2 === 'conversations' ? '🎙 Gesprekken' : '🚀 Outreach'}
               {t2 === 'leads' && newLeadsCount > 0 && (
@@ -637,7 +638,7 @@ Agentmakers.io`)
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Landingspagina&apos;s</h2>
-              <button onClick={() => setShowCreate(true)} style={{ background: '#0D9488', color: '#fff', padding: '12px 24px', borderRadius: 10, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+              <button onClick={() => setShowCreate(true)} title="Genereer een nieuwe landingspagina met AI voor een specifieke branche" style={{ background: '#0D9488', color: '#fff', padding: '12px 24px', borderRadius: 10, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
                 + Nieuwe pagina
               </button>
             </div>
@@ -660,16 +661,16 @@ Agentmakers.io`)
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button onClick={() => toggleStatus(page)} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${page.status === 'live' ? '#EF4444' : '#22C55E'}`, background: '#fff', color: page.status === 'live' ? '#EF4444' : '#22C55E' }}>
+                    <button onClick={() => toggleStatus(page)} title={page.status === 'live' ? 'Pagina offline halen (onzichtbaar voor bezoekers)' : 'Pagina live zetten (zichtbaar voor bezoekers)'} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${page.status === 'live' ? '#EF4444' : '#22C55E'}`, background: '#fff', color: page.status === 'live' ? '#EF4444' : '#22C55E' }}>
                       {page.status === 'live' ? 'Offline' : 'Live zetten'}
                     </button>
-                    <button onClick={() => window.open(`/nl/${page.slug}`, '_blank')} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #CBD5E1', background: '#fff', color: '#334155' }}>
+                    <button onClick={() => window.open(`/nl/${page.slug}`, '_blank')} title="Open deze landingspagina in een nieuw tabblad" style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #CBD5E1', background: '#fff', color: '#334155' }}>
                       Bekijken
                     </button>
-                    <button onClick={() => openEditModal(page)} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #0D9488', background: '#F0FDFA', color: '#0D9488' }}>
+                    <button onClick={() => openEditModal(page)} title="Bewerk de headlines en teksten op deze pagina (automatisch vertaald naar EN en ES)" style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #0D9488', background: '#F0FDFA', color: '#0D9488' }}>
                       ✏ Bewerken
                     </button>
-                    <button onClick={() => setDeleteModal(page)} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #EF4444', background: '#fff', color: '#EF4444' }}>
+                    <button onClick={() => setDeleteModal(page)} title="Pagina permanent verwijderen (kan niet ongedaan worden gemaakt)" style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #EF4444', background: '#fff', color: '#EF4444' }}>
                       Verwijder
                     </button>
                   </div>
@@ -698,11 +699,11 @@ Agentmakers.io`)
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Demo-aanvragen ({leads.length})</h2>
               <div style={{ display: 'flex', gap: 10 }}>
                 {selectedLeads.size > 0 && (
-                  <button onClick={deleteSelectedLeads} disabled={deleteLeadsLoading} style={{ background: '#FEF2F2', border: '1.5px solid #EF4444', color: '#DC2626', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: deleteLeadsLoading ? 0.5 : 1 }}>
+                  <button onClick={deleteSelectedLeads} disabled={deleteLeadsLoading} title={`Verwijder de ${selectedLeads.size} geselecteerde leads permanent`} style={{ background: '#FEF2F2', border: '1.5px solid #EF4444', color: '#DC2626', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: deleteLeadsLoading ? 0.5 : 1 }}>
                     🗑 Verwijder ({selectedLeads.size})
                   </button>
                 )}
-                <button onClick={exportCSV} style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                <button onClick={exportCSV} title="Download alle leads inclusief status, notities en contactgegevens als CSV-bestand" style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
                   ⬇ Exporteer CSV
                 </button>
               </div>
@@ -727,7 +728,7 @@ Agentmakers.io`)
                       <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 1fr 110px auto auto auto', gap: 12, alignItems: 'center', padding: '14px 16px' }}>
 
                         {/* Checkbox */}
-                        <input type="checkbox" checked={selectedLeads.has(lead.id)} onChange={() => toggleSelectLead(lead.id)} style={{ cursor: 'pointer', width: 16, height: 16 }} />
+                        <input type="checkbox" checked={selectedLeads.has(lead.id)} onChange={() => toggleSelectLead(lead.id)} title="Selecteer voor bulk-verwijdering" style={{ cursor: 'pointer', width: 16, height: 16 }} />
 
                         {/* Name / Company */}
                         <div>
@@ -757,6 +758,7 @@ Agentmakers.io`)
                         <select
                           value={status}
                           onChange={e => setLeadStatus(prev => ({ ...prev, [lead.id]: e.target.value }))}
+                          title="Verander de status van deze lead in de sales pipeline"
                           style={{ padding: '5px 8px', borderRadius: 7, border: `1.5px solid ${stage.color}50`, background: stage.bg, color: stage.color, fontWeight: 700, fontSize: '.72rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", outline: 'none' }}
                         >
                           {PIPELINE_STAGES.map(s => (
@@ -765,7 +767,7 @@ Agentmakers.io`)
                         </select>
 
                         {/* Opvolgen button */}
-                        <a href={makeMailto(lead)} style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: '1px solid #0D9488', background: '#F0FDFA', color: '#0D9488', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                        <a href={makeMailto(lead)} title="Opvolgmail sturen naar deze prospect (opent je e-mailprogramma)" style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: '1px solid #0D9488', background: '#F0FDFA', color: '#0D9488', textDecoration: 'none', whiteSpace: 'nowrap' }}>
                           ✉ Opvolgen
                         </a>
 
@@ -774,7 +776,7 @@ Agentmakers.io`)
                           <button
                             onClick={() => { setTab('conversations'); setOpenConvId(matchedConv) }}
                             style={{ padding: '5px 10px', borderRadius: 7, fontSize: '.72rem', fontWeight: 700, border: '1px solid #7C3AED', background: '#F5F3FF', color: '#7C3AED', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", whiteSpace: 'nowrap' }}
-                            title="Gekoppeld gesprek bekijken"
+                            title="Er is een AI-gesprek gekoppeld aan deze lead — klik om het te bekijken"
                           >
                             🎙 Gesprek
                           </button>
@@ -782,10 +784,10 @@ Agentmakers.io`)
 
                         {/* Handled + expand */}
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                          <button onClick={() => toggleHandled(lead.id)} style={{ padding: '5px 10px', borderRadius: 6, fontSize: '.72rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${isHandled ? '#CBD5E1' : '#22C55E'}`, background: isHandled ? '#F1F5F9' : '#F0FDF4', color: isHandled ? '#94A3B8' : '#166534', whiteSpace: 'nowrap' }}>
+                          <button onClick={() => toggleHandled(lead.id)} title={isHandled ? 'Markeer als niet-afgehandeld en heropenen' : 'Markeer deze lead als afgehandeld'} style={{ padding: '5px 10px', borderRadius: 6, fontSize: '.72rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${isHandled ? '#CBD5E1' : '#22C55E'}`, background: isHandled ? '#F1F5F9' : '#F0FDF4', color: isHandled ? '#94A3B8' : '#166534', whiteSpace: 'nowrap' }}>
                             {isHandled ? 'Heropenen' : '✓ Klaar'}
                           </button>
-                          <button onClick={() => setExpandedLeadId(isExpanded ? null : lead.id)} style={{ padding: '5px 8px', borderRadius: 6, fontSize: '.72rem', border: '1px solid #CBD5E1', background: isExpanded ? '#F1F5F9' : '#fff', color: '#64748B', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                          <button onClick={() => setExpandedLeadId(isExpanded ? null : lead.id)} title={isExpanded ? 'Verberg notities' : 'Toon notities voor deze lead'} style={{ padding: '5px 8px', borderRadius: 6, fontSize: '.72rem', border: '1px solid #CBD5E1', background: isExpanded ? '#F1F5F9' : '#fff', color: '#64748B', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
                             {isExpanded ? '▲' : '▼'}
                           </button>
                         </div>
@@ -800,6 +802,7 @@ Agentmakers.io`)
                             onChange={e => setLeadNotes(prev => ({ ...prev, [lead.id]: e.target.value }))}
                             placeholder="Voeg een notitie toe... (bijv. 'Gebeld op 3 april, demo gepland voor vrijdag')"
                             rows={3}
+                            title="Interne notitie voor deze lead — alleen zichtbaar in het admin dashboard"
                             style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.83rem', fontFamily: "'Nunito',sans-serif", color: '#0F172A', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
                           />
                         </div>
@@ -913,7 +916,7 @@ Agentmakers.io`)
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>🎙 Gesprekken ({conversations.length})</h2>
-              <button onClick={() => fetchConversations(savedKey)} disabled={convLoading} style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: convLoading ? 0.6 : 1 }}>
+              <button onClick={() => fetchConversations(savedKey)} disabled={convLoading} title="Herlaad de lijst met AI-gesprekken van de ElevenLabs agent" style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: convLoading ? 0.6 : 1 }}>
                 {convLoading ? 'Laden…' : '↻ Vernieuwen'}
               </button>
             </div>
@@ -1145,6 +1148,7 @@ Agentmakers.io`)
               </div>
             </div>
             <button onClick={handleScrapeQueue} disabled={scrapeQueueLoading}
+              title="Voer de scraper nu handmatig uit — haalt websitedata op van alle onverwerkte leads om demo-pagina's te personaliseren"
               style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '9px 18px', borderRadius: 9, fontWeight: 700, fontSize: '.82rem', cursor: scrapeQueueLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", whiteSpace: 'nowrap', opacity: scrapeQueueLoading ? 0.7 : 1 }}>
               {scrapeQueueLoading ? '⏳ Scrapen…' : '▶ Scrape nu'}
             </button>
@@ -1167,9 +1171,11 @@ Agentmakers.io`)
                     onChange={e => setProspectQuery(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && searchProspects()}
                     placeholder='bijv. "loodgieter amsterdam" of "tandarts rotterdam"'
+                    title="Typ een branche en stad om bedrijven te zoeken via Google Maps (druk Enter of klik Zoek)"
                     style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.88rem', color: '#1E293B', outline: 'none' }}
                   />
                   <button onClick={searchProspects} disabled={prospectLoading}
+                    title="Zoek bedrijven op Google Maps op basis van uw zoekopdracht"
                     style={{ background: '#0D9488', color: '#fff', padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '.88rem', cursor: prospectLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", whiteSpace: 'nowrap', opacity: prospectLoading ? 0.7 : 1 }}>
                     {prospectLoading ? '⏳ Zoeken…' : '🔍 Zoek'}
                   </button>
@@ -1183,11 +1189,13 @@ Agentmakers.io`)
                       <span style={{ fontSize: '.82rem', color: '#64748B' }}>{prospectResults.length} bedrijven gevonden met website</span>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => setSelectedProspects(new Set(prospectResults.map((_, i) => i)))}
+                          title="Selecteer alle gevonden prospects voor import"
                           style={{ fontSize: '.75rem', padding: '5px 12px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#F8FAFC', cursor: 'pointer', color: '#334155' }}>
                           Alles selecteren
                         </button>
                         {selectedProspects.size > 0 && (
                           <button onClick={importSelectedProspects}
+                            title="Voeg de geselecteerde prospects toe aan het CSV-veld hieronder, zodat u direct demo-links kunt genereren"
                             style={{ fontSize: '.75rem', padding: '5px 12px', borderRadius: 6, border: '1px solid #7C3AED', background: '#7C3AED', cursor: 'pointer', color: '#fff', fontWeight: 700 }}>
                             ↓ Importeer {selectedProspects.size} geselecteerd
                           </button>
@@ -1243,6 +1251,7 @@ Agentmakers.io`)
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem' }}>Stap 1 — CSV plakken</h3>
               <button onClick={() => setBulkCsv('Loodgieter Jansen,loodgieterJansen.nl,Kees Jansen,kees@loodgieterjansen.nl,0612345678\nTandarts Smit,tandartsmit.nl,Dr. Smit,info@tandartsmit.nl,')}
+                title="Vul het CSV-veld met voorbeelddata om te zien hoe het formaat werkt"
                 style={{ fontSize: '.75rem', color: '#0D9488', background: 'none', border: '1px solid #0D9488', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
                 Voorbeeld laden
               </button>
@@ -1252,10 +1261,12 @@ Agentmakers.io`)
               value={bulkCsv}
               onChange={e => setBulkCsv(e.target.value)}
               placeholder={'bedrijfsnaam,website,naam,email,telefoon\nLoodgieter Jansen,loodgieterjansen.nl,Kees,kees@test.nl,\nTandarts Smit,tandartsmit.nl,,,'}
+              title="Plak hier uw CSV-data. Verplichte kolommen: bedrijfsnaam, website. Optioneel: naam, email, telefoon"
               style={{ width: '100%', minHeight: 160, padding: 12, borderRadius: 8, border: '1.5px solid #E2E8F0', fontFamily: 'monospace', fontSize: '.82rem', color: '#334155', resize: 'vertical', outline: 'none', lineHeight: 1.6 }}
             />
             {bulkError && <div style={{ marginTop: 8, color: '#DC2626', fontSize: '.83rem' }}>{bulkError}</div>}
             <button onClick={handleBulkProcess}
+              title="Verwerk de ingevoerde CSV-data en toon een voorbeeld van de prospects"
               style={{ marginTop: 12, background: '#0D9488', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
               Verwerk CSV →
             </button>
@@ -1267,6 +1278,7 @@ Agentmakers.io`)
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem' }}>Stap 2 — Controleer ({bulkParsed.length} prospects)</h3>
                 <button onClick={handleBulkGenerate} disabled={bulkLoading}
+                  title="Genereer voor elke prospect een gepersonaliseerde demo-pagina en unieke link — dit kan even duren"
                   style={{ background: bulkLoading ? '#94A3B8' : '#7C3AED', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: bulkLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif" }}>
                   {bulkLoading ? '⏳ Aanmaken…' : `✨ Genereer ${bulkParsed.length} demo-links`}
                 </button>
@@ -1306,6 +1318,7 @@ Agentmakers.io`)
                   </span>
                 </h3>
                 <button onClick={() => { setBulkParsed([]); setBulkResults([]); setBulkCsv('') }}
+                  title="Verwijder de huidige resultaten en start met een nieuwe batch prospects"
                   style={{ fontSize: '.8rem', color: '#64748B', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 7, padding: '6px 14px', cursor: 'pointer' }}>
                   ↺ Nieuwe batch
                 </button>
@@ -1340,6 +1353,7 @@ Agentmakers.io`)
                           {r.status === 'ok' && (
                             <div style={{ display: 'flex', gap: 8 }}>
                               <button onClick={() => copyLink(r.demo_url, i)}
+                                title="Kopieer de demo-link naar het klembord om te plakken in een e-mail of WhatsApp"
                                 style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #E2E8F0', background: copiedIdx === i ? '#DCFCE7' : '#F8FAFC', color: copiedIdx === i ? '#166534' : '#64748B', fontWeight: 600, fontSize: '.75rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                                 {copiedIdx === i ? '✓ Gekopieerd' : '📋 Kopieer link'}
                               </button>
@@ -1350,6 +1364,7 @@ Agentmakers.io`)
                                   <button
                                     onClick={() => sendOutreach(r, i)}
                                     disabled={sendingIdx.has(i)}
+                                    title="Verstuur een gepersonaliseerde outreach-mail met de demo-link naar dit e-mailadres"
                                     style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #0D9488', background: sendingIdx.has(i) ? '#F0FDFA' : '#0D9488', color: sendingIdx.has(i) ? '#0D9488' : '#fff', fontWeight: 700, fontSize: '.75rem', cursor: sendingIdx.has(i) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: sendingIdx.has(i) ? 0.7 : 1 }}>
                                     {sendingIdx.has(i) ? '⏳ Verzenden…' : '✉ Verstuur mail'}
                                   </button>
@@ -1376,7 +1391,7 @@ Agentmakers.io`)
                   const a = document.createElement('a')
                   a.href = url; a.download = 'demo-links.csv'; a.click()
                   URL.revokeObjectURL(url)
-                }} style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', color: '#334155', padding: '10px 20px', borderRadius: 9, fontWeight: 600, fontSize: '.85rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                }} title="Download een CSV met alle gegenereerde demo-links — handig om in te laden in een e-mailtool zoals Mailchimp of HubSpot" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', color: '#334155', padding: '10px 20px', borderRadius: 9, fontWeight: 600, fontSize: '.85rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
                   ⬇ Download alle links als CSV
                 </button>
               </div>
