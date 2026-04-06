@@ -65,6 +65,10 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
       }
       const firstMessage = firstMessageMap[effectiveLang] || firstMessageMap['nl']
 
+      // Speed per language: Spanish TTS runs very fast, dial it back more
+      const speedByLang: Record<string, number> = { nl: 0.92, en: 0.92, es: 0.78 }
+      const speed = speedByLang[effectiveLang] ?? 0.92
+
       const conv = await VoiceConversation.startSession({
         agentId: agent_id,
         connectionType: 'websocket',
@@ -74,6 +78,7 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
             firstMessage,
             prompt: { prompt: system_prompt },
           },
+          tts: { speed },
         },
         dynamicVariables: {
           business_info: business_info || 'Geen informatie beschikbaar.',
