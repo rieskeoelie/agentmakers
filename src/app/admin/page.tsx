@@ -25,6 +25,7 @@ interface Lead {
   id: string; naam: string; email: string; telefoon: string
   landing_page_slug: string; language: string; created_at: string
   website?: string; bedrijfsnaam?: string; handled?: boolean
+  demo_token?: string
 }
 interface Conversation {
   conversation_id: string; status: string
@@ -143,7 +144,7 @@ export default function AdminDashboard() {
   const [outreachSent, setOutreachSent] = useState<Record<string, string>>({})
 
   // AI email modal
-  interface EmailModal { idx: number; bedrijfsnaam: string; naam: string; email: string; demo_url: string; demo_token: string }
+  interface EmailModal { idx: number; bedrijfsnaam: string; naam: string; email: string; demo_url: string; demo_token: string; language?: string }
   const [emailModal, setEmailModal]         = useState<EmailModal | null>(null)
   const [emailSubject, setEmailSubject]     = useState('')
   const [emailBody, setEmailBody]           = useState('')
@@ -325,29 +326,49 @@ Agentmakers.io`)
   }
 
   const openEmailModal = async (r: BulkResult, idx: number) => {
-    setEmailModal({ idx, bedrijfsnaam: r.bedrijfsnaam, naam: r.naam, email: r.email, demo_url: r.demo_url, demo_token: r.demo_token })
+    await _openEmailModalRaw({ idx, bedrijfsnaam: r.bedrijfsnaam, naam: r.naam, email: r.email, demo_url: r.demo_url, demo_token: r.demo_token, language: bulkLanguage ?? 'nl' })
+  }
+
+  // Generic handler — works for both BulkResult rows and inbound Lead rows
+  const _openEmailModalRaw = async (modal: EmailModal) => {
+    setEmailModal(modal)
     setEmailSubject('')
     setEmailBody('')
     setEmailGenError('')
     setEmailGenerating(true)
     try {
-      // Fetch business_info for this lead from the DB via the scrape-status endpoint (reuse token lookup)
       let business_info = ''
-      try {
-        const siRes = await fetch(`/api/admin/lead-info?token=${r.demo_token}`, { headers: { 'x-admin-key': savedKey } })
-        if (siRes.ok) { const d = await siRes.json(); business_info = d.business_info || '' }
-      } catch { /* ignore */ }
-
+      if (modal.demo_token) {
+        try {
+          const siRes = await fetch(`/api/admin/lead-info?token=${modal.demo_token}`, { headers: { 'x-admin-key': savedKey } })
+          if (siRes.ok) { const d = await siRes.json(); business_info = d.business_info || '' }
+        } catch { /* ignore */ }
+      }
       const res = await fetch('/api/admin/generate-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
-        body: JSON.stringify({ bedrijfsnaam: r.bedrijfsnaam, naam: r.naam, demo_url: r.demo_url, business_info, language: bulkLanguage ?? 'nl' }),
+        body: JSON.stringify({ bedrijfsnaam: modal.bedrijfsnaam, naam: modal.naam, demo_url: modal.demo_url, business_info, language: modal.language ?? 'nl' }),
       })
       const data = await res.json()
       if (!res.ok) { setEmailGenError(data.error || 'Genereren mislukt'); return }
       setEmailSubject(data.subject)
       setEmailBody(data.body)
     } catch { setEmailGenError('Netwerkfout') } finally { setEmailGenerating(false) }
+  }
+
+  // Open modal for an inbound lead from the leads tab
+  const openLeadEmailModal = async (lead: Lead) => {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://agentmakers.io'
+    const demo_url = lead.demo_token ? `${siteUrl}/demo/${lead.demo_token}` : ''
+    await _openEmailModalRaw({
+      idx: -1, // not used for per-lead sent tracking (we use demo_token in localStorage)
+      bedrijfsnaam: lead.bedrijfsnaam || lead.naam,
+      naam: lead.naam,
+      email: lead.email,
+      demo_url,
+      demo_token: lead.demo_token || '',
+      language: lead.language || 'nl',
+    })
   }
 
   const sendEmailFromModal = async () => {
@@ -873,7 +894,7 @@ Agentmakers.io`)
                 <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#1D4ED8', marginBottom: 4 }}>Demo-aanvragen opvolgen</div>
                 <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.6 }}>
                   Hier zie je alle prospects die een demo hebben aangevraagd. Gebruik de <strong>status-dropdown</strong> per lead om bij te houden waar je staat in het verkoopproces
-                  (Nieuw → Contact → Demo gepland → Gewonnen). Klik op <strong>▼</strong> om notities toe te voegen. Klik op <strong>✉ Opvolgen</strong> om direct een e-mail te sturen.
+                  (Nieuw → Contact → Demo gepland → Gewonnen). Klik op <strong>▼</strong> om notities toe te voegen. Klik op <strong>✨ AI Opvolgen</strong> om een door AI geschreven, gepersonaliseerde mail te versturen.
                   Gebruik <strong>✓ Klaar</strong> als een lead volledig is afgehandeld. Met <strong>⬇ Exporteer CSV</strong> download je de volledige lijst.
                 </div>
               </div>
@@ -961,10 +982,19 @@ Agentmakers.io`)
                           ))}
                         </select>
 
-                        {/* Opvolgen button */}
-                        <a href={makeMailto(lead)} title="Opvolgmail sturen naar deze prospect (opent je e-mailprogramma)" style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: '1px solid #0D9488', background: '#F0FDFA', color: '#0D9488', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                          ✉ Opvolgen
-                        </a>
+                        {/* Opvolgen button — AI email modal */}
+                        {outreachSent[lead.demo_token || ''] ? (
+                          <span title={`Outreach verstuurd op ${new Date(outreachSent[lead.demo_token || '']).toLocaleDateString('nl-NL')}`}
+                            style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: '1px solid #86EFAC', background: '#F0FDF4', color: '#166534', whiteSpace: 'nowrap' }}>
+                            ✓ Outreach verstuurd
+                          </span>
+                        ) : (
+                          <button onClick={() => lead.email && openLeadEmailModal(lead)} disabled={!lead.email}
+                            title={lead.email ? 'Laat AI een gepersonaliseerde outreach-mail schrijven en verstuur direct vanuit het dashboard' : 'Geen e-mailadres bekend voor deze lead'}
+                            style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: '1px solid #7C3AED', background: '#7C3AED', color: '#fff', cursor: lead.email ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', opacity: lead.email ? 1 : 0.45, fontFamily: "'Nunito',sans-serif" }}>
+                            ✨ AI Opvolgen
+                          </button>
+                        )}
 
                         {/* Matched conversation badge */}
                         {matchedConv ? (
