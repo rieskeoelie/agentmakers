@@ -1407,12 +1407,11 @@ Agentmakers.io`)
             <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🗺️</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#C2410C', marginBottom: 8 }}>Zo werkt de outreach — 4 stappen</div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#C2410C', marginBottom: 8 }}>Zo werkt de outreach — 3 stappen</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px', fontSize: '.82rem', color: '#334155', lineHeight: 1.6 }}>
-                  <div><strong>Stap 1 — Prospects zoeken:</strong> Gebruik de <em>Prospect finder</em> om bedrijven te zoeken via Google Maps. Vink de gewenste prospects aan en importeer ze.</div>
-                  <div><strong>Stap 2 — CSV plakken:</strong> De geïmporteerde prospects verschijnen automatisch in het CSV-veld. Je kunt ook handmatig een lijst plakken.</div>
-                  <div><strong>Stap 3 — Demo-links genereren:</strong> Klik op <em>Verwerk CSV</em> en daarna <em>Genereer demo-links</em>. Het systeem maakt voor elk bedrijf een unieke pagina én personaliseert de AI-agent automatisch op hun website.</div>
-                  <div><strong>Stap 4 — Versturen:</strong> Kopieer de links of klik op <em>✉ Verstuur mail</em> om direct een outreach-e-mail te sturen naar prospects met een e-mailadres.</div>
+                  <div><strong>Stap 1 — Prospects zoeken:</strong> Gebruik de <em>Prospect finder</em> om bedrijven te zoeken via Google Maps. Vink de gewenste prospects aan en klik op <em>Importeer geselecteerd</em>.</div>
+                  <div><strong>Stap 2 — Controleer &amp; genereer:</strong> Controleer de lijst, kies een taal en klik op <em>Genereer demo-links</em>. Wil je handmatig een lijst invoeren? Gebruik het CSV-veld bovenaan.</div>
+                  <div><strong>Stap 3 — Versturen:</strong> Kopieer de links of klik op <em>✉ Verstuur mail</em> om direct een outreach-e-mail te sturen naar prospects met een e-mailadres.</div>
                 </div>
               </div>
             </div>
@@ -1433,7 +1432,7 @@ Agentmakers.io`)
               <span style={{ background: '#0D9488', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>1</span>
               <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>🔍 Prospect finder — bedrijven zoeken</h3>
             </div>
-            <p style={{ color: '#64748B', fontSize: '.82rem', marginBottom: 16, marginLeft: 40 }}>Typ een branche + stad (bijv. <em>"loodgieter amsterdam"</em>). Vink de bedrijven aan die je wilt benaderen en klik op <strong>Importeer geselecteerd</strong> — ze verschijnen automatisch in het CSV-veld hieronder.</p>
+            <p style={{ color: '#64748B', fontSize: '.82rem', marginBottom: 16, marginLeft: 40 }}>Typ een branche + stad (bijv. <em>"loodgieter amsterdam"</em>). Vink de bedrijven aan die je wilt benaderen en klik op <strong>Importeer geselecteerd</strong> — je gaat direct naar de controleer-stap.</p>
 
             {prospectNoApiKey ? (
               <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 16, fontSize: '.85rem', color: '#92400E' }}>
@@ -1471,7 +1470,7 @@ Agentmakers.io`)
                         </button>
                         {selectedProspects.size > 0 && (
                           <button onClick={importSelectedProspects}
-                            title="Voeg de geselecteerde prospects toe aan het CSV-veld hieronder, zodat u direct demo-links kunt genereren"
+                            title="Voeg de geselecteerde prospects toe aan de controleer-lijst en genereer direct demo-links"
                             style={{ fontSize: '.75rem', padding: '5px 12px', borderRadius: 6, border: '1px solid #7C3AED', background: '#7C3AED', cursor: 'pointer', color: '#fff', fontWeight: 700 }}>
                             ↓ Importeer {selectedProspects.size} geselecteerd
                           </button>
@@ -1527,8 +1526,8 @@ Agentmakers.io`)
             )}
           </div>
 
-          {/* Step 1: CSV input — verborgen als prospects al geïmporteerd zijn */}
-          <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0', marginBottom: 20, display: bulkParsed.length > 0 && bulkResults.length === 0 ? 'none' : 'block' }}>
+          {/* Step 2: CSV input — verborgen zodra prospects zijn geïmporteerd of resultaten klaar zijn */}
+          <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0', marginBottom: 20, display: bulkParsed.length === 0 ? 'block' : 'none' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ background: '#0D9488', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>2</span>
@@ -1619,7 +1618,7 @@ Agentmakers.io`)
             <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ background: '#166534', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>4</span>
+                  <span style={{ background: '#166534', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>3</span>
                   <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>
                     Demo-links klaar 🎉
                     <span style={{ marginLeft: 10, fontSize: '.78rem', fontWeight: 400, color: '#64748B' }}>
