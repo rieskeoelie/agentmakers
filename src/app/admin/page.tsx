@@ -592,10 +592,10 @@ Agentmakers.io`)
         </div>
       </div>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '36px 48px' }}>
 
         {/* ── KPI row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14, marginBottom: 32 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16, marginBottom: 36 }}>
           {[
             { icon: '📄', val: pages.length,              label: "Pagina's",       sub: `${pages.filter(p => p.status === 'live').length} live` },
             { icon: '👁️', val: totalVisits,               label: 'Bezoekers',      sub: 'totaal' },
@@ -636,6 +636,18 @@ Agentmakers.io`)
         {/* ══════════════════════ PAGES TAB ══════════════════════ */}
         {tab === 'pages' && (
           <div>
+            {/* Uitlegbanner */}
+            <div style={{ background: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>📄</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#0D9488', marginBottom: 4 }}>Landingspagina&apos;s beheren</div>
+                <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.6 }}>
+                  Hier staan alle gepersonaliseerde landingspagina&apos;s. Elke pagina is gericht op een specifieke branche en bevat een AI-receptionist die bezoekers helpt.
+                  Maak een nieuwe pagina aan met <strong>+ Nieuwe pagina</strong>, zet hem <strong>Live</strong> als hij klaar is, en pas teksten aan met <strong>✏ Bewerken</strong>.
+                  Concept-pagina&apos;s zijn niet zichtbaar voor bezoekers.
+                </div>
+              </div>
+            </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Landingspagina&apos;s</h2>
               <button onClick={() => setShowCreate(true)} title="Genereer een nieuwe landingspagina met AI voor een specifieke branche" style={{ background: '#0D9488', color: '#fff', padding: '12px 24px', borderRadius: 10, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
@@ -683,6 +695,18 @@ Agentmakers.io`)
         {/* ══════════════════════ LEADS TAB ══════════════════════ */}
         {tab === 'leads' && (
           <div>
+            {/* Uitlegbanner */}
+            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>📥</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#1D4ED8', marginBottom: 4 }}>Demo-aanvragen opvolgen</div>
+                <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.6 }}>
+                  Hier zie je alle prospects die een demo hebben aangevraagd. Gebruik de <strong>status-dropdown</strong> per lead om bij te houden waar je staat in het verkoopproces
+                  (Nieuw → Contact → Demo gepland → Gewonnen). Klik op <strong>▼</strong> om notities toe te voegen. Klik op <strong>✉ Opvolgen</strong> om direct een e-mail te sturen.
+                  Gebruik <strong>✓ Klaar</strong> als een lead volledig is afgehandeld. Met <strong>⬇ Exporteer CSV</strong> download je de volledige lijst.
+                </div>
+              </div>
+            </div>
             {/* Pipeline summary bar */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
               {PIPELINE_STAGES.map(stage => (
@@ -818,6 +842,18 @@ Agentmakers.io`)
         {/* ══════════════════════ ANALYTICS TAB ══════════════════════ */}
         {tab === 'analytics' && (
           <div>
+            {/* Uitlegbanner */}
+            <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>📊</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#B45309', marginBottom: 4 }}>Statistieken & prestaties</div>
+                <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.6 }}>
+                  Hier zie je hoeveel bezoekers elke pagina heeft ontvangen en hoeveel daarvan een demo hebben aangevraagd (<strong>conversieratio</strong>).
+                  Filter op taal (NL/EN/ES) om te zien welke markt het best presteert. De <strong>beste pagina&apos;s</strong> rangschikking laat zien welke branches het meest converteren —
+                  gebruik dit om te bepalen voor welke branche je nieuwe pagina&apos;s aanmaakt.
+                </div>
+              </div>
+            </div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 20 }}>Analytics</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
               {[
@@ -914,6 +950,18 @@ Agentmakers.io`)
         {/* ══════════════════════ CONVERSATIONS TAB ══════════════════════ */}
         {tab === 'conversations' && (
           <div>
+            {/* Uitlegbanner */}
+            <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🎙</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#7C3AED', marginBottom: 4 }}>AI-gesprekken beluisteren & lezen</div>
+                <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.6 }}>
+                  Hier staan alle gesprekken die bezoekers hebben gevoerd met de AI-receptionist. Klik op een gesprek om het <strong>transcript te lezen</strong> en (indien beschikbaar) de
+                  <strong> geluidsopname te beluisteren</strong>. Als een gesprek gekoppeld is aan een lead uit de Aanvragen-tab, zie je een groene badge — klik daarop om direct naar die lead te gaan.
+                  Gebruik <strong>↻ Vernieuwen</strong> om nieuwe gesprekken te laden.
+                </div>
+              </div>
+            </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>🎙 Gesprekken ({conversations.length})</h2>
               <button onClick={() => fetchConversations(savedKey)} disabled={convLoading} title="Herlaad de lijst met AI-gesprekken van de ElevenLabs agent" style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: convLoading ? 0.6 : 1 }}>
@@ -1128,10 +1176,21 @@ Agentmakers.io`)
       {tab === 'outreach' && (
         <div>
           <div style={{ marginBottom: 28 }}>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 6 }}>🚀 Bulk outreach</h2>
-            <p style={{ color: '#64748B', fontSize: '.88rem' }}>
-              Plak een CSV met prospects. Systeem genereert voor iedereen een gepersonaliseerde demo-link. Minimale kolommen: <code style={{ background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>bedrijfsnaam, website</code> — optioneel: <code style={{ background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>naam, email, telefoon</code>
-            </p>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 16 }}>🚀 Bulk outreach</h2>
+
+            {/* Uitlegbanner */}
+            <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🗺️</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#C2410C', marginBottom: 8 }}>Zo werkt de outreach — 4 stappen</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px', fontSize: '.82rem', color: '#334155', lineHeight: 1.6 }}>
+                  <div><strong>Stap 1 — Prospects zoeken:</strong> Gebruik de <em>Prospect finder</em> om bedrijven te zoeken via Google Maps. Vink de gewenste prospects aan en importeer ze.</div>
+                  <div><strong>Stap 2 — CSV plakken:</strong> De geïmporteerde prospects verschijnen automatisch in het CSV-veld. Je kunt ook handmatig een lijst plakken.</div>
+                  <div><strong>Stap 3 — Demo-links genereren:</strong> Klik op <em>Verwerk CSV</em> en daarna <em>Genereer demo-links</em>. Het systeem maakt voor elk bedrijf een unieke gepersonaliseerde pagina.</div>
+                  <div><strong>Stap 4 — Versturen:</strong> Kopieer de links of klik op <em>✉ Verstuur mail</em> om direct een outreach-e-mail te sturen naar prospects met een e-mailadres.</div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Auto-scraper status */}
@@ -1139,7 +1198,7 @@ Agentmakers.io`)
             <div>
               <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#0D9488', marginBottom: 3 }}>🤖 Auto-scraper actief</div>
               <div style={{ fontSize: '.8rem', color: '#64748B' }}>
-                Vercel Cron scrapet elke 10 minuten alle onverwerkte leads automatisch.
+                Scrapet dagelijks alle onverwerkte leads automatisch — haalt websitedata op om demo-pagina&apos;s te personaliseren.
                 {scrapeQueueResult && (
                   <span style={{ marginLeft: 8, color: '#166534', fontWeight: 600 }}>
                     ✓ Laatste run: {scrapeQueueResult.processed}/{scrapeQueueResult.total} verwerkt
@@ -1155,9 +1214,12 @@ Agentmakers.io`)
           </div>
 
           {/* Prospect finder */}
-          <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 20 }}>
-            <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem', marginBottom: 6 }}>🔍 Prospect finder</h3>
-            <p style={{ color: '#64748B', fontSize: '.82rem', marginBottom: 16 }}>Zoek bedrijven direct via Google Maps. Selecteer prospects en importeer ze in één klik.</p>
+          <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              <span style={{ background: '#0D9488', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>1</span>
+              <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>🔍 Prospect finder — bedrijven zoeken</h3>
+            </div>
+            <p style={{ color: '#64748B', fontSize: '.82rem', marginBottom: 16, marginLeft: 40 }}>Typ een branche + stad (bijv. <em>"loodgieter amsterdam"</em>). Vink de bedrijven aan die je wilt benaderen en klik op <strong>Importeer geselecteerd</strong> — ze verschijnen automatisch in het CSV-veld hieronder.</p>
 
             {prospectNoApiKey ? (
               <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 16, fontSize: '.85rem', color: '#92400E' }}>
@@ -1247,9 +1309,12 @@ Agentmakers.io`)
           </div>
 
           {/* Step 1: CSV input */}
-          <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0', marginBottom: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem' }}>Stap 1 — CSV plakken</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ background: '#0D9488', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>2</span>
+                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>CSV plakken of importeren</h3>
+              </div>
               <button onClick={() => setBulkCsv('Loodgieter Jansen,loodgieterJansen.nl,Kees Jansen,kees@loodgieterjansen.nl,0612345678\nTandarts Smit,tandartsmit.nl,Dr. Smit,info@tandartsmit.nl,')}
                 title="Vul het CSV-veld met voorbeelddata om te zien hoe het formaat werkt"
                 style={{ fontSize: '.75rem', color: '#0D9488', background: 'none', border: '1px solid #0D9488', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
@@ -1274,9 +1339,12 @@ Agentmakers.io`)
 
           {/* Step 2: Preview */}
           {bulkParsed.length > 0 && bulkResults.length === 0 && (
-            <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 20 }}>
+            <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0', marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem' }}>Stap 2 — Controleer ({bulkParsed.length} prospects)</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ background: '#7C3AED', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>3</span>
+                  <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>Controleer de lijst ({bulkParsed.length} prospects)</h3>
+                </div>
                 <button onClick={handleBulkGenerate} disabled={bulkLoading}
                   title="Genereer voor elke prospect een gepersonaliseerde demo-pagina en unieke link — dit kan even duren"
                   style={{ background: bulkLoading ? '#94A3B8' : '#7C3AED', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: bulkLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif" }}>
@@ -1309,14 +1377,17 @@ Agentmakers.io`)
 
           {/* Step 3: Results */}
           {bulkResults.length > 0 && (
-            <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9' }}>
+            <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem' }}>
-                  Stap 3 — Demo-links klaar 🎉
-                  <span style={{ marginLeft: 10, fontSize: '.78rem', fontWeight: 400, color: '#64748B' }}>
-                    {bulkResults.filter(r => r.status === 'ok').length}/{bulkResults.length} gelukt
-                  </span>
-                </h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ background: '#166534', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>4</span>
+                  <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>
+                    Demo-links klaar 🎉
+                    <span style={{ marginLeft: 10, fontSize: '.78rem', fontWeight: 400, color: '#64748B' }}>
+                      {bulkResults.filter(r => r.status === 'ok').length}/{bulkResults.length} gelukt
+                    </span>
+                  </h3>
+                </div>
                 <button onClick={() => { setBulkParsed([]); setBulkResults([]); setBulkCsv('') }}
                   title="Verwijder de huidige resultaten en start met een nieuwe batch prospects"
                   style={{ fontSize: '.8rem', color: '#64748B', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 7, padding: '6px 14px', cursor: 'pointer' }}>
