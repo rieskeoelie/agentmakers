@@ -20,8 +20,19 @@ function getDomain(website?: string | null): string {
 
 function extractDescription(businessInfo?: string | null): string {
   if (!businessInfo) return ''
-  const idx = businessInfo.indexOf('Website inhoud:')
-  const raw = idx !== -1 ? businessInfo.substring(idx + 15) : businessInfo
+
+  // 1. Prefer Google editorial summary ("Beschrijving: ...")
+  const descMatch = businessInfo.match(/^Beschrijving:\s*(.+)/m)
+  if (descMatch) {
+    const d = descMatch[1].trim()
+    return d.length > 280 ? d.substring(0, 280).trimEnd() + '…' : d
+  }
+
+  // 2. Fall back to scraped website content
+  const websiteIdx = businessInfo.indexOf('Website inhoud:')
+  if (websiteIdx === -1) return '' // no real content — show nothing rather than raw metadata
+
+  const raw = businessInfo.substring(websiteIdx + 15)
   const lines = raw
     .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')

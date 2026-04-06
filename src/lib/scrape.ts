@@ -118,7 +118,8 @@ export function buildBusinessInfo(params: {
 }): string {
   const lines: string[] = []
   if (params.bedrijfsnaam) lines.push(`Bedrijfsnaam: ${params.bedrijfsnaam}`)
-  if (params.naam) lines.push(`Contactpersoon: ${params.naam}`)
+  // Only add Contactpersoon when it's a real person name, not just the company name repeated
+  if (params.naam && params.naam !== params.bedrijfsnaam) lines.push(`Contactpersoon: ${params.naam}`)
   if (params.website) lines.push(`Website: ${params.website}`)
 
   const p = params.placesInfo
