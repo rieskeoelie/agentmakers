@@ -59,10 +59,17 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
       const { signed_url, language, system_prompt, business_info, prospect_naam, prospect_email, prospect_telefoon, bedrijfsnaam } = await res.json()
 
       const effectiveLang = language || lang
+      const voornaam = prospect_naam?.trim().split(/\s+/)[0] || ''
       const firstMessageMap: Record<string, string> = {
-        nl: `Hallo, en welkom bij ${bedrijfsnaam || 'ons bedrijf'}! Waarmee kan ik u van dienst zijn?`,
-        en: `Hello, and welcome to ${bedrijfsnaam || 'our company'}! How can I assist you today?`,
-        es: `¡Hola, y bienvenido a ${bedrijfsnaam || 'nuestra empresa'}! ¿En qué puedo ayudarle?`,
+        nl: voornaam
+          ? `Hallo ${voornaam}, welkom bij ${bedrijfsnaam || 'ons bedrijf'}! Waarmee kan ik u van dienst zijn?`
+          : `Hallo, en welkom bij ${bedrijfsnaam || 'ons bedrijf'}! Met wie spreek ik?`,
+        en: voornaam
+          ? `Hello ${voornaam}, welcome to ${bedrijfsnaam || 'our company'}! How can I assist you today?`
+          : `Hello, and welcome to ${bedrijfsnaam || 'our company'}! Who am I speaking with?`,
+        es: voornaam
+          ? `¡Hola ${voornaam}, bienvenido a ${bedrijfsnaam || 'nuestra empresa'}! ¿En qué puedo ayudarle?`
+          : `¡Hola, y bienvenido a ${bedrijfsnaam || 'nuestra empresa'}! ¿Con quién hablo?`,
       }
       const firstMessage = firstMessageMap[effectiveLang] || firstMessageMap['nl']
 
