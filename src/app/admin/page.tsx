@@ -446,16 +446,16 @@ Agentmakers.io`)
 
   const importSelectedProspects = () => {
     const toImport = prospectResults.filter((_, i) => selectedProspects.has(i))
-    const csv = toImport.map(p =>
-      `"${p.bedrijfsnaam}","${p.website}","","","${p.telefoon}"`
-    ).join('\n')
-    setBulkCsv(csv)
-    setBulkParsed([])
+    const parsed = toImport.map(p => ({
+      bedrijfsnaam: p.bedrijfsnaam,
+      website: p.website,
+      naam: '',
+      email: '',
+      telefoon: p.telefoon,
+    }))
+    setBulkParsed(parsed)
     setBulkResults([])
-    // Scroll / switch focus to CSV section
-    setTimeout(() => {
-      document.getElementById('csv-textarea')?.focus()
-    }, 100)
+    setBulkError('')
   }
 
   const handleScrapeQueue = async () => {
