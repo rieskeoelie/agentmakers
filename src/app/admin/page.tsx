@@ -1083,7 +1083,6 @@ Agentmakers.io`)
             </div>
           </div>
         )}
-      </div>
 
       {/* ══════════════════════ CREATE MODAL ══════════════════════ */}
       {showCreate && (
@@ -1470,6 +1469,7 @@ Agentmakers.io`)
           )}
         </div>
       )}
+      </div>
 
       {/* ══════════════════════ DELETE CONFIRM MODAL ══════════════════════ */}
       {deleteModal && (
