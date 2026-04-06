@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { scrapeWebsite, buildBusinessInfo } from '@/lib/scrape'
+import { scrapeWebsite, fetchPlacesInfo, buildBusinessInfo } from '@/lib/scrape'
 import { nanoid } from 'nanoid'
 
 // Allow up to 60 seconds so after() callbacks have time to finish scraping
@@ -69,22 +69,29 @@ async function processLead(lead: BulkLead): Promise<BulkResult> {
 }
 
 async function scrapeAndUpdate(lead: BulkLead, naam: string, demo_token: string) {
-  const scrapedContent = await scrapeWebsite(lead.website)
+  // Run website scrape and Google Places lookup in parallel to save time
+  const [scrapedContent, placesInfo] = await Promise.all([
+    scrapeWebsite(lead.website),
+    fetchPlacesInfo(lead.bedrijfsnaam, lead.website),
+  ])
+
   const business_info = buildBusinessInfo({
     naam,
     bedrijfsnaam: lead.bedrijfsnaam,
     website: lead.website,
     scrapedContent,
+    placesInfo,
   })
-  // Only mark as scraped when we actually retrieved website content
-  // If scrapedContent is empty, leave scraped_at null so the cron job retries later
-  if (scrapedContent) {
+
+  // Only mark as scraped when we actually retrieved website content or Places data
+  // If both are empty, leave scraped_at null so the cron job retries later
+  const hasContent = !!scrapedContent || !!(placesInfo?.description || placesInfo?.categories?.length)
+  if (hasContent) {
     await supabaseAdmin
       .from('leads')
       .update({ business_info, scraped_at: new Date().toISOString() })
       .eq('demo_token', demo_token)
   } else {
-    // Still save basic business_info (name, website) so agent has something
     await supabaseAdmin
       .from('leads')
       .update({ business_info })

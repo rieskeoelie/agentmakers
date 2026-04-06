@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { scrapeWebsite, buildBusinessInfo } from '@/lib/scrape'
+import { scrapeWebsite, fetchPlacesInfo, buildBusinessInfo } from '@/lib/scrape'
 
 // Allow up to 60s — Firecrawl can be slow; we process 5 leads per call (~10s each = 50s max)
 export const maxDuration = 60
@@ -43,14 +43,22 @@ export async function GET(req: NextRequest) {
   const results = await Promise.allSettled(
     leads.map(async (lead) => {
       try {
-        const scrapedContent = await scrapeWebsite(lead.website)
+        // Website scrape + Places lookup in parallel
+        const [scrapedContent, placesInfo] = await Promise.all([
+          scrapeWebsite(lead.website),
+          fetchPlacesInfo(lead.bedrijfsnaam || '', lead.website),
+        ])
+
         const business_info = buildBusinessInfo({
           naam: lead.naam || '',
           bedrijfsnaam: lead.bedrijfsnaam || '',
           website: lead.website,
           scrapedContent,
+          placesInfo,
         })
-        if (scrapedContent) {
+
+        const hasContent = !!scrapedContent || !!(placesInfo?.description || placesInfo?.categories?.length)
+        if (hasContent) {
           await supabaseAdmin
             .from('leads')
             .update({ business_info, scraped_at: new Date().toISOString() })
@@ -61,7 +69,7 @@ export async function GET(req: NextRequest) {
             .update({ business_info })
             .eq('id', lead.id)
         }
-        return { id: lead.id, bedrijfsnaam: lead.bedrijfsnaam, status: scrapedContent ? 'ok' : 'no-content' }
+        return { id: lead.id, bedrijfsnaam: lead.bedrijfsnaam, status: hasContent ? 'ok' : 'no-content' }
       } catch (err) {
         // Mark as attempted so we don't retry endlessly — set scraped_at to a sentinel
         await supabaseAdmin
