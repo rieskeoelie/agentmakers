@@ -126,6 +126,7 @@ export default function AdminDashboard() {
   const [scrapeLoading, setScrapeLoading] = useState(false)
   const [scrapeDone, setScrapeDone]       = useState(false)
   const [scrapeProgress, setScrapeProgress] = useState<{ scraped: number; total: number } | null>(null)
+  const [scrapeTimedOut, setScrapeTimedOut] = useState(false)
 
   // Prospect finder
   interface ProspectResult { bedrijfsnaam: string; website: string; adres: string; telefoon: string; rating?: number; reviews?: number }
@@ -203,7 +204,11 @@ export default function AdminDashboard() {
       setScrapeLoading(true)
       setScrapeProgress({ scraped: 0, total: tokens.length })
 
+      let attempts = 0
+      const MAX_ATTEMPTS = 12 // 12 × 5s = 60s max wait
+
       const poll = async () => {
+        attempts++
         try {
           const r = await fetch(
             `/api/admin/scrape-status?tokens=${tokens.join(',')}`,
@@ -215,12 +220,22 @@ export default function AdminDashboard() {
             setScrapeQueueResult({ processed: d.scraped, total: d.total })
             setScrapeLoading(false)
             setScrapeDone(true)
+          } else if (attempts >= MAX_ATTEMPTS) {
+            // Timeout — unlock buttons anyway, scraping continues in background via cron
+            setScrapeLoading(false)
+            setScrapeDone(true)
+            setScrapeTimedOut(true)
           } else {
             setTimeout(poll, 5000)
           }
         } catch {
-          // On error keep polling
-          setTimeout(poll, 5000)
+          if (attempts >= MAX_ATTEMPTS) {
+            setScrapeLoading(false)
+            setScrapeDone(true)
+            setScrapeTimedOut(true)
+          } else {
+            setTimeout(poll, 5000)
+          }
         }
       }
       setTimeout(poll, 3000) // First check after 3s
@@ -1505,7 +1520,7 @@ Agentmakers.io`)
                     </span>
                   </h3>
                 </div>
-                <button onClick={() => { setBulkParsed([]); setBulkResults([]); setBulkCsv(''); setScrapeLoading(false); setScrapeDone(false); setScrapeQueueResult(null); setScrapeProgress(null); setBulkLanguage(null) }}
+                <button onClick={() => { setBulkParsed([]); setBulkResults([]); setBulkCsv(''); setScrapeLoading(false); setScrapeDone(false); setScrapeQueueResult(null); setScrapeProgress(null); setScrapeTimedOut(false); setBulkLanguage(null) }}
                   title="Verwijder de huidige resultaten en start met een nieuwe batch prospects"
                   style={{ fontSize: '.8rem', color: '#64748B', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 7, padding: '6px 14px', cursor: 'pointer' }}>
                   ↺ Nieuwe batch
@@ -1524,7 +1539,12 @@ Agentmakers.io`)
                   </div>
                 </div>
               )}
-              {scrapeDone && scrapeQueueResult && (
+              {scrapeDone && scrapeTimedOut && (
+                <div style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 10, padding: '12px 18px', marginBottom: 16, fontSize: '.85rem', color: '#92400E' }}>
+                  ⚠️ De website-personalisatie duurt langer dan verwacht. De links zijn al klaar om te versturen — de AI-agent wordt op de achtergrond verder gepersonaliseerd via de automatische cron job (elke 10 minuten).
+                </div>
+              )}
+              {scrapeDone && !scrapeTimedOut && scrapeQueueResult && (
                 <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 10, padding: '12px 18px', marginBottom: 16, fontSize: '.85rem', color: '#166534' }}>
                   ✅ AI-agent gepersonaliseerd voor <strong>{scrapeQueueResult.processed}</strong> van de {scrapeQueueResult.total} bedrijven — links zijn klaar om te versturen!
                 </div>
