@@ -74,7 +74,7 @@ export default function AdminDashboard() {
   const [key, setKey]           = useState('')
   const [savedKey, setSavedKey] = useState('')
   const [authed, setAuthed]     = useState(false)
-  const [tab, setTab]           = useState<'pages' | 'leads' | 'analytics' | 'conversations'>('pages')
+  const [tab, setTab]           = useState<'pages' | 'leads' | 'analytics' | 'conversations' | 'outreach'>('pages')
   const [pages, setPages]       = useState<Page[]>([])
   const [leads, setLeads]       = useState<Lead[]>([])
   const [loading, setLoading]   = useState(false)
@@ -109,6 +109,90 @@ export default function AdminDashboard() {
 
   // Analytics
   const [analyticsLang, setAnalyticsLang]   = useState<'all' | 'nl' | 'en' | 'es'>('all')
+
+  // Bulk outreach
+  interface BulkRow { bedrijfsnaam: string; website: string; naam: string; email: string; telefoon: string }
+  interface BulkResult { bedrijfsnaam: string; website: string; naam: string; email: string; demo_token: string; demo_url: string; status: 'ok' | 'error'; error?: string }
+  const [bulkCsv, setBulkCsv]           = useState('')
+  const [bulkParsed, setBulkParsed]     = useState<BulkRow[]>([])
+  const [bulkResults, setBulkResults]   = useState<BulkResult[]>([])
+  const [bulkLoading, setBulkLoading]   = useState(false)
+  const [bulkError, setBulkError]       = useState('')
+  const [copiedIdx, setCopiedIdx]       = useState<number | null>(null)
+
+  const parseCsv = (raw: string): BulkRow[] => {
+    const lines = raw.trim().split('\n').filter(l => l.trim())
+    if (lines.length === 0) return []
+    // Auto-detect header
+    const first = lines[0].toLowerCase()
+    const hasHeader = first.includes('bedrijf') || first.includes('website') || first.includes('company')
+    const dataLines = hasHeader ? lines.slice(1) : lines
+    return dataLines.map(line => {
+      const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+      return {
+        bedrijfsnaam: cols[0] || '',
+        website:      cols[1] || '',
+        naam:         cols[2] || '',
+        email:        cols[3] || '',
+        telefoon:     cols[4] || '',
+      }
+    }).filter(r => r.bedrijfsnaam && r.website)
+  }
+
+  const handleBulkProcess = () => {
+    setBulkError('')
+    const parsed = parseCsv(bulkCsv)
+    if (parsed.length === 0) { setBulkError('Geen geldige rijen gevonden. Zorg voor minimaal: bedrijfsnaam, website per rij.'); return }
+    setBulkParsed(parsed)
+    setBulkResults([])
+  }
+
+  const handleBulkGenerate = async () => {
+    if (bulkParsed.length === 0) return
+    setBulkLoading(true)
+    setBulkError('')
+    try {
+      const res = await fetch('/api/bulk-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leads: bulkParsed }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setBulkError(data.error || 'Fout bij aanmaken'); return }
+      setBulkResults(data.results)
+    } catch {
+      setBulkError('Netwerkfout. Probeer opnieuw.')
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
+  const copyLink = (url: string, idx: number) => {
+    navigator.clipboard.writeText(url)
+    setCopiedIdx(idx)
+    setTimeout(() => setCopiedIdx(null), 1800)
+  }
+
+  const makeOutreachMailto = (r: BulkResult) => {
+    const subject = encodeURIComponent(`Ik heb een AI receptioniste gebouwd voor ${r.bedrijfsnaam}`)
+    const body = encodeURIComponent(
+`Hallo${r.naam ? ` ${r.naam.split(' ')[0]}` : ''},
+
+Ik ben Richard van Agentmakers.io — wij bouwen AI receptionistes voor Nederlandse bedrijven.
+
+Ik heb alvast een persoonlijke demo gemaakt voor ${r.bedrijfsnaam}. Ze is getraind op jullie website en staat klaar om vragen van bezoekers en klanten te beantwoorden, 24/7.
+
+👉 Beluister haar hier: ${r.demo_url}
+
+Ze is nu al in staat om jullie bedrijf voor te stellen, vragen te beantwoorden over diensten en prijzen, en een afspraak in te plannen.
+
+Geen verplichtingen — het is gewoon leuk om te zien wat er al mogelijk is.
+
+Met vriendelijke groet,
+Richard
+Agentmakers.io`)
+    return `mailto:${r.email}?subject=${subject}&body=${body}`
+  }
 
   // ─── Data fetching ─────────────────────────────────────────────
   const fetchData = useCallback(async (k: string) => {
@@ -440,14 +524,14 @@ export default function AdminDashboard() {
 
         {/* ── Tabs ── */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          {(['pages', 'leads', 'analytics', 'conversations'] as const).map(t2 => (
+          {(['pages', 'leads', 'analytics', 'conversations', 'outreach'] as const).map(t2 => (
             <button key={t2} onClick={() => {
-              setTab(t2)
+              setTab(t2 as typeof tab)
               if (t2 === 'leads') markAllSeen()
               if (t2 === 'conversations' && conversations.length === 0) fetchConversations(savedKey)
             }}
               style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: tab === t2 ? '#0D9488' : '#fff', color: tab === t2 ? '#fff' : '#64748B', position: 'relative' }}>
-              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📥 Aanvragen' : t2 === 'analytics' ? '📊 Analytics' : '🎙 Gesprekken'}
+              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📥 Aanvragen' : t2 === 'analytics' ? '📊 Analytics' : t2 === 'conversations' ? '🎙 Gesprekken' : '🚀 Outreach'}
               {t2 === 'leads' && newLeadsCount > 0 && (
                 <span style={{ position: 'absolute', top: -6, right: -6, background: '#EF4444', color: '#fff', borderRadius: '50%', width: 20, height: 20, fontSize: '.7rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {newLeadsCount}
@@ -943,6 +1027,155 @@ export default function AdminDashboard() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ══════════════════════ OUTREACH TAB ══════════════════════ */}
+      {tab === 'outreach' && (
+        <div>
+          <div style={{ marginBottom: 28 }}>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 6 }}>🚀 Bulk outreach</h2>
+            <p style={{ color: '#64748B', fontSize: '.88rem' }}>
+              Plak een CSV met prospects. Systeem genereert voor iedereen een gepersonaliseerde demo-link. Minimale kolommen: <code style={{ background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>bedrijfsnaam, website</code> — optioneel: <code style={{ background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>naam, email, telefoon</code>
+            </p>
+          </div>
+
+          {/* Step 1: CSV input */}
+          <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem' }}>Stap 1 — CSV plakken</h3>
+              <button onClick={() => setBulkCsv('Loodgieter Jansen,loodgieterJansen.nl,Kees Jansen,kees@loodgieterjansen.nl,0612345678\nTandarts Smit,tandartsmit.nl,Dr. Smit,info@tandartsmit.nl,')}
+                style={{ fontSize: '.75rem', color: '#0D9488', background: 'none', border: '1px solid #0D9488', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+                Voorbeeld laden
+              </button>
+            </div>
+            <textarea
+              value={bulkCsv}
+              onChange={e => setBulkCsv(e.target.value)}
+              placeholder={'bedrijfsnaam,website,naam,email,telefoon\nLoodgieter Jansen,loodgieterjansen.nl,Kees,kees@test.nl,\nTandarts Smit,tandartsmit.nl,,,'}
+              style={{ width: '100%', minHeight: 160, padding: 12, borderRadius: 8, border: '1.5px solid #E2E8F0', fontFamily: 'monospace', fontSize: '.82rem', color: '#334155', resize: 'vertical', outline: 'none', lineHeight: 1.6 }}
+            />
+            {bulkError && <div style={{ marginTop: 8, color: '#DC2626', fontSize: '.83rem' }}>{bulkError}</div>}
+            <button onClick={handleBulkProcess}
+              style={{ marginTop: 12, background: '#0D9488', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+              Verwerk CSV →
+            </button>
+          </div>
+
+          {/* Step 2: Preview */}
+          {bulkParsed.length > 0 && bulkResults.length === 0 && (
+            <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem' }}>Stap 2 — Controleer ({bulkParsed.length} prospects)</h3>
+                <button onClick={handleBulkGenerate} disabled={bulkLoading}
+                  style={{ background: bulkLoading ? '#94A3B8' : '#7C3AED', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: bulkLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                  {bulkLoading ? '⏳ Aanmaken…' : `✨ Genereer ${bulkParsed.length} demo-links`}
+                </button>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.83rem' }}>
+                  <thead>
+                    <tr style={{ background: '#F8FAFC' }}>
+                      {['Bedrijf', 'Website', 'Naam', 'Email'].map(h => (
+                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #F1F5F9' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bulkParsed.map((r, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}>
+                        <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1E293B' }}>{r.bedrijfsnaam}</td>
+                        <td style={{ padding: '10px 14px', color: '#64748B' }}>{r.website}</td>
+                        <td style={{ padding: '10px 14px', color: '#64748B' }}>{r.naam || '—'}</td>
+                        <td style={{ padding: '10px 14px', color: '#64748B' }}>{r.email || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Results */}
+          {bulkResults.length > 0 && (
+            <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem' }}>
+                  Stap 3 — Demo-links klaar 🎉
+                  <span style={{ marginLeft: 10, fontSize: '.78rem', fontWeight: 400, color: '#64748B' }}>
+                    {bulkResults.filter(r => r.status === 'ok').length}/{bulkResults.length} gelukt
+                  </span>
+                </h3>
+                <button onClick={() => { setBulkParsed([]); setBulkResults([]); setBulkCsv('') }}
+                  style={{ fontSize: '.8rem', color: '#64748B', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 7, padding: '6px 14px', cursor: 'pointer' }}>
+                  ↺ Nieuwe batch
+                </button>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.83rem' }}>
+                  <thead>
+                    <tr style={{ background: '#F8FAFC' }}>
+                      {['Bedrijf', 'Demo-link', 'Acties'].map(h => (
+                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #F1F5F9' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bulkResults.map((r, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #F8FAFC', background: r.status === 'error' ? '#FEF2F2' : 'transparent' }}>
+                        <td style={{ padding: '10px 14px' }}>
+                          <div style={{ fontWeight: 600, color: '#1E293B' }}>{r.bedrijfsnaam}</div>
+                          {r.naam && <div style={{ fontSize: '.75rem', color: '#94A3B8' }}>{r.naam}</div>}
+                        </td>
+                        <td style={{ padding: '10px 14px' }}>
+                          {r.status === 'ok' ? (
+                            <a href={r.demo_url} target="_blank" rel="noopener noreferrer"
+                              style={{ color: '#0D9488', fontSize: '.78rem', fontFamily: 'monospace', textDecoration: 'none' }}>
+                              {r.demo_url.replace('https://agentmakers.io', '')}
+                            </a>
+                          ) : (
+                            <span style={{ color: '#DC2626', fontSize: '.78rem' }}>Fout: {r.error}</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '10px 14px' }}>
+                          {r.status === 'ok' && (
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button onClick={() => copyLink(r.demo_url, i)}
+                                style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #E2E8F0', background: copiedIdx === i ? '#DCFCE7' : '#F8FAFC', color: copiedIdx === i ? '#166534' : '#64748B', fontWeight: 600, fontSize: '.75rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                {copiedIdx === i ? '✓ Gekopieerd' : '📋 Kopieer link'}
+                              </button>
+                              {r.email && (
+                                <a href={makeOutreachMailto(r)}
+                                  style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #0D9488', background: '#F0FDFA', color: '#0D9488', fontWeight: 700, fontSize: '.75rem', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                                  ✉ Mail openen
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Export all links */}
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
+                <button onClick={() => {
+                  const rows = ['bedrijfsnaam,demo_url,email'].concat(
+                    bulkResults.filter(r => r.status === 'ok').map(r => `"${r.bedrijfsnaam}","${r.demo_url}","${r.email}"`)
+                  )
+                  const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url; a.download = 'demo-links.csv'; a.click()
+                  URL.revokeObjectURL(url)
+                }} style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', color: '#334155', padding: '10px 20px', borderRadius: 9, fontWeight: 600, fontSize: '.85rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                  ⬇ Download alle links als CSV
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
