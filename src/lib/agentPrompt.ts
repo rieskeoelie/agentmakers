@@ -68,7 +68,7 @@ Reglas: Solo una pregunta a la vez. Nunca preguntes qué día u hora prefiere �
   // Default: Dutch
   const callerLine = heeftNaam
     ? `De voornaam van de beller is ${voornaam}. Vraag nooit opnieuw naar de naam — je hebt hem al.`
-    : ''
+    : `Je weet niet hoe de beller heet. Spreek de beller nooit aan met een naam — gebruik altijd neutrale aanduidingen zoals "u". Gebruik nooit de bedrijfsnaam als naam voor de beller.`
   const emailLine = prospect_email ? `Het e-mailadres is ${prospect_email}.` : ''
   const callerInfo = [callerLine, emailLine].filter(Boolean).join(' ')
 
