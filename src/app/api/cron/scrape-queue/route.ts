@@ -57,23 +57,18 @@ export async function GET(req: NextRequest) {
         })
 
         const hasContent = !!scrapedContent || !!(placesInfo?.description || placesInfo?.categories?.length)
-        if (hasContent) {
-          await supabaseAdmin
-            .from('leads')
-            .update({ business_info, scraped_at: new Date().toISOString() })
-            .eq('id', lead.id)
-        } else {
-          await supabaseAdmin
-            .from('leads')
-            .update({ business_info })
-            .eq('id', lead.id)
-        }
-        return { id: lead.id, bedrijfsnaam: lead.bedrijfsnaam, status: hasContent ? 'ok' : 'no-content' }
-      } catch (err) {
-        // Mark as attempted so we don't retry endlessly — set scraped_at to a sentinel
+        // Always set scraped_at so the poll in the admin dashboard can detect completion,
+        // regardless of whether useful content was found.
         await supabaseAdmin
           .from('leads')
-          .update({ scraped_at: 'failed' })
+          .update({ business_info, scraped_at: new Date().toISOString() })
+          .eq('id', lead.id)
+        return { id: lead.id, bedrijfsnaam: lead.bedrijfsnaam, status: hasContent ? 'ok' : 'no-content' }
+      } catch (err) {
+        // Mark as attempted with a real timestamp so the poll resolves and we don't retry endlessly.
+        await supabaseAdmin
+          .from('leads')
+          .update({ scraped_at: new Date().toISOString() })
           .eq('id', lead.id)
         return { id: lead.id, bedrijfsnaam: lead.bedrijfsnaam, status: 'error', error: String(err) }
       }
