@@ -36,6 +36,7 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
   const [logoError, setLogoError] = useState(false)
   const [ended, setEnded] = useState(false)
   const wasActiveRef = useRef(false)
+  const hadConversationRef = useRef(false) // true once agent actually started speaking
   const convRef = useRef<VoiceConversation | null>(null)
   const rafRef = useRef<number | null>(null)
 
@@ -110,16 +111,23 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
         onDisconnect: () => {
           console.log('[EL] disconnected')
           convRef.current = null
-          if (wasActiveRef.current) {
+          if (hadConversationRef.current) {
+            // Real conversation happened — show CTA
             setEnded(true)
             window.dispatchEvent(new CustomEvent('demo:ended'))
+          } else if (wasActiveRef.current) {
+            // Connected but agent never spoke — connection dropped too early
+            setErrorMsg('Verbinding verbroken. Probeer opnieuw.')
+            setStatus('error')
           } else {
             setStatus('idle')
           }
           wasActiveRef.current = false
+          hadConversationRef.current = false
         },
         onError: (msg: string) => { console.error('[EL] error:', msg); setErrorMsg(msg); setStatus('error'); convRef.current = null },
         onModeChange: ({ mode }: { mode: string }) => {
+          hadConversationRef.current = true // agent started speaking = real session
           setStatus(mode === 'speaking' ? 'talking' : 'listening')
         },
       })
@@ -132,8 +140,12 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
   }, [token])
 
   const stopCall = useCallback(async () => {
-    if (convRef.current) { await convRef.current.endSession(); convRef.current = null }
-    // onDisconnect will fire and set ended=true if wasActiveRef is true
+    if (convRef.current) {
+      hadConversationRef.current = true // user explicitly ended = show CTA
+      await convRef.current.endSession()
+      convRef.current = null
+    }
+    // onDisconnect will fire and handle state
   }, [])
 
   const isActive = status === 'connecting' || status === 'listening' || status === 'talking'
