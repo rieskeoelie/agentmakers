@@ -27,7 +27,7 @@ async function processLead(lead: BulkLead): Promise<BulkResult> {
   const naam = lead.naam || lead.bedrijfsnaam
   const email = lead.email || ''
   const demo_token = nanoid(24)
-  const demo_url = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://agentmakers.io'}/demo/${demo_token}`
+  const demo_url = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://agentmakers.io'}/demo/${demo_token}`
 
   try {
     const { error: dbError } = await supabaseAdmin
