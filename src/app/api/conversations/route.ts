@@ -6,7 +6,7 @@ const EL_BASE = 'https://api.elevenlabs.io/v1/convai'
 /** GET /api/conversations  — list all conversations for the agent */
 export async function GET(req: NextRequest) {
   const session = getSessionFromRequest(req)
-  if (!session?.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const agentId = process.env.ELEVENLABS_AGENT_ID
   const apiKey  = process.env.ELEVENLABS_API_KEY

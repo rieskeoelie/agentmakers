@@ -825,7 +825,7 @@ Agentmakers.io`)
 
         {/* ── Tabs ── */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          {(['leads', 'analytics', 'outreach', ...(currentUser?.isAdmin ? ['pages', 'conversations'] : [])] as const).map(t2 => (
+          {(['leads', 'analytics', 'conversations', 'outreach', ...(currentUser?.isAdmin ? ['pages'] : [])] as const).map(t2 => (
             <button key={t2} onClick={() => {
               setTab(t2 as typeof tab)
               if (t2 === 'leads') markAllSeen()
