@@ -610,6 +610,13 @@ Agentmakers.io`)
     return undefined
   }
 
+  // For non-admins: filter conversations to only those matched to their own leads
+  const visibleConversations = useMemo(() => {
+    if (currentUser?.isAdmin) return conversations
+    const myConvIds = new Set(leads.map(l => getMatchedConv(l)).filter(Boolean) as string[])
+    return conversations.filter(c => myConvIds.has(c.conversation_id))
+  }, [conversations, currentUser, leads, convByKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Handlers ──────────────────────────────────────────────────
   const login = async () => {
     setLoginError('')
@@ -1182,23 +1189,23 @@ Agentmakers.io`)
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>🎙 Gesprekken ({conversations.length})</h2>
+              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>🎙 Gesprekken ({visibleConversations.length})</h2>
               <button onClick={() => fetchConversations()} disabled={convLoading} title="Herlaad de lijst met AI-gesprekken van de ElevenLabs agent" style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: convLoading ? 0.6 : 1 }}>
                 {convLoading ? 'Laden…' : '↻ Vernieuwen'}
               </button>
             </div>
 
-            {convLoading && conversations.length === 0 && (
+            {convLoading && visibleConversations.length === 0 && (
               <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}>Gesprekken laden…</div>
             )}
-            {!convLoading && conversations.length === 0 && (
+            {!convLoading && visibleConversations.length === 0 && (
               <div style={{ background: '#fff', borderRadius: 14, padding: '60px 24px', textAlign: 'center', color: '#94A3B8', border: '1px solid #F1F5F9' }}>
-                Nog geen gesprekken gevonden voor deze agent.
+                Nog geen gesprekken gevonden.
               </div>
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {conversations.map(conv => {
+              {visibleConversations.map(conv => {
                 const isOpen = openConvId === conv.conversation_id
                 const detail = convDetails[conv.conversation_id]
                 const startDate = new Date(conv.start_time_unix_secs * 1000)
