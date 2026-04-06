@@ -56,7 +56,7 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
     try {
       const res = await fetch(`/api/signed-url?token=${token}`)
       if (!res.ok) throw new Error('Could not connect')
-      const { agent_id, language, system_prompt, business_info, prospect_naam, prospect_email, prospect_telefoon, bedrijfsnaam } = await res.json()
+      const { signed_url, language, system_prompt, business_info, prospect_naam, prospect_email, prospect_telefoon, bedrijfsnaam } = await res.json()
 
       const effectiveLang = language || lang
       const firstMessageMap: Record<string, string> = {
@@ -66,12 +66,8 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
       }
       const firstMessage = firstMessageMap[effectiveLang] || firstMessageMap['nl']
 
-      // Speed per language: Spanish TTS runs very fast, dial it back more
-      const speedByLang: Record<string, number> = { nl: 0.92, en: 0.92, es: 0.78 }
-      const speed = speedByLang[effectiveLang] ?? 0.92
-
       const conv = await VoiceConversation.startSession({
-        agentId: agent_id,
+        signedUrl: signed_url,
         connectionType: 'websocket',
         overrides: {
           agent: {
@@ -79,7 +75,6 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
             firstMessage,
             prompt: { prompt: system_prompt },
           },
-          tts: { speed },
         },
         dynamicVariables: {
           business_info: business_info || 'Geen informatie beschikbaar.',

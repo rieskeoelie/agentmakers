@@ -13,10 +13,20 @@ function getAgentId(lang: string): string {
   return ELEVENLABS_AGENT_ID_NL
 }
 
+async function getSignedUrl(agentId: string): Promise<string> {
+  const apiKey = process.env.ELEVENLABS_API_KEY!
+  const res = await fetch(
+    `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`,
+    { headers: { 'xi-api-key': apiKey } }
+  )
+  if (!res.ok) throw new Error(`ElevenLabs signed URL error: ${res.status}`)
+  const data = await res.json()
+  return data.signed_url as string
+}
+
 /**
  * GET /api/signed-url?token=xxx
- * Returns the ElevenLabs agent ID + business_info for the demo.
- * The agent is Public so no signed URL is needed.
+ * Returns a signed ElevenLabs WebSocket URL + business_info for the demo.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -51,6 +61,7 @@ export async function GET(req: NextRequest) {
     const prospect_telefoon = lead.telefoon || ''
 
     const lang = (lead.language as string) || 'nl'
+    const agentId = getAgentId(lang)
 
     const system_prompt = buildAgentPrompt({
       prospect_naam,
@@ -61,8 +72,12 @@ export async function GET(req: NextRequest) {
       lang,
     })
 
+    // Generate a signed WebSocket URL so the client can connect securely
+    const signed_url = await getSignedUrl(agentId)
+
     return NextResponse.json({
-      agent_id: getAgentId(lang),
+      signed_url,
+      agent_id: agentId,
       language: lang,
       business_info,
       system_prompt,
