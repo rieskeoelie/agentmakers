@@ -75,7 +75,7 @@ export default async function DemoPage({ params }: Props) {
   const strings = {
     nl: {
       eyebrow: 'Persoonlijke AI demo',
-      headline: `AI receptioniste voor\n${companyName}`,
+      headline: 'AI receptioniste voor',
       for: 'Deze receptioniste is voor deze demo getraind op uw website. Zodra ze is getraind met echte data en gekoppeld met uw agenda verandert ze in een volwaardige medewerkster die 24/7 vriendelijk mensen te woord staat.',
       aiReady: 'AI-ready',
       notReady: 'Wordt voorbereid…',
@@ -109,7 +109,7 @@ export default async function DemoPage({ params }: Props) {
     },
     en: {
       eyebrow: 'Personal AI demo',
-      headline: `AI receptionist for\n${companyName}`,
+      headline: 'AI receptionist for',
       for: 'This receptionist has been trained on your website for this demo. Once trained with real data and connected to your calendar, she becomes a full-time team member available 24/7 to answer calls in a friendly manner.',
       aiReady: 'AI-ready',
       notReady: 'Preparing…',
@@ -143,7 +143,7 @@ export default async function DemoPage({ params }: Props) {
     },
     es: {
       eyebrow: 'Demo de IA personal',
-      headline: `IA recepcionista de\n${companyName}`,
+      headline: 'IA recepcionista de',
       for: 'Esta recepcionista ha sido entrenada en su sitio web para esta demo. Una vez entrenada con datos reales y conectada a su agenda, se convierte en una empleada disponible 24/7 para atender llamadas con amabilidad.',
       aiReady: 'IA-ready',
       notReady: 'Preparando…',
@@ -347,12 +347,45 @@ export default async function DemoPage({ params }: Props) {
         @media (max-width: 720px) {
           .main-grid {
             grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 36px;
           }
           .left-col { order: 2; }
           .right-col { order: 1; }
           .hero-sub { display: none; }
           .company-card { display: none; }
           .tips-card { display: none; }
+          .content {
+            padding: 20px 16px 48px;
+          }
+          .topbar {
+            margin-bottom: 28px;
+          }
+          .hero {
+            margin-bottom: 28px;
+          }
+          .offer-strip {
+            display: none;
+          }
+          .cta-section {
+            padding: 0 4px;
+          }
+          .cta-btn {
+            width: 100%;
+            justify-content: center;
+            padding: 15px 24px;
+          }
+          .divider {
+            margin-bottom: 20px;
+          }
+        }
+        @media (max-width: 400px) {
+          .content {
+            padding: 16px 12px 40px;
+          }
+          .logo-wordmark {
+            font-size: 0.9rem;
+          }
         }
 
         /* ── Offer strip ── */
@@ -705,7 +738,7 @@ export default async function DemoPage({ params }: Props) {
           </div>
 
           {/* Hero */}
-          <HeroSection eyebrow={s.eyebrow} headline={s.headline} sub={s.for} />
+          <HeroSection eyebrow={s.eyebrow} headline={s.headline} companyName={companyName} sub={s.for} />
 
           {/* Main two-column grid */}
           <div className="main-grid">

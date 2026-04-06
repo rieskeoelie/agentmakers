@@ -118,9 +118,13 @@ export default function AdminDashboard() {
   const [bulkResults, setBulkResults]   = useState<BulkResult[]>([])
   const [bulkLoading, setBulkLoading]   = useState(false)
   const [bulkError, setBulkError]       = useState('')
+  const [bulkLanguage, setBulkLanguage] = useState<'nl' | 'en' | 'es' | null>(null)
   const [copiedIdx, setCopiedIdx]       = useState<number | null>(null)
   const [scrapeQueueLoading, setScrapeQueueLoading] = useState(false)
   const [scrapeQueueResult, setScrapeQueueResult]   = useState<{ processed: number; total: number } | null>(null)
+  const [scrapeLoading, setScrapeLoading] = useState(false)
+  const [scrapeDone, setScrapeDone]       = useState(false)
+  const [scrapeProgress, setScrapeProgress] = useState<{ scraped: number; total: number } | null>(null)
 
   // Prospect finder
   interface ProspectResult { bedrijfsnaam: string; website: string; adres: string; telefoon: string; rating?: number; reviews?: number }
@@ -165,17 +169,49 @@ export default function AdminDashboard() {
     if (bulkParsed.length === 0) return
     setBulkLoading(true)
     setBulkError('')
+    setScrapeLoading(false)
+    setScrapeDone(false)
+    setScrapeProgress(null)
+    setScrapeQueueResult(null)
     try {
       const res = await fetch('/api/bulk-demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leads: bulkParsed }),
+        body: JSON.stringify({ leads: bulkParsed.map(r => ({ ...r, language: bulkLanguage ?? 'nl' })) }),
       })
       const data = await res.json()
       if (!res.ok) { setBulkError(data.error || 'Fout bij aanmaken'); return }
-      setBulkResults(data.results)
-      // Automatisch scrapen zodat de AI-agent direct gepersonaliseerd is
-      fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } }).catch(() => {})
+      const results: BulkResult[] = data.results
+      setBulkResults(results)
+
+      // Start polling: check every 5s whether the leads are scraped in the background
+      const tokens = results.filter(r => r.status === 'ok').map(r => r.demo_token)
+      if (tokens.length === 0) { setScrapeDone(true); return }
+
+      setScrapeLoading(true)
+      setScrapeProgress({ scraped: 0, total: tokens.length })
+
+      const poll = async () => {
+        try {
+          const r = await fetch(
+            `/api/admin/scrape-status?tokens=${tokens.join(',')}`,
+            { headers: { 'x-admin-key': savedKey } }
+          )
+          const d = await r.json()
+          setScrapeProgress({ scraped: d.scraped ?? 0, total: d.total ?? tokens.length })
+          if ((d.scraped ?? 0) >= tokens.length) {
+            setScrapeQueueResult({ processed: d.scraped, total: d.total })
+            setScrapeLoading(false)
+            setScrapeDone(true)
+          } else {
+            setTimeout(poll, 5000)
+          }
+        } catch {
+          // On error keep polling
+          setTimeout(poll, 5000)
+        }
+      }
+      setTimeout(poll, 3000) // First check after 3s
     } catch {
       setBulkError('Netwerkfout. Probeer opnieuw.')
     } finally {
@@ -582,6 +618,7 @@ Agentmakers.io`)
   // ─── Main dashboard ────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: '#F1F5F9', fontFamily: "'Nunito',sans-serif" }}>
+      <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
 
       {/* Top nav */}
       <div style={{ background: '#fff', borderBottom: '1px solid #F1F5F9', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1335,11 +1372,30 @@ Agentmakers.io`)
                   <span style={{ background: '#7C3AED', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>3</span>
                   <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>Controleer de lijst ({bulkParsed.length} prospects)</h3>
                 </div>
-                <button onClick={handleBulkGenerate} disabled={bulkLoading}
-                  title="Genereer voor elke prospect een gepersonaliseerde demo-pagina en unieke link — dit kan even duren"
-                  style={{ background: bulkLoading ? '#94A3B8' : '#7C3AED', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: bulkLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                  {bulkLoading ? '⏳ Aanmaken…' : `✨ Genereer ${bulkParsed.length} demo-links`}
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {/* Language selector — mandatory */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                    <span style={{ fontSize: '.7rem', fontWeight: 700, color: bulkLanguage ? '#64748B' : '#DC2626', letterSpacing: '.04em', textTransform: 'uppercase' }}>
+                      {bulkLanguage ? 'Taal demo' : '⚠ Kies een taal'}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#F8FAFC', border: `1px solid ${bulkLanguage ? '#E2E8F0' : '#FCA5A5'}`, borderRadius: 9, padding: '4px 6px' }}
+                      title="Verplicht — kies de taal van de demo-pagina die de prospect te zien krijgt">
+                      {(['nl', 'en', 'es'] as const).map(lang => (
+                        <button key={lang} onClick={() => setBulkLanguage(lang)}
+                          style={{ padding: '5px 10px', borderRadius: 6, border: 'none', fontWeight: 700, fontSize: '.78rem', cursor: 'pointer', transition: 'all .15s',
+                            background: bulkLanguage === lang ? '#7C3AED' : 'transparent',
+                            color: bulkLanguage === lang ? '#fff' : '#64748B' }}>
+                          {lang === 'nl' ? '🇳🇱 NL' : lang === 'en' ? '🇬🇧 EN' : '🇪🇸 ES'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button onClick={handleBulkGenerate} disabled={bulkLoading || !bulkLanguage}
+                    title={!bulkLanguage ? 'Kies eerst een taal voor de demo-pagina' : 'Genereer voor elke prospect een gepersonaliseerde demo-pagina en unieke link'}
+                    style={{ background: bulkLoading || !bulkLanguage ? '#94A3B8' : '#7C3AED', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: bulkLoading || !bulkLanguage ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", opacity: !bulkLanguage ? 0.6 : 1 }}>
+                    {bulkLoading ? '⏳ Aanmaken…' : `✨ Genereer ${bulkParsed.length} demo-links`}
+                  </button>
+                </div>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.83rem' }}>
@@ -1378,12 +1434,31 @@ Agentmakers.io`)
                     </span>
                   </h3>
                 </div>
-                <button onClick={() => { setBulkParsed([]); setBulkResults([]); setBulkCsv('') }}
+                <button onClick={() => { setBulkParsed([]); setBulkResults([]); setBulkCsv(''); setScrapeLoading(false); setScrapeDone(false); setScrapeQueueResult(null); setScrapeProgress(null); setBulkLanguage(null) }}
                   title="Verwijder de huidige resultaten en start met een nieuwe batch prospects"
                   style={{ fontSize: '.8rem', color: '#64748B', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 7, padding: '6px 14px', cursor: 'pointer' }}>
                   ↺ Nieuwe batch
                 </button>
               </div>
+
+              {/* Scrape progress banner */}
+              {scrapeLoading && scrapeProgress && (
+                <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 10, padding: '14px 18px', marginBottom: 16, fontSize: '.85rem', color: '#92400E' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <span style={{ display: 'inline-block', animation: 'spin 1.2s linear infinite' }}>⏳</span>
+                    AI-agent wordt gepersonaliseerd op de websites van de bedrijven… ({scrapeProgress.scraped}/{scrapeProgress.total})
+                  </div>
+                  <div style={{ background: '#FED7AA', borderRadius: 99, height: 6, overflow: 'hidden' }}>
+                    <div style={{ background: '#EA580C', height: '100%', borderRadius: 99, width: `${Math.round((scrapeProgress.scraped / scrapeProgress.total) * 100)}%`, transition: 'width .5s ease' }} />
+                  </div>
+                </div>
+              )}
+              {scrapeDone && scrapeQueueResult && (
+                <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 10, padding: '12px 18px', marginBottom: 16, fontSize: '.85rem', color: '#166534' }}>
+                  ✅ AI-agent gepersonaliseerd voor <strong>{scrapeQueueResult.processed}</strong> van de {scrapeQueueResult.total} bedrijven — links zijn klaar om te versturen!
+                </div>
+              )}
+
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.83rem' }}>
                   <thead>
@@ -1413,9 +1488,10 @@ Agentmakers.io`)
                         <td style={{ padding: '10px 14px' }}>
                           {r.status === 'ok' && (
                             <div style={{ display: 'flex', gap: 8 }}>
-                              <button onClick={() => copyLink(r.demo_url, i)}
-                                title="Kopieer de demo-link naar het klembord om te plakken in een e-mail of WhatsApp"
-                                style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #E2E8F0', background: copiedIdx === i ? '#DCFCE7' : '#F8FAFC', color: copiedIdx === i ? '#166534' : '#64748B', fontWeight: 600, fontSize: '.75rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                              <button onClick={() => scrapeDone && copyLink(r.demo_url, i)}
+                                disabled={!scrapeDone}
+                                title={scrapeDone ? 'Kopieer de demo-link naar het klembord om te plakken in een e-mail of WhatsApp' : 'Wacht tot de AI-agent gepersonaliseerd is…'}
+                                style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #E2E8F0', background: copiedIdx === i ? '#DCFCE7' : '#F8FAFC', color: copiedIdx === i ? '#166534' : '#64748B', fontWeight: 600, fontSize: '.75rem', cursor: scrapeDone ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', opacity: scrapeDone ? 1 : 0.4 }}>
                                 {copiedIdx === i ? '✓ Gekopieerd' : '📋 Kopieer link'}
                               </button>
                               {r.email && (
@@ -1424,9 +1500,9 @@ Agentmakers.io`)
                                 ) : (
                                   <button
                                     onClick={() => sendOutreach(r, i)}
-                                    disabled={sendingIdx.has(i)}
-                                    title="Verstuur een gepersonaliseerde outreach-mail met de demo-link naar dit e-mailadres"
-                                    style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #0D9488', background: sendingIdx.has(i) ? '#F0FDFA' : '#0D9488', color: sendingIdx.has(i) ? '#0D9488' : '#fff', fontWeight: 700, fontSize: '.75rem', cursor: sendingIdx.has(i) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: sendingIdx.has(i) ? 0.7 : 1 }}>
+                                    disabled={sendingIdx.has(i) || !scrapeDone}
+                                    title={scrapeDone ? 'Verstuur een gepersonaliseerde outreach-mail met de demo-link naar dit e-mailadres' : 'Wacht tot de AI-agent gepersonaliseerd is…'}
+                                    style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #0D9488', background: sendingIdx.has(i) ? '#F0FDFA' : '#0D9488', color: sendingIdx.has(i) ? '#0D9488' : '#fff', fontWeight: 700, fontSize: '.75rem', cursor: (sendingIdx.has(i) || !scrapeDone) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: (sendingIdx.has(i) || !scrapeDone) ? 0.4 : 1 }}>
                                     {sendingIdx.has(i) ? '⏳ Verzenden…' : '✉ Verstuur mail'}
                                   </button>
                                 )

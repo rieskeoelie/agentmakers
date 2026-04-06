@@ -214,6 +214,7 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
 
       {/* ── Orb ── */}
       <div
+        className="voice-orb-wrap"
         onClick={isActive ? stopCall : startCall}
         style={{
           position: 'relative',
@@ -253,7 +254,7 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
         ))}
 
         {/* Orb surface */}
-        <div style={{
+        <div className="voice-orb-surface" style={{
           width: 148, height: 148,
           borderRadius: '50%',
           position: 'relative',
@@ -367,6 +368,7 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
 
       {/* ── Action button ── */}
       <button
+        className="voice-action-btn"
         onClick={isActive ? stopCall : startCall}
         disabled={isConnecting}
         style={{
@@ -435,6 +437,25 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
         @keyframes soundBar {
           from { transform: scaleY(0.3); }
           to   { transform: scaleY(1.7); }
+        }
+        .voice-action-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 9px;
+        }
+        @media (max-width: 720px) {
+          .voice-action-btn {
+            width: 100%;
+          }
+          .voice-orb-wrap {
+            width: 164px !important;
+            height: 164px !important;
+          }
+          .voice-orb-surface {
+            width: 122px !important;
+            height: 122px !important;
+          }
         }
       `}</style>
     </div>
