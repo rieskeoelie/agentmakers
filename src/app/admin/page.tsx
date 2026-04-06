@@ -138,6 +138,15 @@ export default function AdminDashboard() {
   const [sentIdx, setSentIdx]           = useState<Set<number>>(new Set())
   const [sendErrors, setSendErrors]     = useState<Record<number, string>>({})
 
+  // AI email modal
+  interface EmailModal { idx: number; bedrijfsnaam: string; naam: string; email: string; demo_url: string; demo_token: string }
+  const [emailModal, setEmailModal]         = useState<EmailModal | null>(null)
+  const [emailSubject, setEmailSubject]     = useState('')
+  const [emailBody, setEmailBody]           = useState('')
+  const [emailGenerating, setEmailGenerating] = useState(false)
+  const [emailSending, setEmailSending]     = useState(false)
+  const [emailGenError, setEmailGenError]   = useState('')
+
   const parseCsv = (raw: string): BulkRow[] => {
     const lines = raw.trim().split('\n').filter(l => l.trim())
     if (lines.length === 0) return []
@@ -244,6 +253,51 @@ Met vriendelijke groet,
 Richard
 Agentmakers.io`)
     return `mailto:${r.email}?subject=${subject}&body=${body}`
+  }
+
+  const openEmailModal = async (r: BulkResult, idx: number) => {
+    setEmailModal({ idx, bedrijfsnaam: r.bedrijfsnaam, naam: r.naam, email: r.email, demo_url: r.demo_url, demo_token: r.demo_token })
+    setEmailSubject('')
+    setEmailBody('')
+    setEmailGenError('')
+    setEmailGenerating(true)
+    try {
+      // Fetch business_info for this lead from the DB via the scrape-status endpoint (reuse token lookup)
+      let business_info = ''
+      try {
+        const siRes = await fetch(`/api/admin/lead-info?token=${r.demo_token}`, { headers: { 'x-admin-key': savedKey } })
+        if (siRes.ok) { const d = await siRes.json(); business_info = d.business_info || '' }
+      } catch { /* ignore */ }
+
+      const res = await fetch('/api/admin/generate-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+        body: JSON.stringify({ bedrijfsnaam: r.bedrijfsnaam, naam: r.naam, demo_url: r.demo_url, business_info, language: bulkLanguage ?? 'nl' }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setEmailGenError(data.error || 'Genereren mislukt'); return }
+      setEmailSubject(data.subject)
+      setEmailBody(data.body)
+    } catch { setEmailGenError('Netwerkfout') } finally { setEmailGenerating(false) }
+  }
+
+  const sendEmailFromModal = async () => {
+    if (!emailModal) return
+    setEmailSending(true)
+    try {
+      const res = await fetch('/api/admin/send-outreach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': savedKey },
+        body: JSON.stringify({ naam: emailModal.naam, email: emailModal.email, bedrijfsnaam: emailModal.bedrijfsnaam, demo_url: emailModal.demo_url, subject: emailSubject, body: emailBody }),
+      })
+      if (res.ok) {
+        setSentIdx(prev => new Set(prev).add(emailModal.idx))
+        setEmailModal(null)
+      } else {
+        const d = await res.json()
+        setEmailGenError(d.error || 'Verzenden mislukt')
+      }
+    } catch { setEmailGenError('Netwerkfout') } finally { setEmailSending(false) }
   }
 
   const sendOutreach = async (r: BulkResult, idx: number) => {
@@ -1504,11 +1558,11 @@ Agentmakers.io`)
                                   <span style={{ padding: '6px 12px', borderRadius: 7, background: '#DCFCE7', color: '#166534', fontWeight: 700, fontSize: '.75rem', whiteSpace: 'nowrap' }}>✓ Verstuurd</span>
                                 ) : (
                                   <button
-                                    onClick={() => sendOutreach(r, i)}
-                                    disabled={sendingIdx.has(i) || !scrapeDone}
-                                    title={scrapeDone ? 'Verstuur een gepersonaliseerde outreach-mail met de demo-link naar dit e-mailadres' : 'Wacht tot de AI-agent gepersonaliseerd is…'}
-                                    style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #0D9488', background: sendingIdx.has(i) ? '#F0FDFA' : '#0D9488', color: sendingIdx.has(i) ? '#0D9488' : '#fff', fontWeight: 700, fontSize: '.75rem', cursor: (sendingIdx.has(i) || !scrapeDone) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: (sendingIdx.has(i) || !scrapeDone) ? 0.4 : 1 }}>
-                                    {sendingIdx.has(i) ? '⏳ Verzenden…' : '✉ Verstuur mail'}
+                                    onClick={() => openEmailModal(r, i)}
+                                    disabled={!scrapeDone}
+                                    title={scrapeDone ? 'Laat AI een gepersonaliseerde outreach-mail schrijven op basis van de website van dit bedrijf' : 'Wacht tot de AI-agent gepersonaliseerd is…'}
+                                    style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #7C3AED', background: '#7C3AED', color: '#fff', fontWeight: 700, fontSize: '.75rem', cursor: !scrapeDone ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: !scrapeDone ? 0.4 : 1 }}>
+                                    ✨ AI-mail schrijven
                                   </button>
                                 )
                               )}
@@ -1542,6 +1596,63 @@ Agentmakers.io`)
         </div>
       )}
       </div>
+
+      {/* ══════════════════════ AI EMAIL MODAL ══════════════════════ */}
+      {emailModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 1000 }}>
+          <div style={{ background: '#fff', borderRadius: 20, maxWidth: 640, width: '100%', padding: 36, boxShadow: '0 24px 64px rgba(0,0,0,.25)', display: 'flex', flexDirection: 'column', maxHeight: '90vh', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <div>
+                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', margin: 0, marginBottom: 4 }}>✨ AI-mail voor {emailModal.bedrijfsnaam}</h2>
+                <p style={{ fontSize: '.8rem', color: '#64748B', margin: 0 }}>Naar: {emailModal.email}</p>
+              </div>
+              <button onClick={() => setEmailModal(null)} style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: '#94A3B8', lineHeight: 1, padding: 4 }}>×</button>
+            </div>
+
+            {emailGenerating ? (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: 14 }}>
+                <div style={{ fontSize: '2rem', animation: 'spin 1.2s linear infinite', display: 'inline-block' }}>✨</div>
+                <p style={{ color: '#64748B', fontSize: '.9rem', margin: 0 }}>AI schrijft een gepersonaliseerde mail op basis van de website van {emailModal.bedrijfsnaam}…</p>
+              </div>
+            ) : emailGenError ? (
+              <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '16px', marginBottom: 16, color: '#DC2626', fontSize: '.85rem' }}>
+                ⚠ {emailGenError}
+              </div>
+            ) : (
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: '.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em', display: 'block', marginBottom: 6 }}>Onderwerp</label>
+                  <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: '.9rem', fontFamily: "'Nunito',sans-serif", boxSizing: 'border-box' }} />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <label style={{ fontSize: '.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em', display: 'block', marginBottom: 6 }}>E-mailtekst</label>
+                  <textarea value={emailBody} onChange={e => setEmailBody(e.target.value)}
+                    rows={12}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: '.85rem', fontFamily: "'Nunito',sans-serif", lineHeight: 1.6, resize: 'vertical', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 20, paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
+              <button onClick={() => setEmailModal(null)}
+                style={{ flex: 1, padding: '11px', background: '#F8FAFC', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: 10, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                Annuleren
+              </button>
+              <button onClick={() => { setEmailSubject(''); setEmailBody(''); setEmailGenError(''); openEmailModal({ bedrijfsnaam: emailModal.bedrijfsnaam, naam: emailModal.naam, email: emailModal.email, demo_url: emailModal.demo_url, demo_token: emailModal.demo_token, website: '', status: 'ok' } as BulkResult, emailModal.idx) }}
+                disabled={emailGenerating}
+                style={{ padding: '11px 18px', background: '#F8FAFC', color: '#7C3AED', border: '1px solid #7C3AED', borderRadius: 10, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", whiteSpace: 'nowrap' }}>
+                ↺ Herschrijven
+              </button>
+              <button onClick={sendEmailFromModal}
+                disabled={emailSending || emailGenerating || !emailSubject || !emailBody}
+                style={{ flex: 2, padding: '11px', background: emailSending || !emailSubject ? '#94A3B8' : '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.9rem', cursor: emailSending || !emailSubject ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                {emailSending ? '⏳ Verzenden…' : `📤 Verstuur naar ${emailModal.email}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ══════════════════════ DELETE CONFIRM MODAL ══════════════════════ */}
       {deleteModal && (

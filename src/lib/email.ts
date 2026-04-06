@@ -156,14 +156,31 @@ export async function sendOutreachEmail({
   email,
   bedrijfsnaam,
   demo_url,
+  subject: customSubject,
+  body: customBody,
 }: {
   naam: string
   email: string
   bedrijfsnaam: string
   demo_url: string
+  subject?: string
+  body?: string
 }) {
   const voornaam = naam.split(' ')[0]
-  const subject = `${bedrijfsnaam} — uw persoonlijke AI receptioniste staat klaar`
+  const subject = customSubject || `${bedrijfsnaam} — uw persoonlijke AI receptioniste staat klaar`
+
+  // If AI-generated body provided, use it directly
+  if (customBody) {
+    const bodyHtml = customBody
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>')
+    await resend.emails.send({
+      from: FROM, to: email, subject,
+      html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1E293B;line-height:1.7">${bodyHtml}</div>`,
+      text: customBody,
+    })
+    return
+  }
 
   const html = `
 <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1E293B;line-height:1.7">

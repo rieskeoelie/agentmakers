@@ -11,13 +11,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { naam, email, bedrijfsnaam, demo_url } = await req.json()
+    const { naam, email, bedrijfsnaam, demo_url, subject, body } = await req.json()
 
     if (!email || !bedrijfsnaam || !demo_url) {
       return NextResponse.json({ error: 'email, bedrijfsnaam en demo_url zijn verplicht' }, { status: 400 })
     }
 
-    await sendOutreachEmail({ naam: naam || bedrijfsnaam, email, bedrijfsnaam, demo_url })
+    await sendOutreachEmail({ naam: naam || bedrijfsnaam, email, bedrijfsnaam, demo_url, subject, body })
 
     return NextResponse.json({ success: true })
   } catch (err) {

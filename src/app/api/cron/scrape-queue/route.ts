@@ -47,11 +47,18 @@ export async function GET(req: NextRequest) {
           website: lead.website,
           scrapedContent,
         })
-        await supabaseAdmin
-          .from('leads')
-          .update({ business_info, scraped_at: new Date().toISOString() })
-          .eq('id', lead.id)
-        return { id: lead.id, bedrijfsnaam: lead.bedrijfsnaam, status: 'ok' }
+        if (scrapedContent) {
+          await supabaseAdmin
+            .from('leads')
+            .update({ business_info, scraped_at: new Date().toISOString() })
+            .eq('id', lead.id)
+        } else {
+          await supabaseAdmin
+            .from('leads')
+            .update({ business_info })
+            .eq('id', lead.id)
+        }
+        return { id: lead.id, bedrijfsnaam: lead.bedrijfsnaam, status: scrapedContent ? 'ok' : 'no-content' }
       } catch (err) {
         // Mark as attempted so we don't retry endlessly — set scraped_at to a sentinel
         await supabaseAdmin

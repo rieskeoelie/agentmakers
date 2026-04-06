@@ -71,10 +71,20 @@ async function scrapeAndUpdate(lead: BulkLead, naam: string, demo_token: string)
     website: lead.website,
     scrapedContent,
   })
-  await supabaseAdmin
-    .from('leads')
-    .update({ business_info, scraped_at: new Date().toISOString() })
-    .eq('demo_token', demo_token)
+  // Only mark as scraped when we actually retrieved website content
+  // If scrapedContent is empty, leave scraped_at null so the cron job retries later
+  if (scrapedContent) {
+    await supabaseAdmin
+      .from('leads')
+      .update({ business_info, scraped_at: new Date().toISOString() })
+      .eq('demo_token', demo_token)
+  } else {
+    // Still save basic business_info (name, website) so agent has something
+    await supabaseAdmin
+      .from('leads')
+      .update({ business_info })
+      .eq('demo_token', demo_token)
+  }
 }
 
 export async function POST(req: NextRequest) {
