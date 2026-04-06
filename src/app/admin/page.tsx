@@ -1296,7 +1296,7 @@ Agentmakers.io`)
                         <thead>
                           <tr style={{ background: '#F8FAFC' }}>
                             <th style={{ padding: '8px 10px', width: 32 }}></th>
-                            {['Bedrijf', 'Website', 'Adres', '⭐'].map(h => (
+                            {['Bedrijf', 'Website', 'Telefoon', 'Adres', '⭐'].map(h => (
                               <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #F1F5F9' }}>{h}</th>
                             ))}
                           </tr>
@@ -1319,6 +1319,11 @@ Agentmakers.io`)
                                   style={{ color: '#0D9488', fontSize: '.78rem' }}>
                                   {p.website.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
                                 </a>
+                              </td>
+                              <td style={{ padding: '8px 10px', color: '#334155', fontSize: '.78rem', whiteSpace: 'nowrap' }}>
+                                {p.telefoon
+                                  ? <a href={`tel:${p.telefoon}`} onClick={e => e.stopPropagation()} style={{ color: '#0369A1', textDecoration: 'none' }}>{p.telefoon}</a>
+                                  : <span style={{ color: '#CBD5E1' }}>—</span>}
                               </td>
                               <td style={{ padding: '8px 10px', color: '#94A3B8', fontSize: '.75rem' }}>{p.adres?.split(',')[1]?.trim() || '—'}</td>
                               <td style={{ padding: '8px 10px', color: '#64748B', whiteSpace: 'nowrap' }}>
