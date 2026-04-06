@@ -174,6 +174,8 @@ export default function AdminDashboard() {
       const data = await res.json()
       if (!res.ok) { setBulkError(data.error || 'Fout bij aanmaken'); return }
       setBulkResults(data.results)
+      // Automatisch scrapen zodat de AI-agent direct gepersonaliseerd is
+      fetch('/api/cron/scrape-queue', { headers: { 'x-admin-key': savedKey } }).catch(() => {})
     } catch {
       setBulkError('Netwerkfout. Probeer opnieuw.')
     } finally {
@@ -1185,31 +1187,20 @@ Agentmakers.io`)
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px', fontSize: '.82rem', color: '#334155', lineHeight: 1.6 }}>
                   <div><strong>Stap 1 — Prospects zoeken:</strong> Gebruik de <em>Prospect finder</em> om bedrijven te zoeken via Google Maps. Vink de gewenste prospects aan en importeer ze.</div>
                   <div><strong>Stap 2 — CSV plakken:</strong> De geïmporteerde prospects verschijnen automatisch in het CSV-veld. Je kunt ook handmatig een lijst plakken.</div>
-                  <div><strong>Stap 3 — Demo-links genereren:</strong> Klik op <em>Verwerk CSV</em> en daarna <em>Genereer demo-links</em>. Het systeem maakt voor elk bedrijf een unieke gepersonaliseerde pagina.</div>
+                  <div><strong>Stap 3 — Demo-links genereren:</strong> Klik op <em>Verwerk CSV</em> en daarna <em>Genereer demo-links</em>. Het systeem maakt voor elk bedrijf een unieke pagina én personaliseert de AI-agent automatisch op hun website.</div>
                   <div><strong>Stap 4 — Versturen:</strong> Kopieer de links of klik op <em>✉ Verstuur mail</em> om direct een outreach-e-mail te sturen naar prospects met een e-mailadres.</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Auto-scraper status */}
-          <div style={{ background: '#F0FDFA', borderRadius: 14, padding: 20, border: '1px solid #CCFBF1', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#0D9488', marginBottom: 3 }}>🤖 Auto-scraper actief</div>
-              <div style={{ fontSize: '.8rem', color: '#64748B' }}>
-                Scrapet dagelijks alle onverwerkte leads automatisch — haalt websitedata op om demo-pagina&apos;s te personaliseren.
-                {scrapeQueueResult && (
-                  <span style={{ marginLeft: 8, color: '#166534', fontWeight: 600 }}>
-                    ✓ Laatste run: {scrapeQueueResult.processed}/{scrapeQueueResult.total} verwerkt
-                  </span>
-                )}
-              </div>
-            </div>
-            <button onClick={handleScrapeQueue} disabled={scrapeQueueLoading}
-              title="Voer de scraper nu handmatig uit — haalt websitedata op van alle onverwerkte leads om demo-pagina's te personaliseren"
-              style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '9px 18px', borderRadius: 9, fontWeight: 700, fontSize: '.82rem', cursor: scrapeQueueLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", whiteSpace: 'nowrap', opacity: scrapeQueueLoading ? 0.7 : 1 }}>
-              {scrapeQueueLoading ? '⏳ Scrapen…' : '▶ Scrape nu'}
-            </button>
+          {/* Auto-scraper — subtiele statusregel */}
+          <div style={{ fontSize: '.78rem', color: '#94A3B8', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>🤖</span>
+            <span>De AI-agent wordt automatisch gepersonaliseerd op de website van elk bedrijf zodra je demo-links genereert.</span>
+            {scrapeQueueResult && (
+              <span style={{ color: '#0D9488', fontWeight: 600 }}>✓ {scrapeQueueResult.processed} bedrijven verwerkt</span>
+            )}
           </div>
 
           {/* Prospect finder */}
