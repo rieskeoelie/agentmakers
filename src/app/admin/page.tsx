@@ -5,6 +5,7 @@ const ADMIN_KEY_STORAGE    = 'agentmakers_admin_key'
 const SEEN_LEADS_STORAGE   = 'agentmakers_seen_leads'
 const LEAD_STATUS_STORAGE  = 'agentmakers_lead_status'
 const LEAD_NOTES_STORAGE   = 'agentmakers_lead_notes'
+const OUTREACH_SENT_STORAGE = 'agentmakers_outreach_sent' // { [demo_token]: ISO date string }
 
 const PIPELINE_STAGES = [
   { value: 'nieuw',    label: 'Nieuw',        color: '#64748B', bg: '#F1F5F9' },
@@ -137,6 +138,8 @@ export default function AdminDashboard() {
   const [sendingIdx, setSendingIdx]     = useState<Set<number>>(new Set())
   const [sentIdx, setSentIdx]           = useState<Set<number>>(new Set())
   const [sendErrors, setSendErrors]     = useState<Record<number, string>>({})
+  // Persistent outreach history: demo_token → ISO date sent
+  const [outreachSent, setOutreachSent] = useState<Record<string, string>>({})
 
   // AI email modal
   interface EmailModal { idx: number; bedrijfsnaam: string; naam: string; email: string; demo_url: string; demo_token: string }
@@ -292,6 +295,13 @@ Agentmakers.io`)
       })
       if (res.ok) {
         setSentIdx(prev => new Set(prev).add(emailModal.idx))
+        // Persist to localStorage so status survives page reload
+        const sentAt = new Date().toISOString()
+        setOutreachSent(prev => {
+          const updated = { ...prev, [emailModal.demo_token]: sentAt }
+          localStorage.setItem(OUTREACH_SENT_STORAGE, JSON.stringify(updated))
+          return updated
+        })
         setEmailModal(null)
       } else {
         const d = await res.json()
@@ -439,6 +449,8 @@ Agentmakers.io`)
       if (st) setLeadStatus(JSON.parse(st))
       const sn = localStorage.getItem(LEAD_NOTES_STORAGE)
       if (sn) setLeadNotes(JSON.parse(sn))
+      const os = localStorage.getItem(OUTREACH_SENT_STORAGE)
+      if (os) setOutreachSent(JSON.parse(os))
     }
   }, [fetchData])
 
@@ -1553,9 +1565,20 @@ Agentmakers.io`)
                                 style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #E2E8F0', background: copiedIdx === i ? '#DCFCE7' : '#F8FAFC', color: copiedIdx === i ? '#166534' : '#64748B', fontWeight: 600, fontSize: '.75rem', cursor: scrapeDone ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', opacity: scrapeDone ? 1 : 0.4 }}>
                                 {copiedIdx === i ? '✓ Gekopieerd' : '📋 Kopieer link'}
                               </button>
-                              {r.email && (
-                                sentIdx.has(i) ? (
-                                  <span style={{ padding: '6px 12px', borderRadius: 7, background: '#DCFCE7', color: '#166534', fontWeight: 700, fontSize: '.75rem', whiteSpace: 'nowrap' }}>✓ Verstuurd</span>
+                              {r.email && (() => {
+                                const alreadySent = sentIdx.has(i) || !!outreachSent[r.demo_token]
+                                const sentDate = outreachSent[r.demo_token]
+                                  ? new Date(outreachSent[r.demo_token]).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+                                  : null
+                                return alreadySent ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <span style={{ padding: '6px 12px', borderRadius: 7, background: '#DCFCE7', color: '#166534', fontWeight: 700, fontSize: '.75rem', whiteSpace: 'nowrap' }}>✓ Outreach verstuurd</span>
+                                    {sentDate && <span style={{ fontSize: '.68rem', color: '#94A3B8', paddingLeft: 4 }}>{sentDate}</span>}
+                                    <button onClick={() => openEmailModal(r, i)}
+                                      style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #E2E8F0', background: 'transparent', color: '#94A3B8', fontSize: '.7rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                      ↺ Opnieuw sturen
+                                    </button>
+                                  </div>
                                 ) : (
                                   <button
                                     onClick={() => openEmailModal(r, i)}
@@ -1565,7 +1588,7 @@ Agentmakers.io`)
                                     ✨ AI-mail schrijven
                                   </button>
                                 )
-                              )}
+                              })()}
                               {sendErrors[i] && <span style={{ fontSize: '.7rem', color: '#DC2626' }}>{sendErrors[i]}</span>}
                             </div>
                           )}
