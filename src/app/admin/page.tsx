@@ -108,7 +108,8 @@ export default function AdminDashboard() {
   // Modals
   const [deleteModal, setDeleteModal]       = useState<Page | null>(null)
   const [editModal, setEditModal]           = useState<Page | null>(null)
-  const [editFields, setEditFields]         = useState<Record<string, string>>({})
+  const [editContent, setEditContent]       = useState<Record<string, unknown>>({})
+  const [editSection, setEditSection]       = useState('hero')
   const [editSaving, setEditSaving]         = useState(false)
 
   // Analytics
@@ -674,34 +675,35 @@ Agentmakers.io`)
 
   const openEditModal = (page: Page) => {
     setEditModal(page)
-    setEditFields({
-      hero_headline_nl: page.hero_headline_nl || '',
-      agents_headline:  page.body_content_nl?.agents_headline || '',
-      steps_title:      page.body_content_nl?.steps_title || '',
-      usecases_headline: page.body_content_nl?.usecases_headline || '',
-    })
+    setEditContent(page.body_content_nl || {})
+    setEditSection('hero')
   }
+
+  const setTextField = (key: string, value: string) =>
+    setEditContent(prev => ({ ...prev, [key]: value }))
+
+  const setArrayField = (key: string, idx: number, field: string, value: string) =>
+    setEditContent(prev => {
+      const arr = [...((prev[key] as Record<string, unknown>[]) || [])]
+      arr[idx] = { ...(arr[idx] || {}), [field]: value }
+      return { ...prev, [key]: arr }
+    })
 
   const saveEditModal = async () => {
     if (!editModal) return
     setEditSaving(true)
-    const updates: Record<string, unknown> = { id: editModal.id }
-    if (editFields.hero_headline_nl) updates.hero_headline_nl = editFields.hero_headline_nl
-    const bodyContent = {
-      ...(editModal.body_content_nl || {}),
-      agents_headline:   editFields.agents_headline,
-      steps_title:       editFields.steps_title,
-      usecases_headline: editFields.usecases_headline,
-    }
-    updates.body_content_nl = bodyContent
     const res = await fetch('/api/pages', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates)
+      body: JSON.stringify({
+        id: editModal.id,
+        body_content_nl: editContent,
+        hero_headline_nl: (editContent.hero_headline as string) || editModal.hero_headline_nl,
+      })
     })
     if (res.ok) {
       const updated = await res.json()
-      setPages(prev => prev.map(p => p.id === editModal.id ? { ...p, ...updated } : p))
+      setPages(prev => prev.map(p => p.id === editModal.id ? { ...p, ...updated, body_content_nl: editContent } : p))
       setEditModal(null)
     }
     setEditSaving(false)
@@ -1356,46 +1358,198 @@ Agentmakers.io`)
       )}
 
       {/* ══════════════════════ EDIT MODAL ══════════════════════ */}
-      {editModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: 20, maxWidth: 600, width: '100%', padding: 40, position: 'relative', boxShadow: '0 24px 64px rgba(0,0,0,.2)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button onClick={() => !editSaving && setEditModal(null)} style={{ position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: editSaving ? 'not-allowed' : 'pointer', fontSize: '1rem' }}>✕</button>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 4 }}>✏ Pagina bewerken</h2>
-            <p style={{ color: '#0D9488', fontSize: '.85rem', marginBottom: 28 }}>{editModal.industry} · /{editModal.slug}</p>
+      {editModal && (() => {
+        const ec = editContent
+        const str = (k: string) => (ec[k] as string) || ''
+        const arr = (k: string) => (ec[k] as Record<string, unknown>[]) || []
 
-            <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 10, padding: '10px 14px', fontSize: '.78rem', color: '#92400E', marginBottom: 24 }}>
-              ✨ Wijzigingen in de Nederlandse tekst worden automatisch vertaald naar Engels en Spaans.
+        const SECTIONS = [
+          { id: 'hero',       icon: '🏠', label: 'Hero' },
+          { id: 'probleem',   icon: '❓', label: 'Probleem' },
+          { id: 'oplossing',  icon: '✅', label: 'Oplossing' },
+          { id: 'usecases',   icon: '💡', label: 'Use Cases' },
+          { id: 'agents',     icon: '🤖', label: 'Agents' },
+          { id: 'stappen',    icon: '📋', label: 'Stappen' },
+          { id: 'statistieken', icon: '📊', label: 'Statistieken' },
+          { id: 'cta',        icon: '🎯', label: 'CTA' },
+          { id: 'calculator', icon: '🧮', label: 'Calculator' },
+        ]
+
+        const Field = ({ label, k, rows = 1 }: { label: string; k: string; rows?: number }) => (
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>{label}</label>
+            <textarea rows={rows} value={str(k)} onChange={e => setTextField(k, e.target.value)}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontFamily: "'Nunito',sans-serif", fontSize: '.9rem', color: '#1E293B', resize: 'vertical', outline: 'none', lineHeight: 1.5, boxSizing: 'border-box' }} />
+          </div>
+        )
+
+        const ArrayItemField = ({ arrKey, idx, field, label, rows = 1 }: { arrKey: string; idx: number; field: string; label: string; rows?: number }) => (
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: '.68rem', fontWeight: 700, color: '#94A3B8', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</label>
+            <textarea rows={rows} value={(arr(arrKey)[idx]?.[field] as string) || ''}
+              onChange={e => setArrayField(arrKey, idx, field, e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 7, border: '1.5px solid #E2E8F0', fontFamily: "'Nunito',sans-serif", fontSize: '.88rem', color: '#1E293B', resize: 'vertical', outline: 'none', lineHeight: 1.5, boxSizing: 'border-box' }} />
+          </div>
+        )
+
+        const SectionTitle = ({ title, sub }: { title: string; sub?: string }) => (
+          <div style={{ marginBottom: 28 }}>
+            <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', color: '#0F172A', margin: 0 }}>{title}</h3>
+            {sub && <p style={{ color: '#94A3B8', fontSize: '.8rem', margin: '4px 0 0' }}>{sub}</p>}
+          </div>
+        )
+
+        const Divider = () => <div style={{ borderTop: '1px solid #F1F5F9', margin: '20px 0' }} />
+
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
+            {/* Header */}
+            <div style={{ background: '#fff', borderBottom: '1px solid #E2E8F0', padding: '16px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <div>
+                <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: '1.05rem', color: '#0F172A' }}>✏ Pagina bewerken</div>
+                <div style={{ fontSize: '.78rem', color: '#0D9488', marginTop: 2 }}>{editModal.industry} · /{editModal.slug}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '6px 12px', fontSize: '.75rem', color: '#92400E' }}>
+                  ✨ Automatisch vertaald naar EN + ES bij opslaan
+                </div>
+                <button onClick={() => !editSaving && setEditModal(null)} disabled={editSaving}
+                  style={{ padding: '9px 18px', borderRadius: 8, border: '1.5px solid #E2E8F0', background: '#F8FAFC', color: '#64748B', fontWeight: 600, fontSize: '.85rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                  Annuleren
+                </button>
+                <button onClick={saveEditModal} disabled={editSaving}
+                  style={{ padding: '9px 22px', borderRadius: 8, border: 'none', background: '#0D9488', color: '#fff', fontWeight: 700, fontSize: '.88rem', cursor: editSaving ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", opacity: editSaving ? 0.7 : 1 }}>
+                  {editSaving ? '⏳ Opslaan…' : '✓ Opslaan & vertalen'}
+                </button>
+              </div>
             </div>
 
-            {[
-              { key: 'hero_headline_nl', label: 'Hero headline', placeholder: 'De krachtige openingstekst bovenaan de pagina' },
-              { key: 'agents_headline',  label: 'Agents headline', placeholder: 'Kop boven de agent-kaarten' },
-              { key: 'steps_title',      label: 'Hoe het werkt — kop', placeholder: 'Kop boven de stappenuitleg' },
-              { key: 'usecases_headline', label: 'Usecases headline', placeholder: 'Kop boven de use cases' },
-            ].map(field => (
-              <div key={field.key} style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.04em' }}>{field.label}</label>
-                <textarea
-                  value={editFields[field.key] || ''}
-                  onChange={e => setEditFields(prev => ({ ...prev, [field.key]: e.target.value }))}
-                  placeholder={field.placeholder}
-                  rows={2}
-                  style={{ ...inp, resize: 'vertical', boxSizing: 'border-box' }}
-                />
+            {/* Body: sidebar + content */}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+              {/* Sidebar */}
+              <div style={{ width: 180, background: '#F8FAFC', borderRight: '1px solid #E2E8F0', padding: '20px 12px', overflowY: 'auto', flexShrink: 0 }}>
+                {SECTIONS.map(s => (
+                  <button key={s.id} onClick={() => setEditSection(s.id)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 8, border: 'none', marginBottom: 4, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", fontWeight: editSection === s.id ? 700 : 500, fontSize: '.85rem', background: editSection === s.id ? '#0D9488' : 'transparent', color: editSection === s.id ? '#fff' : '#334155', textAlign: 'left' }}>
+                    <span>{s.icon}</span>{s.label}
+                  </button>
+                ))}
               </div>
-            ))}
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-              <button onClick={() => setEditModal(null)} disabled={editSaving} style={{ flex: 1, padding: 14, background: '#F1F5F9', color: '#334155', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: '.95rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                Annuleren
-              </button>
-              <button onClick={saveEditModal} disabled={editSaving} style={{ flex: 2, padding: 14, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.95rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: editSaving ? 0.7 : 1 }}>
-                {editSaving ? 'Opslaan & vertalen…' : '✓ Opslaan'}
-              </button>
+              {/* Content */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
+
+                {editSection === 'hero' && <>
+                  <SectionTitle title="Hero" sub="Eerste sectie bovenaan de pagina" />
+                  <Field label="Headline" k="hero_headline" rows={2} />
+                  <Field label="Subline" k="hero_subline" rows={3} />
+                  <Field label="Badge (klein label boven headline)" k="hero_badge" />
+                </>}
+
+                {editSection === 'probleem' && <>
+                  <SectionTitle title="Probleem" sub="Blok dat het probleem van de klant beschrijft" />
+                  <Field label="Headline" k="problem_headline" rows={2} />
+                  <Field label="Tekst" k="problem_body" rows={4} />
+                </>}
+
+                {editSection === 'oplossing' && <>
+                  <SectionTitle title="Oplossing" sub="Blok dat de oplossing introduceert" />
+                  <Field label="Headline" k="solution_headline" rows={2} />
+                  <Field label="Subline" k="solution_subline" rows={3} />
+                </>}
+
+                {editSection === 'usecases' && <>
+                  <SectionTitle title="Use Cases" sub="Sectie met concrete toepassingen" />
+                  <Field label="Label (klein label boven sectie)" k="usecases_label" />
+                  <Field label="Headline" k="usecases_headline" rows={2} />
+                  <Field label="Subline" k="usecases_subline" rows={2} />
+                  <Divider />
+                  {arr('usecases').map((_, i) => (
+                    <div key={i} style={{ background: '#F8FAFC', borderRadius: 10, padding: '16px 18px', marginBottom: 14, border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#0D9488', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>Use case {i + 1}</div>
+                      <ArrayItemField arrKey="usecases" idx={i} field="title" label="Titel" />
+                      <ArrayItemField arrKey="usecases" idx={i} field="body" label="Tekst" rows={2} />
+                    </div>
+                  ))}
+                </>}
+
+                {editSection === 'agents' && <>
+                  <SectionTitle title="Agents" sub="Kaarten met de verschillende agent-types" />
+                  <Field label="Label" k="agents_label" />
+                  <Field label="Headline" k="agents_headline" rows={2} />
+                  <Field label="Subline" k="agents_subline" rows={2} />
+                  <Divider />
+                  {arr('agents').map((_, i) => (
+                    <div key={i} style={{ background: '#F8FAFC', borderRadius: 10, padding: '16px 18px', marginBottom: 14, border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#0D9488', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>Agent {i + 1}</div>
+                      <ArrayItemField arrKey="agents" idx={i} field="title" label="Titel" />
+                      <ArrayItemField arrKey="agents" idx={i} field="body" label="Tekst" rows={2} />
+                      <ArrayItemField arrKey="agents" idx={i} field="tag" label="Tag (bijv. 'Inkomend')" />
+                    </div>
+                  ))}
+                </>}
+
+                {editSection === 'stappen' && <>
+                  <SectionTitle title="Stappen" sub="Hoe het werkt — stappenplan" />
+                  <Field label="Titel" k="steps_title" rows={2} />
+                  <Field label="Subtitel" k="steps_sub" rows={2} />
+                  <Divider />
+                  {arr('steps').map((_, i) => (
+                    <div key={i} style={{ background: '#F8FAFC', borderRadius: 10, padding: '16px 18px', marginBottom: 14, border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#0D9488', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>Stap {i + 1}</div>
+                      <ArrayItemField arrKey="steps" idx={i} field="title" label="Titel" />
+                      <ArrayItemField arrKey="steps" idx={i} field="body" label="Tekst" rows={2} />
+                    </div>
+                  ))}
+                </>}
+
+                {editSection === 'statistieken' && <>
+                  <SectionTitle title="Statistieken" sub="Cijfers en resultaten" />
+                  <Field label="Label" k="stats_label" />
+                  <Field label="Headline" k="stats_title" rows={2} />
+                  <Divider />
+                  {arr('stats').map((_, i) => (
+                    <div key={i} style={{ background: '#F8FAFC', borderRadius: 10, padding: '16px 18px', marginBottom: 14, border: '1px solid #E2E8F0', display: 'flex', gap: 16 }}>
+                      <div style={{ width: 100, flexShrink: 0 }}>
+                        <ArrayItemField arrKey="stats" idx={i} field="value" label="Waarde" />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <ArrayItemField arrKey="stats" idx={i} field="label" label="Label" rows={2} />
+                      </div>
+                    </div>
+                  ))}
+                </>}
+
+                {editSection === 'cta' && <>
+                  <SectionTitle title="Call to Action" sub="Afsluitende sectie onderaan de pagina" />
+                  <Field label="Headline" k="cta_headline" rows={2} />
+                </>}
+
+                {editSection === 'calculator' && <>
+                  <SectionTitle title="Calculator" sub="Interactieve omzetberekening" />
+                  <Field label="Label slider 1 (gemiste afspraken)" k="calc_calls_label" />
+                  <Field label="Label slider 2 (gemiddelde waarde per afspraak)" k="calc_value_label" />
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Standaard aantal gemiste afspraken</label>
+                      <input type="number" value={(ec.revenue_calls as number) || 5}
+                        onChange={e => setEditContent(prev => ({ ...prev, revenue_calls: Number(e.target.value) }))}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.9rem', color: '#1E293B', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Standaard waarde per afspraak (€)</label>
+                      <input type="number" value={(ec.revenue_per_call as number) || 500}
+                        onChange={e => setEditContent(prev => ({ ...prev, revenue_per_call: Number(e.target.value) }))}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.9rem', color: '#1E293B', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                </>}
+
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ══════════════════════ OUTREACH TAB ══════════════════════ */}
       {tab === 'outreach' && (
