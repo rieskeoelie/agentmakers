@@ -18,7 +18,8 @@ interface Page {
   id: string; slug: string; industry: string; status: string
   visits: number; conversions: number; created_at: string; hero_image_url: string
   hero_headline_nl?: string
-  body_content_nl?: Record<string, string>
+  hero_subline_nl?: string
+  body_content_nl?: Record<string, unknown>
 }
 interface Lead {
   id: string; naam: string; email: string; telefoon: string
@@ -699,6 +700,7 @@ Agentmakers.io`)
         id: editModal.id,
         body_content_nl: editContent,
         hero_headline_nl: (editContent.hero_headline as string) || editModal.hero_headline_nl,
+        hero_subline_nl: (editContent.hero_subline as string) || editModal.hero_subline_nl,
       })
     })
     if (res.ok) {
