@@ -686,7 +686,7 @@ Agentmakers.io`)
   const refreshHeroImage = async (industry: string) => {
     setHeroImageLoading(true)
     try {
-      const res = await fetch(`/api/admin/hero-image?industry=${encodeURIComponent(industry)}`)
+      const res = await fetch(`/api/admin/hero-image?industry=${encodeURIComponent(industry)}&t=${Date.now()}`)
       const data = await res.json()
       if (data.url) setEditHeroImage(data.url)
     } finally {
