@@ -1437,7 +1437,7 @@ Agentmakers.io`)
               </div>
 
               {/* Content */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px', background: '#fff' }}>
 
                 {editSection === 'hero' && <>
                   {SectionTitle({ title: 'Hero', sub: 'Eerste sectie bovenaan de pagina' })}
