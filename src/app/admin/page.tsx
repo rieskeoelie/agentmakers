@@ -1440,95 +1440,95 @@ Agentmakers.io`)
               <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
 
                 {editSection === 'hero' && <>
-                  <SectionTitle title="Hero" sub="Eerste sectie bovenaan de pagina" />
-                  <Field label="Headline" k="hero_headline" rows={2} />
-                  <Field label="Subline" k="hero_subline" rows={3} />
-                  <Field label="Badge (klein label boven headline)" k="hero_badge" />
+                  {SectionTitle({ title: 'Hero', sub: 'Eerste sectie bovenaan de pagina' })}
+                  {Field({ label: 'Headline', k: 'hero_headline', rows: 2 })}
+                  {Field({ label: 'Subline', k: 'hero_subline', rows: 3 })}
+                  {Field({ label: 'Badge (klein label boven headline)', k: 'hero_badge' })}
                 </>}
 
                 {editSection === 'probleem' && <>
-                  <SectionTitle title="Probleem" sub="Blok dat het probleem van de klant beschrijft" />
-                  <Field label="Headline" k="problem_headline" rows={2} />
-                  <Field label="Tekst" k="problem_body" rows={4} />
+                  {SectionTitle({ title: 'Probleem', sub: 'Blok dat het probleem van de klant beschrijft' })}
+                  {Field({ label: 'Headline', k: 'problem_headline', rows: 2 })}
+                  {Field({ label: 'Tekst', k: 'problem_body', rows: 4 })}
                 </>}
 
                 {editSection === 'oplossing' && <>
-                  <SectionTitle title="Oplossing" sub="Blok dat de oplossing introduceert" />
-                  <Field label="Headline" k="solution_headline" rows={2} />
-                  <Field label="Subline" k="solution_subline" rows={3} />
+                  {SectionTitle({ title: 'Oplossing', sub: 'Blok dat de oplossing introduceert' })}
+                  {Field({ label: 'Headline', k: 'solution_headline', rows: 2 })}
+                  {Field({ label: 'Subline', k: 'solution_subline', rows: 3 })}
                 </>}
 
                 {editSection === 'usecases' && <>
-                  <SectionTitle title="Use Cases" sub="Sectie met concrete toepassingen" />
-                  <Field label="Label (klein label boven sectie)" k="usecases_label" />
-                  <Field label="Headline" k="usecases_headline" rows={2} />
-                  <Field label="Subline" k="usecases_subline" rows={2} />
-                  <Divider />
+                  {SectionTitle({ title: 'Use Cases', sub: 'Sectie met concrete toepassingen' })}
+                  {Field({ label: 'Label (klein label boven sectie)', k: 'usecases_label' })}
+                  {Field({ label: 'Headline', k: 'usecases_headline', rows: 2 })}
+                  {Field({ label: 'Subline', k: 'usecases_subline', rows: 2 })}
+                  {Divider()}
                   {arr('usecases').map((_, i) => (
                     <div key={i} style={{ background: '#F8FAFC', borderRadius: 10, padding: '16px 18px', marginBottom: 14, border: '1px solid #E2E8F0' }}>
                       <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#0D9488', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>Use case {i + 1}</div>
-                      <ArrayItemField arrKey="usecases" idx={i} field="title" label="Titel" />
-                      <ArrayItemField arrKey="usecases" idx={i} field="body" label="Tekst" rows={2} />
+                      {ArrayItemField({ arrKey: 'usecases', idx: i, field: 'title', label: 'Titel' })}
+                      {ArrayItemField({ arrKey: 'usecases', idx: i, field: 'body', label: 'Tekst', rows: 2 })}
                     </div>
                   ))}
                 </>}
 
                 {editSection === 'agents' && <>
-                  <SectionTitle title="Agents" sub="Kaarten met de verschillende agent-types" />
-                  <Field label="Label" k="agents_label" />
-                  <Field label="Headline" k="agents_headline" rows={2} />
-                  <Field label="Subline" k="agents_subline" rows={2} />
-                  <Divider />
+                  {SectionTitle({ title: 'Agents', sub: 'Kaarten met de verschillende agent-types' })}
+                  {Field({ label: 'Label', k: 'agents_label' })}
+                  {Field({ label: 'Headline', k: 'agents_headline', rows: 2 })}
+                  {Field({ label: 'Subline', k: 'agents_subline', rows: 2 })}
+                  {Divider()}
                   {arr('agents').map((_, i) => (
                     <div key={i} style={{ background: '#F8FAFC', borderRadius: 10, padding: '16px 18px', marginBottom: 14, border: '1px solid #E2E8F0' }}>
                       <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#0D9488', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>Agent {i + 1}</div>
-                      <ArrayItemField arrKey="agents" idx={i} field="title" label="Titel" />
-                      <ArrayItemField arrKey="agents" idx={i} field="body" label="Tekst" rows={2} />
-                      <ArrayItemField arrKey="agents" idx={i} field="tag" label="Tag (bijv. 'Inkomend')" />
+                      {ArrayItemField({ arrKey: 'agents', idx: i, field: 'title', label: 'Titel' })}
+                      {ArrayItemField({ arrKey: 'agents', idx: i, field: 'body', label: 'Tekst', rows: 2 })}
+                      {ArrayItemField({ arrKey: 'agents', idx: i, field: 'tag', label: "Tag (bijv. 'Inkomend')" })}
                     </div>
                   ))}
                 </>}
 
                 {editSection === 'stappen' && <>
-                  <SectionTitle title="Stappen" sub="Hoe het werkt — stappenplan" />
-                  <Field label="Titel" k="steps_title" rows={2} />
-                  <Field label="Subtitel" k="steps_sub" rows={2} />
-                  <Divider />
+                  {SectionTitle({ title: 'Stappen', sub: 'Hoe het werkt — stappenplan' })}
+                  {Field({ label: 'Titel', k: 'steps_title', rows: 2 })}
+                  {Field({ label: 'Subtitel', k: 'steps_sub', rows: 2 })}
+                  {Divider()}
                   {arr('steps').map((_, i) => (
                     <div key={i} style={{ background: '#F8FAFC', borderRadius: 10, padding: '16px 18px', marginBottom: 14, border: '1px solid #E2E8F0' }}>
                       <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#0D9488', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>Stap {i + 1}</div>
-                      <ArrayItemField arrKey="steps" idx={i} field="title" label="Titel" />
-                      <ArrayItemField arrKey="steps" idx={i} field="body" label="Tekst" rows={2} />
+                      {ArrayItemField({ arrKey: 'steps', idx: i, field: 'title', label: 'Titel' })}
+                      {ArrayItemField({ arrKey: 'steps', idx: i, field: 'body', label: 'Tekst', rows: 2 })}
                     </div>
                   ))}
                 </>}
 
                 {editSection === 'statistieken' && <>
-                  <SectionTitle title="Statistieken" sub="Cijfers en resultaten" />
-                  <Field label="Label" k="stats_label" />
-                  <Field label="Headline" k="stats_title" rows={2} />
-                  <Divider />
+                  {SectionTitle({ title: 'Statistieken', sub: 'Cijfers en resultaten' })}
+                  {Field({ label: 'Label', k: 'stats_label' })}
+                  {Field({ label: 'Headline', k: 'stats_title', rows: 2 })}
+                  {Divider()}
                   {arr('stats').map((_, i) => (
                     <div key={i} style={{ background: '#F8FAFC', borderRadius: 10, padding: '16px 18px', marginBottom: 14, border: '1px solid #E2E8F0', display: 'flex', gap: 16 }}>
                       <div style={{ width: 100, flexShrink: 0 }}>
-                        <ArrayItemField arrKey="stats" idx={i} field="value" label="Waarde" />
+                        {ArrayItemField({ arrKey: 'stats', idx: i, field: 'value', label: 'Waarde' })}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <ArrayItemField arrKey="stats" idx={i} field="label" label="Label" rows={2} />
+                        {ArrayItemField({ arrKey: 'stats', idx: i, field: 'label', label: 'Label', rows: 2 })}
                       </div>
                     </div>
                   ))}
                 </>}
 
                 {editSection === 'cta' && <>
-                  <SectionTitle title="Call to Action" sub="Afsluitende sectie onderaan de pagina" />
-                  <Field label="Headline" k="cta_headline" rows={2} />
+                  {SectionTitle({ title: 'Call to Action', sub: 'Afsluitende sectie onderaan de pagina' })}
+                  {Field({ label: 'Headline', k: 'cta_headline', rows: 2 })}
                 </>}
 
                 {editSection === 'calculator' && <>
-                  <SectionTitle title="Calculator" sub="Interactieve omzetberekening" />
-                  <Field label="Label slider 1 (gemiste afspraken)" k="calc_calls_label" />
-                  <Field label="Label slider 2 (gemiddelde waarde per afspraak)" k="calc_value_label" />
+                  {SectionTitle({ title: 'Calculator', sub: 'Interactieve omzetberekening' })}
+                  {Field({ label: 'Label slider 1 (gemiste afspraken)', k: 'calc_calls_label' })}
+                  {Field({ label: 'Label slider 2 (gemiddelde waarde per afspraak)', k: 'calc_value_label' })}
                   <div style={{ display: 'flex', gap: 16 }}>
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Standaard aantal gemiste afspraken</label>
