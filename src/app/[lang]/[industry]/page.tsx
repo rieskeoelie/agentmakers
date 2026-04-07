@@ -275,6 +275,8 @@ export default async function LandingPage({ params }: Props) {
         lang={l}
         defaultCalls={content.revenue_calls || 5}
         defaultValue={content.revenue_per_call || 500}
+        callsLabel={content.calc_calls_label}
+        valueLabel={content.calc_value_label}
       />
 
       {/* HOE HET WERKT */}

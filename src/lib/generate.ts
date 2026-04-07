@@ -45,6 +45,8 @@ export interface LangContent {
   stats: { value: string; label: string }[]
   revenue_calls: number
   revenue_per_call: number
+  calc_calls_label: string
+  calc_value_label: string
   cta_headline: string
 }
 
@@ -142,6 +144,8 @@ Return ONLY valid JSON matching this exact structure (no markdown, no explanatio
     ],
     "revenue_calls": 5,
     "revenue_per_call": 500,
+    "calc_calls_label": "Industry-specific term for missed appointments/bookings per week, e.g. 'Gemiste consulten / week' for dentists, 'Gemiste bezichtigingen / week' for real estate — short, max 4 words",
+    "calc_value_label": "Industry-specific term for average order/appointment value, e.g. 'Gem. behandelwaarde' for dentists, 'Gem. transactiewaarde' for real estate — short, max 4 words",
     "cta_headline": "Strong closing CTA headline in Dutch"
   },
   "en": { ... same structure but in English, with industry-specific English terminology ... },

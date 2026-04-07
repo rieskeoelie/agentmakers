@@ -6,9 +6,11 @@ interface Props {
   lang: Lang
   defaultCalls?: number
   defaultValue?: number
+  callsLabel?: string
+  valueLabel?: string
 }
 
-export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }: Props) {
+export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500, callsLabel, valueLabel }: Props) {
   const [calls, setCalls] = useState(defaultCalls)
   const [value, setValue] = useState(defaultValue)
 
@@ -19,9 +21,9 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
     nl: {
       label: 'DE IMPACT',
       title: 'Zie hoeveel omzet u per jaar misloopt',
-      subtitle: 'De cijfers liegen niet. Door reguliere sluitingstijden te hanteren loopt u schrikbarend veel omzet mis.',
-      callsLabel: 'Gemiste boekingen / week',
-      valueLabel: 'Gem. orderwaarde',
+      subtitle: 'De cijfers liegen niet. Door reguliere sluitingstijden te hanteren loopt u veel omzet mis.',
+      callsLabel: callsLabel || 'Gemiste boekingen / week',
+      valueLabel: valueLabel || 'Gem. orderwaarde',
       perYear: 'gemiste omzet per jaar',
       perMonth: (m: string) => `≈ €${m} per maand`,
       context: (c: number, v: number) =>
@@ -36,8 +38,8 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
       label: 'THE IMPACT',
       title: 'See how much revenue you miss per year',
       subtitle: 'The numbers don\'t lie. By keeping regular closing hours, you\'re missing out on a shocking amount of revenue.',
-      callsLabel: 'Missed bookings / week',
-      valueLabel: 'Avg. order value',
+      callsLabel: callsLabel || 'Missed bookings / week',
+      valueLabel: valueLabel || 'Avg. order value',
       perYear: 'missed revenue per year',
       perMonth: (m: string) => `≈ €${m} per month`,
       context: (c: number) =>
@@ -52,8 +54,8 @@ export function RevenueCalculator({ lang, defaultCalls = 5, defaultValue = 500 }
       label: 'EL IMPACTO',
       title: 'Vea cuántos ingresos pierde al año',
       subtitle: 'Los números no mienten. Al mantener horarios regulares de cierre, está perdiendo una cantidad asombrosa de ingresos.',
-      callsLabel: 'Reservas perdidas / semana',
-      valueLabel: 'Valor medio del pedido',
+      callsLabel: callsLabel || 'Reservas perdidas / semana',
+      valueLabel: valueLabel || 'Valor medio del pedido',
       perYear: 'ingresos perdidos al año',
       perMonth: (m: string) => `≈ €${m} al mes`,
       context: (c: number) =>
