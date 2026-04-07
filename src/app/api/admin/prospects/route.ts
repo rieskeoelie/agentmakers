@@ -28,31 +28,50 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Google Places Text Search
-    const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json')
-    url.searchParams.set('query', query)
-    url.searchParams.set('region', 'nl')
-    url.searchParams.set('language', 'nl')
-    url.searchParams.set('key', apiKey)
+    // Google Places Text Search — paginate up to 5 pages (max 100 results)
+    const allPlaces: {
+      place_id: string; name: string
+      formatted_address?: string; rating?: number; user_ratings_total?: number
+    }[] = []
 
-    const res = await fetch(url.toString())
-    const data = await res.json()
+    let pageToken: string | undefined
+    const MAX_PAGES = 5
 
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      return NextResponse.json({ error: `Google API fout: ${data.status}` }, { status: 500 })
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json')
+      url.searchParams.set('query', query)
+      url.searchParams.set('region', 'nl')
+      url.searchParams.set('language', 'nl')
+      url.searchParams.set('key', apiKey)
+      if (pageToken) url.searchParams.set('pagetoken', pageToken)
+
+      // Google requires a short delay before a pagetoken becomes valid
+      if (page > 0) await new Promise(r => setTimeout(r, 2000))
+
+      const res = await fetch(url.toString())
+      const data = await res.json()
+
+      if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+        if (page === 0) return NextResponse.json({ error: `Google API fout: ${data.status}` }, { status: 500 })
+        break // partial results are fine
+      }
+
+      allPlaces.push(...(data.results ?? []))
+      pageToken = data.next_page_token
+      if (!pageToken) break
     }
 
-    const places = data.results ?? []
+    const places = allPlaces.slice(0, 100)
 
     // For each place, fetch details to get website + phone
     const detailed = await Promise.allSettled(
-      places.slice(0, 20).map(async (place: {
+      places.map(async (place: {
         place_id: string
         name: string
         formatted_address?: string
         rating?: number
         user_ratings_total?: number
-      }) => {
+    }) => {
         const detailUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json')
         detailUrl.searchParams.set('place_id', place.place_id)
         detailUrl.searchParams.set('fields', 'name,website,formatted_phone_number,formatted_address,rating,user_ratings_total')
