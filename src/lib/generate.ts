@@ -154,26 +154,77 @@ Make ALL content highly specific and relevant to the "${industry}" industry. Use
   return JSON.parse(jsonMatch[0]) as GeneratedContent
 }
 
-// Fetch a relevant Unsplash image URL using source redirect (no API key needed)
-export async function getUnsplashImage(query: string): Promise<string> {
-  // Unsplash source URL redirects to a random relevant photo
-  // We fetch to get the final redirect URL, then append sizing params
-  const encoded = encodeURIComponent(query)
-  const sourceUrl = `https://source.unsplash.com/1920x1080/?${encoded}`
+// Curated fallback images per industry keyword (Unsplash photo IDs)
+const FALLBACK_IMAGES: Record<string, string> = {
+  dental:      'photo-1606811841689-23dfddce3e95', // dental clinic
+  tandarts:    'photo-1606811841689-23dfddce3e95',
+  dentist:     'photo-1606811841689-23dfddce3e95',
+  hair:        'photo-1560066984-138dadb4c035', // hair salon
+  kapper:      'photo-1560066984-138dadb4c035',
+  salon:       'photo-1560066984-138dadb4c035',
+  fitness:     'photo-1534438327276-14e5300c3a48', // gym
+  gym:         'photo-1534438327276-14e5300c3a48',
+  sport:       'photo-1534438327276-14e5300c3a48',
+  restaurant:  'photo-1414235077428-338989a2e8c0',
+  food:        'photo-1414235077428-338989a2e8c0',
+  real:        'photo-1560518883-ce09059eeffa', // real estate
+  estate:      'photo-1560518883-ce09059eeffa',
+  makelaar:    'photo-1560518883-ce09059eeffa',
+  clinic:      'photo-1519494026892-80bbd2d6fd0d', // medical clinic
+  medical:     'photo-1519494026892-80bbd2d6fd0d',
+  zorg:        'photo-1519494026892-80bbd2d6fd0d',
+  lawyer:      'photo-1589829545856-d10d557cf95f', // law office
+  legal:       'photo-1589829545856-d10d557cf95f',
+  advocaat:    'photo-1589829545856-d10d557cf95f',
+  accountant:  'photo-1554224155-6726b3ff858f',
+  finance:     'photo-1554224155-6726b3ff858f',
+  cleaning:    'photo-1581578731548-c64695cc6952', // cleaning
+  schoonmaak:  'photo-1581578731548-c64695cc6952',
+  painting:    'photo-1562259949-e8e7689d7828', // painting
+  schilder:    'photo-1562259949-e8e7689d7828',
+  plumber:     'photo-1585771724684-38269d6639fd', // plumber
+  loodgieter:  'photo-1585771724684-38269d6639fd',
+  electrician: 'photo-1621905251189-08b45249a5b0',
+  elektricien: 'photo-1621905251189-08b45249a5b0',
+  vet:         'photo-1548767797-d8c844163c4a', // veterinarian
+  dierenarts:  'photo-1548767797-d8c844163c4a',
+  pharmacy:    'photo-1587854692152-cbe660dbde88',
+  apotheek:    'photo-1587854692152-cbe660dbde88',
+  default:     'photo-1497366216548-37526070297c', // professional office
+}
 
-  try {
-    const res = await fetch(sourceUrl, { redirect: 'follow' })
-    const finalUrl = res.url
-    // If we got a valid unsplash image URL, use it
-    if (finalUrl && finalUrl.includes('unsplash.com')) {
-      // Strip any existing params and add our own
-      const base = finalUrl.split('?')[0]
-      return `${base}?w=1920&q=80&auto=format&fit=crop`
+function getFallbackImage(query: string): string {
+  const lower = query.toLowerCase()
+  for (const [keyword, photoId] of Object.entries(FALLBACK_IMAGES)) {
+    if (lower.includes(keyword)) {
+      return `https://images.unsplash.com/${photoId}?w=1920&q=80&auto=format&fit=crop`
     }
-  } catch {
-    // Fall through to fallback
+  }
+  return `https://images.unsplash.com/${FALLBACK_IMAGES.default}?w=1920&q=80&auto=format&fit=crop`
+}
+
+// Fetch a relevant Unsplash image URL.
+// Uses the official Unsplash API when UNSPLASH_ACCESS_KEY is set,
+// otherwise falls back to a curated map of industry-specific photos.
+export async function getUnsplashImage(query: string): Promise<string> {
+  const accessKey = process.env.UNSPLASH_ACCESS_KEY
+
+  if (accessKey) {
+    try {
+      const encoded = encodeURIComponent(query)
+      const res = await fetch(
+        `https://api.unsplash.com/photos/random?query=${encoded}&orientation=landscape&client_id=${accessKey}`,
+        { headers: { 'Accept-Version': 'v1' } }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        const url = data?.urls?.regular || data?.urls?.full
+        if (url) return url.split('?')[0] + '?w=1920&q=80&auto=format&fit=crop'
+      }
+    } catch {
+      // Fall through to curated fallback
+    }
   }
 
-  // Fallback: use direct unsplash photo URL with query
-  return `https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=1920&q=80&auto=format&fit=crop`
+  return getFallbackImage(query)
 }
