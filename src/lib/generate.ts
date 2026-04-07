@@ -48,6 +48,18 @@ export interface LangContent {
   cta_headline: string
 }
 
+// Recursively replace em-dashes (—) with a regular comma+space in all string values
+function removeEmDashes<T>(obj: T): T {
+  if (typeof obj === 'string') return obj.replace(/—/g, ',') as unknown as T
+  if (Array.isArray(obj)) return obj.map(removeEmDashes) as unknown as T
+  if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, removeEmDashes(v)])
+    ) as unknown as T
+  }
+  return obj
+}
+
 export async function generateLandingPageContent(industry: string): Promise<GeneratedContent> {
   const prompt = `You are an expert marketing copywriter for AI business automation.
 
@@ -137,7 +149,9 @@ Return ONLY valid JSON matching this exact structure (no markdown, no explanatio
   "hero_image_query": "Unsplash search query for a professional ${industry} photo (in English, 3-5 words, e.g. 'modern dental clinic interior' or 'real estate luxury home')"
 }
 
-Make ALL content highly specific and relevant to the "${industry}" industry. Use realistic numbers for revenue_calls and revenue_per_call based on the industry's typical appointment/transaction value. Every single text string must use the natural vocabulary and jargon of this industry — never use generic business terms when an industry-specific term exists.`
+Make ALL content highly specific and relevant to the "${industry}" industry. Use realistic numbers for revenue_calls and revenue_per_call based on the industry's typical appointment/transaction value. Every single text string must use the natural vocabulary and jargon of this industry — never use generic business terms when an industry-specific term exists.
+
+FORMATTING RULE: Never use em-dashes (—) anywhere in the output. Use a comma, colon, or rewrite the sentence instead.`
 
   const message = await anthropic.messages.create({
     model: 'claude-opus-4-6',
@@ -151,7 +165,8 @@ Make ALL content highly specific and relevant to the "${industry}" industry. Use
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('No JSON in Claude response')
 
-  return JSON.parse(jsonMatch[0]) as GeneratedContent
+  const parsed = JSON.parse(jsonMatch[0]) as GeneratedContent
+  return removeEmDashes(parsed)
 }
 
 // Curated fallback images per industry keyword (Unsplash photo IDs)
