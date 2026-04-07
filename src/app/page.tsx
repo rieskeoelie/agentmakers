@@ -27,17 +27,9 @@ export default async function HomePage() {
             <img src="/logo-transparent.png" alt="agentmakers.io" style={{ height: 36, width: 'auto', display: 'block' }} />
           </a>
           <div style={{ display: 'flex', gap: 8 }}>
-            <a href="/" title="Nederlands" style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: 1, lineHeight: 1 }}>🇳🇱</a>
-            {livePages[0]?.slug ? (
-              <a href={`/en/${livePages[0].slug}`} title="English" style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }}>🇬🇧</a>
-            ) : (
-              <span style={{ fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }} title="English">🇬🇧</span>
-            )}
-            {livePages[0]?.slug ? (
-              <a href={`/es/${livePages[0].slug}`} title="Español" style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }}>🇪🇸</a>
-            ) : (
-              <span style={{ fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }} title="Español">🇪🇸</span>
-            )}
+            <span style={{ fontSize: '1.35rem', opacity: 1, lineHeight: 1 }} title="Nederlands">🇳🇱</span>
+            <span style={{ fontSize: '1.35rem', opacity: 0.25, lineHeight: 1, cursor: 'default' }} title="English">🇬🇧</span>
+            <span style={{ fontSize: '1.35rem', opacity: 0.25, lineHeight: 1, cursor: 'default' }} title="Español">🇪🇸</span>
           </div>
         </div>
       </nav>
