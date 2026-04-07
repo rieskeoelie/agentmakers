@@ -114,6 +114,7 @@ export default function AdminDashboard() {
   const [editSaving, setEditSaving]         = useState(false)
   const [editHeroImage, setEditHeroImage]   = useState('')
   const [heroImageLoading, setHeroImageLoading] = useState(false)
+  const [heroImageKey, setHeroImageKey]     = useState(0)
 
   // Analytics
   const [analyticsLang, setAnalyticsLang]   = useState<'all' | 'nl' | 'en' | 'es'>('all')
@@ -688,7 +689,7 @@ Agentmakers.io`)
     try {
       const res = await fetch(`/api/admin/hero-image?industry=${encodeURIComponent(industry)}&t=${Date.now()}`)
       const data = await res.json()
-      if (data.url) setEditHeroImage(data.url)
+      if (data.url) { setEditHeroImage(data.url); setHeroImageKey(k => k + 1) }
     } finally {
       setHeroImageLoading(false)
     }
@@ -1465,7 +1466,7 @@ Agentmakers.io`)
                   <div style={{ marginBottom: 20 }}>
                     <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>Hero afbeelding</label>
                     {editHeroImage && (
-                      <img src={editHeroImage} alt="Hero preview"
+                      <img key={heroImageKey} src={editHeroImage} alt="Hero preview"
                         style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 10, marginBottom: 10, border: '1.5px solid #E2E8F0', display: 'block' }} />
                     )}
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
