@@ -13,13 +13,6 @@ async function getLivePages(): Promise<LandingPage[]> {
   return (data as LandingPage[]) || []
 }
 
-const COMING_SOON = [
-  { industry: 'Tandartspraktijken', icon: '🦷', img: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=600&q=80', desc: 'Afspraken, spoedgevallen en herinneringen — uw AI assistent regelt het.' },
-  { industry: 'Restaurants & Horeca', icon: '🍽️', img: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80', desc: 'Reserveringen aannemen, menukaart delen en wachtlijst beheren via AI.' },
-  { industry: 'Fysiotherapie', icon: '💪', img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80', desc: 'Intake, afspraken en oefenschema-opvolging — volledig geautomatiseerd.' },
-  { industry: 'Makelaardij', icon: '🏠', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80', desc: 'Bezichtigingen plannen, vragen beantwoorden en leads opvolgen.' },
-  { industry: 'Autogarages', icon: '🔧', img: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&q=80', desc: 'APK-afspraken, onderhoudsherinneringen en statusupdates — automatisch.' },
-]
 
 export default async function HomePage() {
   const livePages = await getLivePages()
@@ -100,18 +93,6 @@ export default async function HomePage() {
               </a>
             ))}
 
-            {/* Coming soon pages */}
-            {COMING_SOON.map((item) => (
-              <div key={item.industry} style={{ background: '#fff', border: '1px solid #F1F5F9', borderRadius: 16, overflow: 'hidden', opacity: .55 }}>
-                <img src={item.img} alt={item.industry} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
-                <div style={{ padding: 24 }}>
-                  <div style={{ fontSize: '1.4rem', marginBottom: 16 }}>{item.icon}</div>
-                  <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.1rem', fontWeight: 700, marginBottom: 8, color: '#0F172A' }}>{item.industry}</h3>
-                  <p style={{ fontSize: '.9rem', color: '#64748B', lineHeight: 1.6, marginBottom: 16 }}>{item.desc}</p>
-                  <span style={{ display: 'inline-block', background: '#F1F5F9', color: '#64748B', padding: '4px 12px', borderRadius: 6, fontSize: '.75rem', fontWeight: 600 }}>Binnenkort beschikbaar</span>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
