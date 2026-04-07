@@ -112,6 +112,8 @@ export default function AdminDashboard() {
   const [editContent, setEditContent]       = useState<Record<string, unknown>>({})
   const [editSection, setEditSection]       = useState('hero')
   const [editSaving, setEditSaving]         = useState(false)
+  const [editHeroImage, setEditHeroImage]   = useState('')
+  const [heroImageLoading, setHeroImageLoading] = useState(false)
 
   // Analytics
   const [analyticsLang, setAnalyticsLang]   = useState<'all' | 'nl' | 'en' | 'es'>('all')
@@ -677,7 +679,19 @@ Agentmakers.io`)
   const openEditModal = (page: Page) => {
     setEditModal(page)
     setEditContent(page.body_content_nl || {})
+    setEditHeroImage(page.hero_image_url || '')
     setEditSection('hero')
+  }
+
+  const refreshHeroImage = async (industry: string) => {
+    setHeroImageLoading(true)
+    try {
+      const res = await fetch(`/api/admin/hero-image?industry=${encodeURIComponent(industry)}`)
+      const data = await res.json()
+      if (data.url) setEditHeroImage(data.url)
+    } finally {
+      setHeroImageLoading(false)
+    }
   }
 
   const setTextField = (key: string, value: string) =>
@@ -701,6 +715,7 @@ Agentmakers.io`)
         body_content_nl: editContent,
         hero_headline_nl: (editContent.hero_headline as string) || editModal.hero_headline_nl,
         hero_subline_nl: (editContent.hero_subline as string) || editModal.hero_subline_nl,
+        hero_image_url: editHeroImage || editModal.hero_image_url,
       })
     })
     if (res.ok) {
@@ -1446,6 +1461,24 @@ Agentmakers.io`)
                   {Field({ label: 'Headline', k: 'hero_headline', rows: 2 })}
                   {Field({ label: 'Subline', k: 'hero_subline', rows: 3 })}
                   {Field({ label: 'Badge (klein label boven headline)', k: 'hero_badge' })}
+                  {Divider()}
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>Hero afbeelding</label>
+                    {editHeroImage && (
+                      <img src={editHeroImage} alt="Hero preview"
+                        style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 10, marginBottom: 10, border: '1.5px solid #E2E8F0', display: 'block' }} />
+                    )}
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input value={editHeroImage} onChange={e => setEditHeroImage(e.target.value)}
+                        placeholder="Plak een afbeelding-URL..."
+                        style={{ flex: 1, padding: '10px 12px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontFamily: "'Nunito',sans-serif", fontSize: '.88rem', color: '#1E293B', outline: 'none', boxSizing: 'border-box' }} />
+                      <button onClick={() => editModal && refreshHeroImage(editModal.industry)} disabled={heroImageLoading}
+                        style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: heroImageLoading ? '#E2E8F0' : '#0D9488', color: heroImageLoading ? '#94A3B8' : '#fff', fontWeight: 700, fontSize: '.82rem', cursor: heroImageLoading ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', fontFamily: "'Nunito',sans-serif" }}>
+                        {heroImageLoading ? '⏳ Laden…' : '🔄 Nieuwe foto'}
+                      </button>
+                    </div>
+                    <p style={{ fontSize: '.75rem', color: '#94A3B8', marginTop: 6 }}>Klik op &quot;Nieuwe foto&quot; voor een andere Unsplash-foto, of plak zelf een URL.</p>
+                  </div>
                 </>}
 
                 {editSection === 'probleem' && <>
