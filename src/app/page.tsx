@@ -28,8 +28,8 @@ export default async function HomePage() {
           </a>
           <div style={{ display: 'flex', gap: 8 }}>
             <span style={{ fontSize: '1.35rem', opacity: 1, lineHeight: 1 }} title="Nederlands">🇳🇱</span>
-            <span style={{ fontSize: '1.35rem', opacity: 0.25, lineHeight: 1, cursor: 'default' }} title="English">🇬🇧</span>
-            <span style={{ fontSize: '1.35rem', opacity: 0.25, lineHeight: 1, cursor: 'default' }} title="Español">🇪🇸</span>
+            <a href="/en" title="English" style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }}>🇬🇧</a>
+            <a href="/es" title="Español" style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }}>🇪🇸</a>
           </div>
         </div>
       </nav>
