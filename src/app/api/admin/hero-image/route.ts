@@ -62,11 +62,13 @@ function translateIndustryForSearch(industry: string): string {
   return industry // already English or unknown — use as-is
 }
 
-async function fetchRandomHeroImage(query: string): Promise<string> {
+// englishQuery → sent to Unsplash API (better results in English)
+// dutchKey     → used for the static fallback map (keywords are Dutch)
+async function fetchRandomHeroImage(englishQuery: string, dutchKey: string): Promise<string> {
   const accessKey = process.env.UNSPLASH_ACCESS_KEY
   if (accessKey) {
     try {
-      const encoded = encodeURIComponent(query)
+      const encoded = encodeURIComponent(englishQuery)
       // Request 30 photos at once and pick randomly — maximises variety
       const res = await fetch(
         `https://api.unsplash.com/photos/random?query=${encoded}&orientation=landscape&count=30&client_id=${accessKey}`,
@@ -83,8 +85,8 @@ async function fetchRandomHeroImage(query: string): Promise<string> {
       }
     } catch { /* fall through to fallback */ }
   }
-  // No API key or Unsplash error — delegate to shared helper
-  return await getUnsplashImage(query)
+  // API unavailable — use Dutch keyword for the curated fallback map
+  return await getUnsplashImage(dutchKey)
 }
 
 export async function GET(req: NextRequest) {
@@ -98,11 +100,13 @@ export async function GET(req: NextRequest) {
 
   // 1. Use the query Claude generated at page-creation time (most accurate)
   // 2. Fall back to static Dutch→English translation map
-  const storedQuery = await getStoredQuery(slug)
-  const query = storedQuery ?? `professional ${translateIndustryForSearch(industry)} business`
+  const storedQuery  = await getStoredQuery(slug)
+  const englishQuery = storedQuery ?? `professional ${translateIndustryForSearch(industry)} business`
+  // Dutch keyword for the static fallback image map (in case Unsplash API is unavailable)
+  const dutchKey = industry.toLowerCase()
 
   try {
-    const url = await fetchRandomHeroImage(query)
+    const url = await fetchRandomHeroImage(englishQuery, dutchKey)
     return NextResponse.json({ url }, { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } })
   } catch (err) {
     console.error('hero-image error', err)
