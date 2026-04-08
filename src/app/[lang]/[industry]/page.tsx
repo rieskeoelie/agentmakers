@@ -62,7 +62,6 @@ const HOURS_CONFIGS: { keywords: string[]; config: HoursConfig }[] = [
     },
   },
   {
-  {
     // Autobedrijven, garages: ma–za 8:30–17:30
     keywords: ['autobedrijf', 'autobedrijven', 'autogarage', 'autogarages', 'auto'],
     config: {
