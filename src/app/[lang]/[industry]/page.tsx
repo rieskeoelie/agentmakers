@@ -149,10 +149,11 @@ export default async function LandingPage({ params }: Props) {
   const subline = page[`hero_subline_${l}`] || page.hero_subline_nl
   const heroImg = page.hero_image_url
 
-  // Opening hours — per-industry config, overridable via body_content
+  // Opening hours — industry config is canonical; body_content values are ignored
+  // (all AI-generated pages default to 73% which is wrong for e.g. restaurants)
   const hours = getHoursConfig(industry)
-  const closedPct   = (content.closed_percent as number)    || hours.closedPercent
-  const closedHours = (content.closed_hours as number)      || hours.closedHoursPerYear
+  const closedPct   = hours.closedPercent
+  const closedHours = hours.closedHoursPerYear
   const openLabel   = l === 'en' ? hours.labelEN : l === 'es' ? hours.labelES : hours.labelNL
   // SVG: red arc covers closedPct% of circumference; offset = remaining (open) portion
   const ringOffset = Math.round(CIRCUMFERENCE * (1 - closedPct / 100))
