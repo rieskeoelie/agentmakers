@@ -11,6 +11,88 @@ import type { Metadata } from 'next'
 // Always fetch fresh data from DB so content changes appear immediately
 export const dynamic = 'force-dynamic'
 
+// ─── Industry-specific opening hours ────────────────────────────────────────
+// openDays: 0=Ma/Mon/Lun … 6=Zo/Sun/Dom
+// closedPercent = round((168 - openDays.length × hoursPerDay) / 168 × 100)
+// closedHoursPerYear = (168 - openDays.length × hoursPerDay) × 52
+interface HoursConfig {
+  openDays: number[]
+  hoursPerDay: number
+  labelNL: string; labelEN: string; labelES: string
+  closedPercent: number
+  closedHoursPerYear: number
+}
+const CIRCUMFERENCE = 691.15 // 2π × r110
+
+const HOURS_CONFIGS: { keywords: string[]; config: HoursConfig }[] = [
+  {
+    // Restaurants, horeca: di–zo 17:00–23:00
+    keywords: ['restaurant', 'horeca', 'eten', 'cafe', 'café', 'catering'],
+    config: {
+      openDays: [1,2,3,4,5,6], hoursPerDay: 6,
+      labelNL: 'Open: di–zo 17:00–23:00',
+      labelEN: 'Open: Tue–Sun 5pm–11pm',
+      labelES: 'Abierto: Mar–Dom 17:00–23:00',
+      closedPercent: 79,
+      closedHoursPerYear: 6864,
+    },
+  },
+  {
+    // Kappers, schoonheidssalons: di–za 9:00–18:00
+    keywords: ['kapper', 'salon', 'schoonheid', 'beauty', 'hair', 'nagel'],
+    config: {
+      openDays: [1,2,3,4,5], hoursPerDay: 9,
+      labelNL: 'Open: di–za 9:00–18:00',
+      labelEN: 'Open: Tue–Sat 9am–6pm',
+      labelES: 'Abierto: Mar–Sáb 9:00–18:00',
+      closedPercent: 73,
+      closedHoursPerYear: 6396,
+    },
+  },
+  {
+    // Dierenartsen: ma–vr 8:00–18:00, za 9:00–13:00
+    keywords: ['dierenarts', 'veterinair', 'vet'],
+    config: {
+      openDays: [0,1,2,3,4,5], hoursPerDay: 9, // avg: 10h weekdays + 4h sat ≈ 9h/day for 6 days
+      labelNL: 'Open: ma–vr 8:00–18:00, za 9:00–13:00',
+      labelEN: 'Open: Mon–Fri 8am–6pm, Sat 9am–1pm',
+      labelES: 'Abierto: Lun–Vie 8:00–18:00, Sáb 9:00–13:00',
+      closedPercent: 68,
+      closedHoursPerYear: 5928,
+    },
+  },
+  {
+    // Tandarts, fysiotherapie, klinieken, makelaars, apotheek — default kantooruren
+    keywords: ['tandarts', 'fysiotherapie', 'kliniek', 'makelaar', 'apotheek', 'advocaat', 'accountant', 'garage'],
+    config: {
+      openDays: [0,1,2,3,4], hoursPerDay: 9,
+      labelNL: 'Open: ma–vr 9:00–18:00',
+      labelEN: 'Open: Mon–Fri 9am–6pm',
+      labelES: 'Abierto: Lun–Vie 9:00–18:00',
+      closedPercent: 73,
+      closedHoursPerYear: 6420,
+    },
+  },
+]
+
+const DEFAULT_HOURS: HoursConfig = {
+  openDays: [0,1,2,3,4], hoursPerDay: 9,
+  labelNL: 'Open: ma–vr 9:00–18:00',
+  labelEN: 'Open: Mon–Fri 9am–6pm',
+  labelES: 'Abierto: Lun–Vie 9:00–18:00',
+  closedPercent: 73,
+  closedHoursPerYear: 6420,
+}
+
+function getHoursConfig(slug: string): HoursConfig {
+  const lower = slug.toLowerCase()
+  for (const { keywords, config } of HOURS_CONFIGS) {
+    if (keywords.some(k => lower.includes(k))) return config
+  }
+  return DEFAULT_HOURS
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 interface Props {
   params: Promise<{ lang: string; industry: string }>
 }
@@ -66,6 +148,14 @@ export default async function LandingPage({ params }: Props) {
   const headline = page[`hero_headline_${l}`] || page.hero_headline_nl
   const subline = page[`hero_subline_${l}`] || page.hero_subline_nl
   const heroImg = page.hero_image_url
+
+  // Opening hours — per-industry config, overridable via body_content
+  const hours = getHoursConfig(industry)
+  const closedPct   = (content.closed_percent as number)    || hours.closedPercent
+  const closedHours = (content.closed_hours as number)      || hours.closedHoursPerYear
+  const openLabel   = l === 'en' ? hours.labelEN : l === 'es' ? hours.labelES : hours.labelNL
+  // SVG: red arc covers closedPct% of circumference; offset = remaining (open) portion
+  const ringOffset = Math.round(CIRCUMFERENCE * (1 - closedPct / 100))
 
   return (
     <div style={{ fontFamily: "'Nunito', sans-serif", color: '#334155', background: '#fff' }}>
@@ -148,10 +238,10 @@ export default async function LandingPage({ params }: Props) {
             <div style={{ width: 260, height: 260, margin: '0 auto', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg viewBox="0 0 260 260" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
                 <circle cx="130" cy="130" r="110" fill="none" stroke="#0D9488" strokeWidth="16" />
-                <circle cx="130" cy="130" r="110" fill="none" stroke="#DC5858" strokeWidth="16" strokeDasharray="691.15" strokeDashoffset="186.6" strokeLinecap="round" transform="rotate(-90 130 130)" />
+                <circle cx="130" cy="130" r="110" fill="none" stroke="#DC5858" strokeWidth="16" strokeDasharray={CIRCUMFERENCE} strokeDashoffset={ringOffset} strokeLinecap="round" transform="rotate(-90 130 130)" />
               </svg>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '3.6rem', fontWeight: 700, color: '#0F172A' }}>{content.closed_percent || 73}%</div>
+                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '3.6rem', fontWeight: 700, color: '#0F172A' }}>{closedPct}%</div>
                 <div style={{ fontSize: '.95rem', color: '#64748B' }}>{t(l, 'percent_closed')}</div>
               </div>
             </div>
@@ -165,16 +255,19 @@ export default async function LandingPage({ params }: Props) {
               </div>
             </div>
             <div style={{ textAlign: 'center', marginTop: 32, padding: 24, background: '#fff', borderRadius: 14, boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
-              <div style={{ fontSize: '1.15rem', color: '#0F172A', marginBottom: 8, fontWeight: 700 }}>
-                {l === 'nl' ? 'Open: ma–vr 9:00–18:00' : l === 'en' ? 'Open: Mon–Fri 9am–6pm' : 'Abierto: Lun–Vie 9:00–18:00'}
+              <div style={{ fontSize: '1.05rem', color: '#0F172A', marginBottom: 8, fontWeight: 700 }}>
+                {openLabel}
               </div>
               <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
-                {(l === 'nl' ? ['MA','DI','WO','DO','VR','ZA','ZO'] : l === 'en' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']).map((day, i) => (
-                  <span key={day} style={{ background: i < 5 ? '#E2E8F0' : '#FEE2E2', padding: '6px 10px', borderRadius: 6, fontSize: '.9rem', color: i < 5 ? '#64748B' : '#EF4444', fontWeight: i < 5 ? 400 : 600 }}>{day}</span>
-                ))}
+                {(l === 'nl' ? ['MA','DI','WO','DO','VR','ZA','ZO'] : l === 'en' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']).map((day, i) => {
+                  const isOpen = hours.openDays.includes(i)
+                  return (
+                    <span key={day} style={{ background: isOpen ? '#E2E8F0' : '#FEE2E2', padding: '6px 10px', borderRadius: 6, fontSize: '.9rem', color: isOpen ? '#64748B' : '#EF4444', fontWeight: isOpen ? 400 : 600 }}>{day}</span>
+                  )
+                })}
               </div>
               <div style={{ marginTop: 12, fontSize: '1.15rem', color: '#EF4444', fontWeight: 700 }}>
-                {(content.closed_hours || 6420).toLocaleString('nl-NL')} {t(l, 'hours_closed')}
+                {closedHours.toLocaleString('nl-NL')} {t(l, 'hours_closed')}
               </div>
             </div>
           </div>
