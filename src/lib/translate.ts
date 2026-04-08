@@ -62,6 +62,31 @@ async function translateToLang(
   targetLang: 'English' | 'Spanish',
   industry: string
 ): Promise<{ title: string; meta_description: string; hero_headline: string; hero_subline: string; body_content: Record<string, unknown> }> {
+  const platformMap: Record<string, { English: string; Spanish: string }> = {
+    // Real estate portals
+    'Funda':          { English: 'Rightmove',    Spanish: 'Idealista' },
+    'funda':          { English: 'Rightmove',    Spanish: 'Idealista' },
+    // Real estate CRMs
+    'Hyppoconnect':   { English: 'Reapit',       Spanish: 'Inmovilla' },
+    'hyppoconnect':   { English: 'Reapit',       Spanish: 'Inmovilla' },
+    'Kolibri':        { English: 'Alto',         Spanish: 'Sooprema' },
+    'kolibri':        { English: 'Alto',         Spanish: 'Sooprema' },
+    // Payments
+    'iDeal':          { English: 'Stripe',       Spanish: 'Bizum' },
+    'iDEAL':          { English: 'Stripe',       Spanish: 'Bizum' },
+    // Food delivery
+    'Thuisbezorgd':   { English: 'Deliveroo',    Spanish: 'Glovo' },
+    'thuisbezorgd':   { English: 'Deliveroo',    Spanish: 'Glovo' },
+    // Review platforms
+    'Trustoo':        { English: 'Trustpilot',   Spanish: 'Trustpilot' },
+    // Booking
+    'Zorgdomein':     { English: 'NHS Choices',  Spanish: 'cita previa' },
+  }
+
+  const platformInstructions = Object.entries(platformMap)
+    .map(([nl, targets]) => `  - "${nl}" → "${targets[targetLang]}"`)
+    .join('\n')
+
   const prompt = `Translate the following Dutch landing page content for the "${industry}" industry to ${targetLang}.
 
 Rules:
@@ -69,6 +94,8 @@ Rules:
 - Keep all numbers, percentages and prices as-is (34%, 40%, 85%, 73%, €299 etc.)
 - Keep brand names unchanged: "agentmakers.io"
 - Keep treatment/service names naturally adapted for ${targetLang}-speaking markets
+- Replace Dutch-specific platform names with their local ${targetLang} equivalent:
+${platformInstructions}
 - Return ONLY valid JSON with the exact same structure as the input
 
 Dutch source:
