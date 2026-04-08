@@ -129,10 +129,12 @@ const T = {
   },
 }
 
-async function getLivePages(descField: string): Promise<Record<string, unknown>[]> {
+async function getLivePages(lang: Lang): Promise<Record<string, unknown>[]> {
+  const descField = `meta_description_${lang}`
+  const titleField = `title_${lang}`
   const { data } = await supabaseAdmin
     .from('landing_pages')
-    .select(`slug, industry, hero_image_url, ${descField}, status`)
+    .select(`slug, industry, hero_image_url, ${descField}, ${titleField}, status`)
     .eq('status', 'live')
     .order('created_at', { ascending: true })
   return (data as unknown as Record<string, unknown>[]) || []
@@ -144,7 +146,7 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
   const lang = rawLang as Lang
   const tx = T[lang]
 
-  const livePages = await getLivePages(tx.descField)
+  const livePages = await getLivePages(lang)
 
   const flags: Record<Lang, string> = { nl: '🇳🇱', en: '🇬🇧', es: '🇪🇸' }
   const flagLinks: Record<Lang, string> = { nl: '/', en: '/en', es: '/es' }
@@ -209,8 +211,12 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
                 <img src={(page.hero_image_url as string) || 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=600&q=80'} alt={page.industry as string} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
                 <div style={{ padding: 24 }}>
                   <div style={{ width: 48, height: 48, borderRadius: 12, background: '#F0FDFA', color: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', marginBottom: 16 }}>✚</div>
-                  <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.1rem', fontWeight: 700, marginBottom: 8, color: '#0F172A' }}>{page.industry as string}</h3>
-                  <p style={{ fontSize: '.9rem', color: '#64748B', lineHeight: 1.6, marginBottom: 16 }}>{(page[tx.descField] as string) || ''}</p>
+                  <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.1rem', fontWeight: 700, marginBottom: 8, color: '#0F172A' }}>
+                    {(page[`title_${lang}`] as string) || (page.industry as string)}
+                  </h3>
+                  <p style={{ fontSize: '.9rem', color: '#64748B', lineHeight: 1.6, marginBottom: 16 }}>
+                    {(page[`meta_description_${lang}`] as string) || ''}
+                  </p>
                   <span style={{ fontSize: '.88rem', fontWeight: 600, color: '#0D9488', display: 'inline-flex', alignItems: 'center', gap: 4 }}>{tx.viewSolution}</span>
                 </div>
               </a>
