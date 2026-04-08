@@ -34,6 +34,8 @@ const NL_TO_EN_INDUSTRY: Record<string, string> = {
   'dierenarts':         'veterinary clinic',
   'apotheken':          'pharmacy',
   'apotheek':           'pharmacy',
+  'autobedrijven':      'car dealership showroom',
+  'autobedrijf':        'car dealership showroom',
   'autogarages':        'car garage mechanic',
   'autogarage':         'car garage mechanic',
   'schilders':          'professional painter',

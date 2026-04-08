@@ -62,6 +62,19 @@ const HOURS_CONFIGS: { keywords: string[]; config: HoursConfig }[] = [
     },
   },
   {
+  {
+    // Autobedrijven, garages: ma–za 8:30–17:30
+    keywords: ['autobedrijf', 'autobedrijven', 'autogarage', 'autogarages', 'auto'],
+    config: {
+      openDays: [0,1,2,3,4,5], hoursPerDay: 9,
+      labelNL: 'Open: ma–za 8:30–17:30',
+      labelEN: 'Open: Mon–Sat 8:30am–5:30pm',
+      labelES: 'Abierto: Lun–Sáb 8:30–17:30',
+      closedPercent: 68,
+      closedHoursPerYear: 5928,
+    },
+  },
+  {
     // Tandarts, fysiotherapie, klinieken, makelaars, apotheek — default kantooruren
     keywords: ['tandarts', 'fysiotherapie', 'kliniek', 'makelaar', 'apotheek', 'advocaat', 'accountant', 'garage'],
     config: {
