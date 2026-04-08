@@ -1,15 +1,37 @@
 'use client'
 import { useEffect, useState } from 'react'
 
-const PHRASES = [
-  'Goedemiddag, waarmee kan ik u helpen?',
-  'Ik boek dat direct voor u in…',
-  'Een moment, ik kijk even in de agenda…',
-  'Donderdag om 10 uur past prima!',
-  'U ontvangt een bevestiging per e-mail.',
-]
+const PHRASES: Record<string, string[]> = {
+  nl: [
+    'Goedemiddag, waarmee kan ik u helpen?',
+    'Ik boek dat direct voor u in…',
+    'Een moment, ik kijk even in de agenda…',
+    'Donderdag om 10 uur past prima!',
+    'U ontvangt een bevestiging per e-mail.',
+  ],
+  en: [
+    'Good afternoon, how can I help you?',
+    'I\'ll book that for you right away…',
+    'One moment, let me check the calendar…',
+    'Thursday at 10 o\'clock works perfectly!',
+    'You\'ll receive a confirmation by email.',
+  ],
+  es: [
+    'Buenas tardes, ¿en qué puedo ayudarle?',
+    'Le reservo eso ahora mismo…',
+    'Un momento, compruebo la agenda…',
+    '¡El jueves a las 10 es perfecto!',
+    'Recibirá una confirmación por correo.',
+  ],
+}
 
-export function OrbPreview() {
+const STATUS_LABEL: Record<string, string> = {
+  nl: 'Spreekt',
+  en: 'Speaking',
+  es: 'Hablando',
+}
+
+export function OrbPreview({ lang = 'nl' }: { lang?: string }) {
   const [phraseIdx, setPhraseIdx] = useState(0)
   const [visible, setVisible] = useState(true)
   const [hidden, setHidden] = useState(false)
@@ -20,17 +42,19 @@ export function OrbPreview() {
     return () => window.removeEventListener('form:success', hide)
   }, [])
 
+  const phrases = PHRASES[lang] ?? PHRASES.nl
+
   useEffect(() => {
     const cycle = () => {
       setVisible(false)
       setTimeout(() => {
-        setPhraseIdx(i => (i + 1) % PHRASES.length)
+        setPhraseIdx(i => (i + 1) % phrases.length)
         setVisible(true)
       }, 500)
     }
     const id = setInterval(cycle, 3200)
     return () => clearInterval(id)
-  }, [])
+  }, [phrases.length])
 
   if (hidden) return null
 
@@ -127,7 +151,7 @@ export function OrbPreview() {
           transition: 'opacity 0.4s ease',
           margin: 0,
         }}>
-          &ldquo;{PHRASES[phraseIdx]}&rdquo;
+          &ldquo;{phrases[phraseIdx]}&rdquo;
         </p>
       </div>
 
@@ -153,7 +177,7 @@ export function OrbPreview() {
           animation: 'dotPulsePrev 2s ease-in-out infinite',
           display: 'inline-block',
         }} />
-        Spreekt
+        {STATUS_LABEL[lang] ?? STATUS_LABEL.nl}
       </div>
 
       <style>{`

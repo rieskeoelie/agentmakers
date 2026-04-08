@@ -39,7 +39,7 @@ export function DemoGridWrapper({ slug, lang, strings, orbLabel }: Props) {
       </div>
       <OrbColumn>
         <div className="demo-section-orb" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <OrbPreview />
+          <OrbPreview lang={lang} />
           <p style={{ color: '#fff', fontSize: '0.78rem', textAlign: 'center', maxWidth: 240, lineHeight: 1.6, margin: 0 }}>
             {orbLabel}
           </p>

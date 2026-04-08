@@ -284,7 +284,7 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
           <div className="demo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center', maxWidth: 960, margin: '0 auto' }}>
             <OrbColumn>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                <OrbPreview />
+                <OrbPreview lang={lang} />
                 <p style={{ color: 'rgba(240,244,248,0.38)', fontSize: '0.78rem', textAlign: 'center', maxWidth: 240, lineHeight: 1.6, margin: 0 }}>{tx.orbSub}</p>
               </div>
             </OrbColumn>
