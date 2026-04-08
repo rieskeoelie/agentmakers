@@ -9,9 +9,9 @@ async function fetchRandomHeroImage(query: string): Promise<string> {
   if (accessKey) {
     try {
       const encoded = encodeURIComponent(query)
-      // Request 5 photos at once — pick one at random to guarantee variety
+      // Request 30 photos at once and pick randomly — maximises variety
       const res = await fetch(
-        `https://api.unsplash.com/photos/random?query=${encoded}&orientation=landscape&count=5&client_id=${accessKey}`,
+        `https://api.unsplash.com/photos/random?query=${encoded}&orientation=landscape&count=30&client_id=${accessKey}`,
         { cache: 'no-store', headers: { 'Accept-Version': 'v1' } }
       )
       if (res.ok) {

@@ -173,53 +173,56 @@ FORMATTING RULE: Never use em-dashes (—) anywhere in the output. Use a comma, 
   return removeEmDashes(parsed)
 }
 
-// Curated fallback images per industry keyword (Unsplash photo IDs)
-const FALLBACK_IMAGES: Record<string, string> = {
-  dental:      'photo-1606811841689-23dfddce3e95', // dental clinic
-  tandarts:    'photo-1606811841689-23dfddce3e95',
-  dentist:     'photo-1606811841689-23dfddce3e95',
-  hair:        'photo-1560066984-138dadb4c035', // hair salon
-  kapper:      'photo-1560066984-138dadb4c035',
-  salon:       'photo-1560066984-138dadb4c035',
-  fitness:     'photo-1534438327276-14e5300c3a48', // gym
-  gym:         'photo-1534438327276-14e5300c3a48',
-  sport:       'photo-1534438327276-14e5300c3a48',
-  restaurant:  'photo-1414235077428-338989a2e8c0',
-  food:        'photo-1414235077428-338989a2e8c0',
-  real:        'photo-1560518883-ce09059eeffa', // real estate
-  estate:      'photo-1560518883-ce09059eeffa',
-  makelaar:    'photo-1560518883-ce09059eeffa',
-  clinic:      'photo-1519494026892-80bbd2d6fd0d', // medical clinic
-  medical:     'photo-1519494026892-80bbd2d6fd0d',
-  zorg:        'photo-1519494026892-80bbd2d6fd0d',
-  lawyer:      'photo-1589829545856-d10d557cf95f', // law office
-  legal:       'photo-1589829545856-d10d557cf95f',
-  advocaat:    'photo-1589829545856-d10d557cf95f',
-  accountant:  'photo-1554224155-6726b3ff858f',
-  finance:     'photo-1554224155-6726b3ff858f',
-  cleaning:    'photo-1581578731548-c64695cc6952', // cleaning
-  schoonmaak:  'photo-1581578731548-c64695cc6952',
-  painting:    'photo-1562259949-e8e7689d7828', // painting
-  schilder:    'photo-1562259949-e8e7689d7828',
-  plumber:     'photo-1585771724684-38269d6639fd', // plumber
-  loodgieter:  'photo-1585771724684-38269d6639fd',
-  electrician: 'photo-1621905251189-08b45249a5b0',
-  elektricien: 'photo-1621905251189-08b45249a5b0',
-  vet:         'photo-1548767797-d8c844163c4a', // veterinarian
-  dierenarts:  'photo-1548767797-d8c844163c4a',
-  pharmacy:    'photo-1587854692152-cbe660dbde88',
-  apotheek:    'photo-1587854692152-cbe660dbde88',
-  default:     'photo-1497366216548-37526070297c', // professional office
+// Curated fallback images per industry keyword (multiple Unsplash photo IDs for variety)
+const FALLBACK_IMAGES: Record<string, string[]> = {
+  dental:      ['photo-1606811841689-23dfddce3e95', 'photo-1588776814546-1ffbb172c4e4', 'photo-1629909613654-28e377c37b09', 'photo-1598256989800-fe5f95da9787'],
+  tandarts:    ['photo-1606811841689-23dfddce3e95', 'photo-1588776814546-1ffbb172c4e4', 'photo-1629909613654-28e377c37b09', 'photo-1598256989800-fe5f95da9787'],
+  dentist:     ['photo-1606811841689-23dfddce3e95', 'photo-1588776814546-1ffbb172c4e4', 'photo-1629909613654-28e377c37b09', 'photo-1598256989800-fe5f95da9787'],
+  hair:        ['photo-1560066984-138dadb4c035', 'photo-1522337360788-8b13dee7a37e', 'photo-1521590832167-7bcbfaa6381f', 'photo-1562322994-1c2742c0e6f6'],
+  kapper:      ['photo-1560066984-138dadb4c035', 'photo-1522337360788-8b13dee7a37e', 'photo-1521590832167-7bcbfaa6381f', 'photo-1562322994-1c2742c0e6f6'],
+  salon:       ['photo-1560066984-138dadb4c035', 'photo-1522337360788-8b13dee7a37e', 'photo-1521590832167-7bcbfaa6381f', 'photo-1562322994-1c2742c0e6f6'],
+  fitness:     ['photo-1534438327276-14e5300c3a48', 'photo-1571019613454-1cb2f99b2d8b', 'photo-1517836357463-d25dfeac3438', 'photo-1605296867304-46d5465a13f1'],
+  gym:         ['photo-1534438327276-14e5300c3a48', 'photo-1571019613454-1cb2f99b2d8b', 'photo-1517836357463-d25dfeac3438', 'photo-1605296867304-46d5465a13f1'],
+  sport:       ['photo-1534438327276-14e5300c3a48', 'photo-1571019613454-1cb2f99b2d8b', 'photo-1517836357463-d25dfeac3438', 'photo-1605296867304-46d5465a13f1'],
+  restaurant:  ['photo-1414235077428-338989a2e8c0', 'photo-1517248135467-4c7edcad34c4', 'photo-1555396273-367ea4eb4db5', 'photo-1466978913421-dad2ebd01d17'],
+  food:        ['photo-1414235077428-338989a2e8c0', 'photo-1517248135467-4c7edcad34c4', 'photo-1555396273-367ea4eb4db5', 'photo-1466978913421-dad2ebd01d17'],
+  real:        ['photo-1560518883-ce09059eeffa', 'photo-1570129477492-45c003edd2be', 'photo-1512917774080-9991f1c4c750', 'photo-1582407947304-fd86f28320c7'],
+  estate:      ['photo-1560518883-ce09059eeffa', 'photo-1570129477492-45c003edd2be', 'photo-1512917774080-9991f1c4c750', 'photo-1582407947304-fd86f28320c7'],
+  makelaar:    ['photo-1560518883-ce09059eeffa', 'photo-1570129477492-45c003edd2be', 'photo-1512917774080-9991f1c4c750', 'photo-1582407947304-fd86f28320c7'],
+  clinic:      ['photo-1519494026892-80bbd2d6fd0d', 'photo-1576091160399-112ba8d25d1d', 'photo-1532938911079-1b06ac7ceec7', 'photo-1579684385127-1ef15d508118'],
+  medical:     ['photo-1519494026892-80bbd2d6fd0d', 'photo-1576091160399-112ba8d25d1d', 'photo-1532938911079-1b06ac7ceec7', 'photo-1579684385127-1ef15d508118'],
+  zorg:        ['photo-1519494026892-80bbd2d6fd0d', 'photo-1576091160399-112ba8d25d1d', 'photo-1532938911079-1b06ac7ceec7', 'photo-1579684385127-1ef15d508118'],
+  lawyer:      ['photo-1589829545856-d10d557cf95f', 'photo-1453728013993-6d66e9c9123a', 'photo-1507679799987-c73779587ccf', 'photo-1568992687947-868a62a9f521'],
+  legal:       ['photo-1589829545856-d10d557cf95f', 'photo-1453728013993-6d66e9c9123a', 'photo-1507679799987-c73779587ccf', 'photo-1568992687947-868a62a9f521'],
+  advocaat:    ['photo-1589829545856-d10d557cf95f', 'photo-1453728013993-6d66e9c9123a', 'photo-1507679799987-c73779587ccf', 'photo-1568992687947-868a62a9f521'],
+  accountant:  ['photo-1554224155-6726b3ff858f', 'photo-1460925895917-afdab827c52f', 'photo-1611974789855-9c2a0a7236a3', 'photo-1450101499163-c8848c66ca85'],
+  finance:     ['photo-1554224155-6726b3ff858f', 'photo-1460925895917-afdab827c52f', 'photo-1611974789855-9c2a0a7236a3', 'photo-1450101499163-c8848c66ca85'],
+  cleaning:    ['photo-1581578731548-c64695cc6952', 'photo-1527515637462-cff94ebb57f9', 'photo-1563453392212-326f5e854473', 'photo-1558618666-fcd25c85cd64'],
+  schoonmaak:  ['photo-1581578731548-c64695cc6952', 'photo-1527515637462-cff94ebb57f9', 'photo-1563453392212-326f5e854473', 'photo-1558618666-fcd25c85cd64'],
+  painting:    ['photo-1562259949-e8e7689d7828', 'photo-1589939705384-5185137a7f0f', 'photo-1558618047-f32e61e7d0f3', 'photo-1504307651254-35680f356dfd'],
+  schilder:    ['photo-1562259949-e8e7689d7828', 'photo-1589939705384-5185137a7f0f', 'photo-1558618047-f32e61e7d0f3', 'photo-1504307651254-35680f356dfd'],
+  plumber:     ['photo-1585771724684-38269d6639fd', 'photo-1607472586893-edb57bdc0e39', 'photo-1558618048-f32e61e7d0f3', 'photo-1504307651254-35680f356dfd'],
+  loodgieter:  ['photo-1585771724684-38269d6639fd', 'photo-1607472586893-edb57bdc0e39', 'photo-1558618048-f32e61e7d0f3', 'photo-1504307651254-35680f356dfd'],
+  electrician: ['photo-1621905251189-08b45249a5b0', 'photo-1473341304170-971dccb5ac1e', 'photo-1497435334941-8c899ee9e8e9', 'photo-1530124566582-a618bc2615dc'],
+  elektricien: ['photo-1621905251189-08b45249a5b0', 'photo-1473341304170-971dccb5ac1e', 'photo-1497435334941-8c899ee9e8e9', 'photo-1530124566582-a618bc2615dc'],
+  vet:         ['photo-1548767797-d8c844163c4a', 'photo-1516734212186-a967f81ad0d7', 'photo-1587300003388-59208cc962cb', 'photo-1602584427168-cc01c63e895a'],
+  dierenarts:  ['photo-1548767797-d8c844163c4a', 'photo-1516734212186-a967f81ad0d7', 'photo-1587300003388-59208cc962cb', 'photo-1602584427168-cc01c63e895a'],
+  pharmacy:    ['photo-1587854692152-cbe660dbde88', 'photo-1584308666744-24d5c474f2ae', 'photo-1550572017-a9b7e28d9b93', 'photo-1563213126-a4273aed2016'],
+  apotheek:    ['photo-1587854692152-cbe660dbde88', 'photo-1584308666744-24d5c474f2ae', 'photo-1550572017-a9b7e28d9b93', 'photo-1563213126-a4273aed2016'],
+  default:     ['photo-1497366216548-37526070297c', 'photo-1486406146926-c627a92ad1ab', 'photo-1497215842964-222b430dc094', 'photo-1504384308090-c894fdcc538d', 'photo-1522202176988-66273c2fd55f'],
 }
 
 function getFallbackImage(query: string): string {
   const lower = query.toLowerCase()
-  for (const [keyword, photoId] of Object.entries(FALLBACK_IMAGES)) {
+  for (const [keyword, photoIds] of Object.entries(FALLBACK_IMAGES)) {
     if (lower.includes(keyword)) {
-      return `https://images.unsplash.com/${photoId}?w=1920&q=80&auto=format&fit=crop`
+      const pick = photoIds[Math.floor(Math.random() * photoIds.length)]
+      return `https://images.unsplash.com/${pick}?w=1920&q=80&auto=format&fit=crop`
     }
   }
-  return `https://images.unsplash.com/${FALLBACK_IMAGES.default}?w=1920&q=80&auto=format&fit=crop`
+  const defaults = FALLBACK_IMAGES.default
+  const pick = defaults[Math.floor(Math.random() * defaults.length)]
+  return `https://images.unsplash.com/${pick}?w=1920&q=80&auto=format&fit=crop`
 }
 
 // Fetch a relevant Unsplash image URL.
