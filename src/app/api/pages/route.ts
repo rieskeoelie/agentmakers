@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { autoTranslatePage } from '@/lib/translate'
 import { getSessionFromRequest } from '@/lib/auth'
@@ -36,13 +36,18 @@ export async function PATCH(req: NextRequest) {
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Auto-translate EN+ES if any NL content field was changed
+  // Auto-translate EN+ES if any NL content field was changed.
+  // Use `after()` so Vercel keeps the function alive until translation completes
+  // instead of killing it the moment the response is sent.
   const nlChanged = NL_CONTENT_FIELDS.some(field => field in updates)
   if (nlChanged) {
-    // Fire-and-forget: don't block the response
-    autoTranslatePage(id).catch(err =>
-      console.error('[auto-translate] Failed for page', id, err)
-    )
+    after(async () => {
+      try {
+        await autoTranslatePage(id)
+      } catch (err) {
+        console.error('[auto-translate] Failed for page', id, err)
+      }
+    })
   }
 
   return NextResponse.json(data)
