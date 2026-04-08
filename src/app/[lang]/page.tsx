@@ -158,12 +158,15 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
           <a href="/" style={{ textDecoration: 'none' }}>
             <img src="/logo-transparent.png" alt="agentmakers.io" style={{ height: 36, width: 'auto', display: 'block' }} />
           </a>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {(['nl', 'en', 'es'] as Lang[]).map(l => (
-              <a key={l} href={flagLinks[l]} title={l} style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: l === lang ? 1 : 0.45, lineHeight: 1 }}>
-                {flags[l]}
-              </a>
-            ))}
+          <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+            <a href="/ai-agents" style={{ fontWeight: 600, color: '#0D9488', fontSize: '.9rem', textDecoration: 'none' }}>AI Agents</a>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['nl', 'en', 'es'] as Lang[]).map(l => (
+                <a key={l} href={flagLinks[l]} title={l} style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: l === lang ? 1 : 0.45, lineHeight: 1 }}>
+                  {flags[l]}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </nav>

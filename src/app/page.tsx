@@ -26,10 +26,13 @@ export default async function HomePage() {
           <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
             <img src="/logo-transparent.png" alt="agentmakers.io" style={{ height: 36, width: 'auto', display: 'block' }} />
           </a>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <span style={{ fontSize: '1.35rem', opacity: 1, lineHeight: 1 }} title="Nederlands">🇳🇱</span>
-            <a href="/en" title="English" style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }}>🇬🇧</a>
-            <a href="/es" title="Español" style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }}>🇪🇸</a>
+          <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+            <a href="/ai-agents" style={{ fontWeight: 600, color: '#0D9488', fontSize: '.9rem', textDecoration: 'none' }}>AI Agents</a>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <span style={{ fontSize: '1.35rem', opacity: 1, lineHeight: 1 }} title="Nederlands">🇳🇱</span>
+              <a href="/en" title="English" style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }}>🇬🇧</a>
+              <a href="/es" title="Español" style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }}>🇪🇸</a>
+            </div>
           </div>
         </div>
       </nav>
