@@ -9,6 +9,28 @@ type Lang = 'nl' | 'en' | 'es'
 
 const SUPPORTED = ['nl', 'en', 'es']
 
+// Translate Dutch industry names to EN/ES for the homepage cards
+const INDUSTRY_TRANSLATIONS: Record<string, Record<Lang, string>> = {
+  'tandartspraktijken':  { nl: 'Tandartspraktijken',  en: 'Dental Practices',     es: 'Clínicas Dentales' },
+  'klinieken & salons':  { nl: 'Klinieken & Salons',  en: 'Clinics & Salons',      es: 'Clínicas & Salones' },
+  'klinieken':           { nl: 'Klinieken',            en: 'Clinics',               es: 'Clínicas' },
+  'schoonheidssalons':   { nl: 'Schoonheidssalons',   en: 'Beauty Salons',          es: 'Salones de Belleza' },
+  'fysiotherapie':       { nl: 'Fysiotherapie',        en: 'Physiotherapy',          es: 'Fisioterapia' },
+  'makelaardij':         { nl: 'Makelaardij',          en: 'Real Estate',            es: 'Inmobiliaria' },
+  'autogarages':         { nl: 'Autogarages',          en: 'Car Garages',            es: 'Talleres de Coches' },
+  'restaurants':         { nl: 'Restaurants',          en: 'Restaurants',            es: 'Restaurantes' },
+  'horeca':              { nl: 'Horeca',               en: 'Hospitality',            es: 'Hostelería' },
+  'loodgieters':         { nl: 'Loodgieters',          en: 'Plumbers',              es: 'Fontaneros' },
+  'advocaten':           { nl: 'Advocaten',            en: 'Law Firms',             es: 'Abogados' },
+  'accountants':         { nl: 'Accountants',          en: 'Accountants',           es: 'Contables' },
+}
+
+function translateIndustry(industry: string, lang: Lang): string {
+  if (lang === 'nl') return industry
+  const key = industry.toLowerCase()
+  return INDUSTRY_TRANSLATIONS[key]?.[lang] ?? industry
+}
+
 const T = {
   nl: {
     badge: 'AI Agents op maat voor uw branche',
@@ -131,10 +153,9 @@ const T = {
 
 async function getLivePages(lang: Lang): Promise<Record<string, unknown>[]> {
   const descField = `meta_description_${lang}`
-  const titleField = `title_${lang}`
   const { data } = await supabaseAdmin
     .from('landing_pages')
-    .select(`slug, industry, hero_image_url, ${descField}, ${titleField}, status`)
+    .select(`slug, industry, hero_image_url, ${descField}, status`)
     .eq('status', 'live')
     .order('created_at', { ascending: true })
   return (data as unknown as Record<string, unknown>[]) || []
@@ -212,7 +233,7 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
                 <div style={{ padding: 24 }}>
                   <div style={{ width: 48, height: 48, borderRadius: 12, background: '#F0FDFA', color: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', marginBottom: 16 }}>✚</div>
                   <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.1rem', fontWeight: 700, marginBottom: 8, color: '#0F172A' }}>
-                    {(page[`title_${lang}`] as string) || (page.industry as string)}
+                    {translateIndustry(page.industry as string, lang)}
                   </h3>
                   <p style={{ fontSize: '.9rem', color: '#64748B', lineHeight: 1.6, marginBottom: 16 }}>
                     {(page[`meta_description_${lang}`] as string) || ''}
