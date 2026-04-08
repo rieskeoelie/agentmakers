@@ -4,6 +4,51 @@ import { getUnsplashImage } from '@/lib/generate'
 
 export const dynamic = 'force-dynamic'
 
+// Translate common Dutch industry names to English for better Unsplash results
+const NL_TO_EN_INDUSTRY: Record<string, string> = {
+  'tandartspraktijken': 'dental clinic',
+  'tandarts':           'dental clinic',
+  'fysiotherapie':      'physiotherapy clinic',
+  'fysiotherapeut':     'physiotherapy clinic',
+  'klinieken':          'medical clinic',
+  'kliniek':            'medical clinic',
+  'schoonheidssalons':  'beauty salon',
+  'schoonheidssalon':   'beauty salon',
+  'kappers':            'hair salon',
+  'kapper':             'hair salon',
+  'makelaars':          'real estate agent office',
+  'makelaar':           'real estate agent office',
+  'makelaardij':        'real estate office',
+  'loodgieters':        'plumber professional',
+  'loodgieter':         'plumber professional',
+  'elektriciens':       'electrician professional',
+  'elektricien':        'electrician professional',
+  'advocaten':          'law office',
+  'advocaat':           'law office',
+  'accountants':        'accounting office',
+  'accountant':         'accounting office',
+  'restaurants':        'restaurant interior',
+  'restaurant':         'restaurant interior',
+  'horeca':             'hospitality restaurant',
+  'dierenartsen':       'veterinary clinic',
+  'dierenarts':         'veterinary clinic',
+  'apotheken':          'pharmacy',
+  'apotheek':           'pharmacy',
+  'autogarages':        'car garage mechanic',
+  'autogarage':         'car garage mechanic',
+  'schilders':          'professional painter',
+  'schilder':           'professional painter',
+  'schoonmaak':         'professional cleaning',
+}
+
+function translateIndustryForSearch(industry: string): string {
+  const lower = industry.toLowerCase()
+  for (const [nl, en] of Object.entries(NL_TO_EN_INDUSTRY)) {
+    if (lower.includes(nl)) return en
+  }
+  return industry // already English or unknown — use as-is
+}
+
 async function fetchRandomHeroImage(query: string): Promise<string> {
   const accessKey = process.env.UNSPLASH_ACCESS_KEY
   if (accessKey) {
@@ -36,7 +81,8 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const industry = searchParams.get('industry') || ''
-  const query = `professional ${industry} business`
+  const englishIndustry = translateIndustryForSearch(industry)
+  const query = `professional ${englishIndustry} business`
 
   try {
     const url = await fetchRandomHeroImage(query)
