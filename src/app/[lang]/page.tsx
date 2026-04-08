@@ -5,6 +5,8 @@ import { OrbPreview } from '@/components/landing/OrbPreview'
 import { OrbColumn } from '@/components/landing/OrbColumn'
 import type { LandingPage } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 type Lang = 'nl' | 'en' | 'es'
 
 const SUPPORTED = ['nl', 'en', 'es']

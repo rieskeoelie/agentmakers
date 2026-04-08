@@ -4,6 +4,8 @@ import { DemoForm } from '@/components/landing/DemoForm'
 import { OrbPreview } from '@/components/landing/OrbPreview'
 import { OrbColumn } from '@/components/landing/OrbColumn'
 
+export const dynamic = 'force-dynamic'
+
 async function getLivePages(): Promise<LandingPage[]> {
   const { data } = await supabaseAdmin
     .from('landing_pages')
