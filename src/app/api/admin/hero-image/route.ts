@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSessionFromRequest } from '@/lib/auth'
 import { getUnsplashImage } from '@/lib/generate'
 import { supabaseAdmin } from '@/lib/supabase'
+import Anthropic from '@anthropic-ai/sdk'
 
 export const dynamic = 'force-dynamic'
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // Fetch the stored hero_image_query for a slug (set at page generation time)
 async function getStoredQuery(slug: string): Promise<string | null> {
@@ -13,6 +16,38 @@ async function getStoredQuery(slug: string): Promise<string | null> {
     .eq('slug', slug)
     .single()
   return (data?.body_content_nl as Record<string, unknown>)?._hero_image_query as string ?? null
+}
+
+// Ask Claude for the best English Unsplash search query for any industry name.
+// Result is stored in the DB so subsequent calls are instant.
+async function deriveAndStoreQuery(slug: string, industry: string): Promise<string> {
+  try {
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 60,
+      messages: [{
+        role: 'user',
+        content: `Give me a 3-5 word English Unsplash search query for a professional hero photo of a "${industry}" business. Reply with ONLY the search query, nothing else. Example: "modern dental clinic interior"`,
+      }],
+    })
+    const query = msg.content[0].type === 'text'
+      ? msg.content[0].text.trim().replace(/^["']|["']$/g, '')
+      : `professional ${industry} business`
+
+    // Store in DB so next call is instant
+    const { data: page } = await supabaseAdmin
+      .from('landing_pages')
+      .select('body_content_nl')
+      .eq('slug', slug)
+      .single()
+    if (page) {
+      const updated = { ...(page.body_content_nl as Record<string, unknown> || {}), _hero_image_query: query }
+      await supabaseAdmin.from('landing_pages').update({ body_content_nl: updated }).eq('slug', slug)
+    }
+    return query
+  } catch {
+    return `professional ${industry} business`
+  }
 }
 
 // Fallback: translate common Dutch industry names to English for Unsplash
@@ -100,8 +135,21 @@ export async function GET(req: NextRequest) {
 
   // 1. Use the query Claude generated at page-creation time (most accurate)
   // 2. Fall back to static Dutch→English translation map
-  const storedQuery  = await getStoredQuery(slug)
-  const englishQuery = storedQuery ?? `professional ${translateIndustryForSearch(industry)} business`
+  // 3. If no static match, ask Claude Haiku to derive + store the query
+  const storedQuery = await getStoredQuery(slug)
+  let englishQuery: string
+  if (storedQuery) {
+    englishQuery = storedQuery
+  } else {
+    const translated = translateIndustryForSearch(industry)
+    if (translated !== industry) {
+      // Static map had a match
+      englishQuery = `professional ${translated} business`
+    } else {
+      // Unknown industry — ask Claude and persist for next time
+      englishQuery = await deriveAndStoreQuery(slug, industry)
+    }
+  }
   // Dutch keyword for the static fallback image map (in case Unsplash API is unavailable)
   const dutchKey = industry.toLowerCase()
 
