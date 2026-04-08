@@ -162,12 +162,22 @@ export default async function LandingPage({ params }: Props) {
   const subline = page[`hero_subline_${l}`] || page.hero_subline_nl
   const heroImg = page.hero_image_url
 
-  // Opening hours — industry config is canonical; body_content values are ignored
-  // (all AI-generated pages default to 73% which is wrong for e.g. restaurants)
-  const hours = getHoursConfig(industry)
-  const closedPct   = hours.closedPercent
-  const closedHours = hours.closedHoursPerYear
-  const openLabel   = l === 'en' ? hours.labelEN : l === 'es' ? hours.labelES : hours.labelNL
+  // Opening hours — prefer Claude-generated config stored at page creation time,
+  // fall back to static industry lookup for older pages
+  const storedHours = content._opening_hours as {
+    open_days: number[]; label_nl: string; label_en: string; label_es: string
+    closed_percent: number; closed_hours_per_year: number
+  } | undefined
+
+  const staticHours  = getHoursConfig(industry)
+  const openDays     = storedHours?.open_days    ?? staticHours.openDays
+  const closedPct    = storedHours?.closed_percent        ?? staticHours.closedPercent
+  const closedHours  = storedHours?.closed_hours_per_year ?? staticHours.closedHoursPerYear
+  const openLabel    = l === 'en'
+    ? (storedHours?.label_en ?? staticHours.labelEN)
+    : l === 'es'
+    ? (storedHours?.label_es ?? staticHours.labelES)
+    : (storedHours?.label_nl ?? staticHours.labelNL)
   // SVG: red arc covers closedPct% of circumference; offset = remaining (open) portion
   const ringOffset = Math.round(CIRCUMFERENCE * (1 - closedPct / 100))
 
@@ -274,7 +284,7 @@ export default async function LandingPage({ params }: Props) {
               </div>
               <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
                 {(l === 'nl' ? ['MA','DI','WO','DO','VR','ZA','ZO'] : l === 'en' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']).map((day, i) => {
-                  const isOpen = hours.openDays.includes(i)
+                  const isOpen = openDays.includes(i)
                   return (
                     <span key={day} style={{ background: isOpen ? '#E2E8F0' : '#FEE2E2', padding: '6px 10px', borderRadius: 6, fontSize: '.9rem', color: isOpen ? '#64748B' : '#EF4444', fontWeight: isOpen ? 400 : 600 }}>{day}</span>
                   )

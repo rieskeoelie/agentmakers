@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       meta_description_nl: content.nl.meta_description,
       hero_headline_nl: content.nl.hero_headline,
       hero_subline_nl: content.nl.hero_subline,
-      body_content_nl: { ...content.nl, _hero_image_query: content.hero_image_query },
+      body_content_nl: { ...content.nl, _hero_image_query: content.hero_image_query, _opening_hours: content.opening_hours },
       title_en: content.en.title,
       meta_description_en: content.en.meta_description,
       hero_headline_en: content.en.hero_headline,

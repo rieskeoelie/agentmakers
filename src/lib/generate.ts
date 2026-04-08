@@ -2,11 +2,21 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+export interface OpeningHoursConfig {
+  open_days: number[]           // 0=Mon … 6=Sun
+  label_nl: string
+  label_en: string
+  label_es: string
+  closed_percent: number
+  closed_hours_per_year: number
+}
+
 export interface GeneratedContent {
   nl: LangContent
   en: LangContent
   es: LangContent
   hero_image_query: string
+  opening_hours: OpeningHoursConfig
 }
 
 export interface LangContent {
@@ -150,8 +160,23 @@ Return ONLY valid JSON matching this exact structure (no markdown, no explanatio
   },
   "en": { ... same structure but in English, with industry-specific English terminology ... },
   "es": { ... same structure but in Spanish, with industry-specific Spanish terminology ... },
-  "hero_image_query": "Unsplash search query for a professional ${industry} photo (in English, 3-5 words, e.g. 'modern dental clinic interior' or 'real estate luxury home')"
+  "hero_image_query": "Unsplash search query for a professional ${industry} photo (in English, 3-5 words, e.g. 'modern dental clinic interior' or 'real estate luxury home')",
+  "opening_hours": {
+    "open_days": [0,1,2,3,4],
+    "label_nl": "Open: ma–vr 9:00–18:00",
+    "label_en": "Open: Mon–Fri 9am–6pm",
+    "label_es": "Abierto: Lun–Vie 9:00–18:00",
+    "closed_percent": 73,
+    "closed_hours_per_year": 6420
+  }
 }
+
+IMPORTANT for opening_hours: use the REAL typical opening schedule for "${industry}":
+- open_days: array of day indices that are OPEN (0=Mon,1=Tue,2=Wed,3=Thu,4=Fri,5=Sat,6=Sun)
+- Example restaurants: open_days [1,2,3,4,5,6] (Tue-Sun), label "di–zo 17:00–23:00", closed_percent 79, closed_hours_per_year 6864
+- Example hair salons: open_days [1,2,3,4,5] (Tue-Sat), label "di–za 9:00–18:00", closed_percent 73, closed_hours_per_year 6396
+- Example car dealers: open_days [0,1,2,3,4,5] (Mon-Sat), label "ma–za 8:30–17:30", closed_percent 68, closed_hours_per_year 5928
+- Formula: closed_percent = round((168 - open_days.length * hours_per_day) / 168 * 100), closed_hours_per_year = (168 - open_days.length * hours_per_day) * 52
 
 Make ALL content highly specific and relevant to the "${industry}" industry. Use realistic numbers for revenue_calls and revenue_per_call based on the industry's typical appointment/transaction value. Every single text string must use the natural vocabulary and jargon of this industry — never use generic business terms when an industry-specific term exists.
 
