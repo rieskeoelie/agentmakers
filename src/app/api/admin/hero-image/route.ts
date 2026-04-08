@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionFromRequest } from '@/lib/auth'
 import { getUnsplashImage } from '@/lib/generate'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
-// Translate common Dutch industry names to English for better Unsplash results
+// Fetch the stored hero_image_query for a slug (set at page generation time)
+async function getStoredQuery(slug: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from('landing_pages')
+    .select('body_content_nl')
+    .eq('slug', slug)
+    .single()
+  return (data?.body_content_nl as Record<string, unknown>)?._hero_image_query as string ?? null
+}
+
+// Fallback: translate common Dutch industry names to English for Unsplash
 const NL_TO_EN_INDUSTRY: Record<string, string> = {
   'tandartspraktijken': 'dental clinic',
   'tandarts':           'dental clinic',
@@ -83,8 +94,12 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const industry = searchParams.get('industry') || ''
-  const englishIndustry = translateIndustryForSearch(industry)
-  const query = `professional ${englishIndustry} business`
+  const slug     = searchParams.get('slug') || industry.toLowerCase().replace(/\s+/g, '-')
+
+  // 1. Use the query Claude generated at page-creation time (most accurate)
+  // 2. Fall back to static Dutch→English translation map
+  const storedQuery = await getStoredQuery(slug)
+  const query = storedQuery ?? `professional ${translateIndustryForSearch(industry)} business`
 
   try {
     const url = await fetchRandomHeroImage(query)

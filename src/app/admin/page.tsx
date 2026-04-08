@@ -684,10 +684,12 @@ Agentmakers.io`)
     setEditSection('hero')
   }
 
-  const refreshHeroImage = async (industry: string) => {
+  const refreshHeroImage = async (industry: string, slug?: string) => {
     setHeroImageLoading(true)
     try {
-      const res = await fetch(`/api/admin/hero-image?industry=${encodeURIComponent(industry)}&t=${Date.now()}`)
+      const params = new URLSearchParams({ industry, t: String(Date.now()) })
+      if (slug) params.set('slug', slug)
+      const res = await fetch(`/api/admin/hero-image?${params.toString()}`)
       const data = await res.json()
       if (data.url) { setEditHeroImage(data.url); setHeroImageKey(k => k + 1) }
     } finally {
@@ -1473,7 +1475,7 @@ Agentmakers.io`)
                       <input value={editHeroImage} onChange={e => setEditHeroImage(e.target.value)}
                         placeholder="Plak een afbeelding-URL..."
                         style={{ flex: 1, padding: '10px 12px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontFamily: "'Nunito',sans-serif", fontSize: '.88rem', color: '#1E293B', outline: 'none', boxSizing: 'border-box' }} />
-                      <button onClick={() => editModal && refreshHeroImage(editModal.industry)} disabled={heroImageLoading}
+                      <button onClick={() => editModal && refreshHeroImage(editModal.industry, editModal.slug)} disabled={heroImageLoading}
                         style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: heroImageLoading ? '#E2E8F0' : '#0D9488', color: heroImageLoading ? '#94A3B8' : '#fff', fontWeight: 700, fontSize: '.82rem', cursor: heroImageLoading ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', fontFamily: "'Nunito',sans-serif" }}>
                         {heroImageLoading ? '⏳ Laden…' : '🔄 Nieuwe foto'}
                       </button>
