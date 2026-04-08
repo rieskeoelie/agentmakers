@@ -27,6 +27,8 @@ export async function autoTranslatePage(pageId: string): Promise<void> {
     hero_headline: page.hero_headline_nl,
     hero_subline: page.hero_subline_nl,
     body_content: page.body_content_nl,
+    // Include the industry name so Claude translates it naturally
+    industry_label: page.industry,
   }
 
   const [en, es] = await Promise.all([
@@ -41,27 +43,28 @@ export async function autoTranslatePage(pageId: string): Promise<void> {
       meta_description_en:   en.meta_description,
       hero_headline_en:      en.hero_headline,
       hero_subline_en:       en.hero_subline,
-      body_content_en:       en.body_content,
+      // Store _industry_label inside body_content so homepage can read it without schema changes
+      body_content_en:       { ...en.body_content, _industry_label: en.industry_label },
       title_es:              es.title,
       meta_description_es:   es.meta_description,
       hero_headline_es:      es.hero_headline,
       hero_subline_es:       es.hero_subline,
-      body_content_es:       es.body_content,
+      body_content_es:       { ...es.body_content, _industry_label: es.industry_label },
     })
     .eq('id', pageId)
 
   if (updateError) {
     console.error('[translate] Failed to save translations:', updateError)
   } else {
-    console.log(`[translate] ✅ EN+ES updated for page: ${page.slug}`)
+    console.log(`[translate] ✅ EN+ES updated for page: ${page.slug} (industry_label: ${en.industry_label} / ${es.industry_label})`)
   }
 }
 
 async function translateToLang(
-  nl: { title: string; meta_description: string; hero_headline: string; hero_subline: string; body_content: Record<string, unknown> },
+  nl: { title: string; meta_description: string; hero_headline: string; hero_subline: string; body_content: Record<string, unknown>; industry_label: string },
   targetLang: 'English' | 'Spanish',
   industry: string
-): Promise<{ title: string; meta_description: string; hero_headline: string; hero_subline: string; body_content: Record<string, unknown> }> {
+): Promise<{ title: string; meta_description: string; hero_headline: string; hero_subline: string; body_content: Record<string, unknown>; industry_label: string }> {
   const platformMap: Record<string, { English: string; Spanish: string }> = {
     // Real estate portals
     'Funda':          { English: 'Rightmove',    Spanish: 'Idealista' },
@@ -96,12 +99,13 @@ Rules:
 - Keep treatment/service names naturally adapted for ${targetLang}-speaking markets
 - Replace Dutch-specific platform names with their local ${targetLang} equivalent:
 ${platformInstructions}
+- For "industry_label": translate it naturally as it would appear as a category heading (e.g. "Autobedrijven" → "Car Dealerships" / "Concesionarios de Coches")
 - Return ONLY valid JSON with the exact same structure as the input
 
 Dutch source:
 ${JSON.stringify(nl, null, 2)}
 
-Return JSON with keys: title, meta_description, hero_headline, hero_subline, body_content (preserve all nested keys and structure exactly).`
+Return JSON with keys: title, meta_description, hero_headline, hero_subline, body_content (preserve all nested keys and structure exactly), industry_label.`
 
   const msg = await anthropic.messages.create({
     model: 'claude-opus-4-6',
@@ -113,5 +117,9 @@ Return JSON with keys: title, meta_description, hero_headline, hero_subline, bod
   const match = text.match(/\{[\s\S]*\}/)
   if (!match) throw new Error(`[translate] No JSON in Claude response for ${targetLang}`)
 
-  return JSON.parse(match[0])
+  const parsed = JSON.parse(match[0])
+  // Fallback: if Claude didn't return industry_label, use the industry name
+  if (!parsed.industry_label) parsed.industry_label = industry
+
+  return parsed
 }

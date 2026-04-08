@@ -156,10 +156,11 @@ const T = {
 }
 
 async function getLivePages(lang: Lang): Promise<Record<string, unknown>[]> {
-  const descField = `meta_description_${lang}`
+  const descField    = `meta_description_${lang}`
+  const contentField = `body_content_${lang}`
   const { data } = await supabaseAdmin
     .from('landing_pages')
-    .select(`slug, industry, hero_image_url, ${descField}, status`)
+    .select(`slug, industry, hero_image_url, ${descField}, ${contentField}, status`)
     .eq('status', 'live')
     .order('created_at', { ascending: true })
   return (data as unknown as Record<string, unknown>[]) || []
@@ -237,7 +238,8 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
                 <div style={{ padding: 24 }}>
                   <div style={{ width: 48, height: 48, borderRadius: 12, background: '#F0FDFA', color: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', marginBottom: 16 }}>✚</div>
                   <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.1rem', fontWeight: 700, marginBottom: 8, color: '#0F172A' }}>
-                    {translateIndustry(page.industry as string, lang)}
+                    {(page[`body_content_${lang}`] as Record<string, unknown> | undefined)?._industry_label as string
+                      || translateIndustry(page.industry as string, lang)}
                   </h3>
                   <p style={{ fontSize: '.9rem', color: '#64748B', lineHeight: 1.6, marginBottom: 16 }}>
                     {(page[`meta_description_${lang}`] as string) || ''}
