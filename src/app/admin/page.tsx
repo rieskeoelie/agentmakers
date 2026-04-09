@@ -922,10 +922,14 @@ Agentmakers.io`)
         </h1>
         <p style={{ color: '#64748B', fontSize: '.9rem', marginBottom: 32 }}>Dashboard</p>
         <button
-          onClick={() => {
-            setCurrentUser({ displayName: 'Richard', isAdmin: true, isSuperAdmin: true })
+          onClick={async () => {
+            const res = await fetch('/api/auth/bypass')
+            if (!res.ok) { alert('Bypass mislukt'); return }
+            const data = await res.json()
+            setCurrentUser({ displayName: data.displayName || 'Richard', isAdmin: true, isSuperAdmin: true })
             setAuthed(true)
-            fetch('/api/leads').then(r => r.ok ? r.json() : null).then(d => { if (d) setLeads(d) }).catch(() => {})
+            fetchData()
+            fetchConversations()
           }}
           style={{ width: '100%', padding: 16, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: '1.1rem', cursor: 'pointer', fontFamily: "\'Nunito\',sans-serif" }}
         >
