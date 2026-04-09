@@ -186,7 +186,7 @@ export default async function HomePage() {
               Zie direct uw AI receptioniste in actie
             </h2>
             <p style={{ color: 'rgba(240,244,248,0.55)', fontSize: '1.05rem', maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>
-              Per jaar bent u duizenden uren gesloten. Zie hoe uw AI receptioniste tijdens die uren uw agenda vult met afspraken.
+              Vul het formulier in en ontvang direct de link naar de demo via de mail. De agent neemt op met uw bedrijfsnaam, en staat u vriendelijk te woord.
             </p>
           </div>
 

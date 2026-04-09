@@ -90,7 +90,7 @@ const T = {
     ],
     demoBadge: 'Gratis demo',
     demoH2: 'Zie direct uw AI receptioniste in actie',
-    demoSub: 'Per jaar bent u duizenden uren gesloten. Zie hoe uw AI receptioniste tijdens die uren uw agenda vult met afspraken.',
+    demoSub: 'Vul het formulier in en ontvang direct de link naar de demo via de mail. De agent neemt op met uw bedrijfsnaam, en staat u vriendelijk te woord.',
     orbSub: 'Vul snel het formulier in en beluister de AI voice agent in actie.',
     form: {
       cta_headline: '',
