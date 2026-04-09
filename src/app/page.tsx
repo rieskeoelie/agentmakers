@@ -50,9 +50,9 @@ export default async function HomePage() {
                 AI Agents op maat voor uw branche
               </div>
               <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.6rem, 2.8vw, 2.3rem)', lineHeight: 1.18, marginBottom: 20 }}>
-                Uw bedrijf verdient een{' '}
-                <em style={{ fontStyle: 'normal', color: '#0D9488' }}>AI medewerker</em>{' '}
-                die nooit slaapt
+                Elke oproep beantwoord.{' '}
+                <em style={{ fontStyle: 'normal', color: '#0D9488' }}>Elke afspraak ingeboekt.</em>{' '}
+                24/7.
               </h1>
               <p style={{ fontSize: '1.05rem', color: '#64748B', marginBottom: 36, lineHeight: 1.7 }}>
                 Wij bouwen AI agents die uw telefoon beantwoorden, afspraken inboeken en klanten helpen — 24/7, in elke branche.

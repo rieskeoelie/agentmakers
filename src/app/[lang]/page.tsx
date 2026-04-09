@@ -69,9 +69,9 @@ function translateIndustry(industry: string, lang: Lang): string {
 const T = {
   nl: {
     badge: 'AI Agents op maat voor uw branche',
-    h1a: 'Uw bedrijf verdient een',
-    h1em: 'AI medewerker',
-    h1b: 'die nooit slaapt',
+    h1a: 'Elke oproep beantwoord.',
+    h1em: 'Elke afspraak ingeboekt.',
+    h1b: '24/7.',
     sub: 'Wij bouwen AI agents die uw telefoon beantwoorden, afspraken inboeken en klanten helpen — 24/7, in elke branche.',
     cta: 'Bekijk onze oplossingen ↓',
     stats: [['24/7', 'Altijd bereikbaar'], ['10+', 'Talen ondersteund'], ['48u', 'Live in 48 uur']],
@@ -123,9 +123,9 @@ const T = {
   },
   en: {
     badge: 'AI Agents tailored for your industry',
-    h1a: 'Your business deserves an',
-    h1em: 'AI employee',
-    h1b: 'that never sleeps',
+    h1a: 'Every call answered.',
+    h1em: 'Every appointment booked.',
+    h1b: '24/7.',
     sub: 'We build AI agents that answer your phone, book appointments and help customers — 24/7, in every industry.',
     cta: 'Discover our solutions ↓',
     stats: [['24/7', 'Always available'], ['10+', 'Languages supported'], ['48h', 'Live in 48 hours']],
@@ -177,9 +177,9 @@ const T = {
   },
   es: {
     badge: 'Agentes de IA para su sector',
-    h1a: 'Su empresa merece un',
-    h1em: 'empleado de IA',
-    h1b: 'que nunca duerme',
+    h1a: 'Cada llamada atendida.',
+    h1em: 'Cada cita reservada.',
+    h1b: '24/7.',
     sub: 'Creamos agentes de IA que responden su teléfono, reservan citas y ayudan a clientes — 24/7, en cualquier sector.',
     cta: 'Descubra nuestras soluciones ↓',
     stats: [['24/7', 'Siempre disponible'], ['10+', 'Idiomas'], ['48h', 'En directo en 48h']],
