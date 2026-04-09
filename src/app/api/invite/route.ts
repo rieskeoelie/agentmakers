@@ -51,17 +51,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: dbError.message }, { status: 500 })
   }
 
-  // Send demo email to prospect immediately
-  await sendConfirmationEmail({
-    naam,
-    email,
-    telefoon: '',
-    website,
-    bedrijfsnaam,
-    landing_page_slug: 'invite',
-    language: lang,
-    demo_token,
-  }).catch(() => {/* email failure should not block the response */})
+  // Send demo email to prospect immediately — surface errors to client
+  let emailError: string | null = null
+  try {
+    await sendConfirmationEmail({
+      naam,
+      email,
+      telefoon: '',
+      website,
+      bedrijfsnaam,
+      landing_page_slug: 'invite',
+      language: lang,
+      demo_token,
+    })
+  } catch (err) {
+    emailError = err instanceof Error ? err.message : String(err)
+    console.error('[invite] sendConfirmationEmail failed:', emailError)
+  }
+
+  if (emailError) {
+    return NextResponse.json({ error: `Lead aangemaakt maar e-mail mislukt: ${emailError}` }, { status: 500 })
+  }
 
   // Scrape website in background after response is returned
   after(() =>
