@@ -626,6 +626,13 @@ Agentmakers.io`)
     }).catch(() => {})
   }, [fetchData])
 
+  // Load all data as soon as we're authenticated
+  useEffect(() => {
+    if (authed) {
+      fetchData()
+    }
+  }, [authed, fetchData])
+
   useEffect(() => {
     if (authed) localStorage.setItem(LEAD_STATUS_STORAGE, JSON.stringify(leadStatus))
   }, [leadStatus, authed])
@@ -928,8 +935,7 @@ Agentmakers.io`)
             const data = await res.json()
             setCurrentUser({ displayName: data.displayName || 'Richard', isAdmin: true, isSuperAdmin: true })
             setAuthed(true)
-            fetchData()
-            fetchConversations()
+            // fetchData() is triggered by the useEffect below that watches authed
           }}
           style={{ width: '100%', padding: 16, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: '1.1rem', cursor: 'pointer', fontFamily: "\'Nunito\',sans-serif" }}
         >
