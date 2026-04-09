@@ -93,8 +93,8 @@ const T = {
     demoSub: 'Per jaar bent u duizenden uren gesloten. Zie hoe uw AI receptioniste tijdens die uren uw agenda vult met afspraken.',
     orbSub: 'Vul snel het formulier in en beluister de AI voice agent in actie.',
     form: {
-      cta_headline: 'Zie de Voice Agent in actie',
-      cta_sub: 'Binnen enkele minuten ontvangt u een link om uw eigen AI receptioniste te beluisteren.',
+      cta_headline: '',
+      cta_sub: '',
       name: 'Uw naam', email: 'E-mailadres', phone: 'Telefoonnummer',
       website: 'Website (optioneel)', company: 'Bedrijfsnaam',
       submit: 'Stuur mij de demo link', sending: 'Even geduld…',
@@ -147,8 +147,8 @@ const T = {
     demoSub: 'Your business is closed thousands of hours per year. See how your AI receptionist fills your calendar during those hours.',
     orbSub: 'Fill in the form quickly and listen to the AI voice agent in action.',
     form: {
-      cta_headline: 'See the Voice Agent in action',
-      cta_sub: 'Within minutes you will receive a link to listen to your own AI receptionist.',
+      cta_headline: '',
+      cta_sub: '',
       name: 'Your name', email: 'Email address', phone: 'Phone number',
       website: 'Website (optional)', company: 'Company name',
       submit: 'Send me the demo link', sending: 'Please wait…',
@@ -201,8 +201,8 @@ const T = {
     demoSub: 'Su empresa está cerrada miles de horas al año. Vea cómo su recepcionista de IA llena su agenda durante esas horas.',
     orbSub: 'Rellene el formulario rápidamente y escuche al agente de voz de IA en acción.',
     form: {
-      cta_headline: 'Vea el Agente de Voz en acción',
-      cta_sub: 'En minutos recibirá un enlace para escuchar su propio recepcionista de IA.',
+      cta_headline: '',
+      cta_sub: '',
       name: 'Su nombre', email: 'Correo electrónico', phone: 'Número de teléfono',
       website: 'Sitio web (opcional)', company: 'Nombre de empresa',
       submit: 'Envíame el enlace de demo', sending: 'Un momento…',
