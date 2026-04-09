@@ -71,7 +71,7 @@ const T = {
     badge: 'AI Agents op maat voor uw branche',
     h1a: 'Elke oproep beantwoord.',
     h1em: 'Elke afspraak ingeboekt.',
-    h1b: '24/7.',
+    h1b: '24/7. Met uw eigen AI agents.',
     sub: 'Wij bouwen AI agents die uw telefoon beantwoorden, afspraken inboeken en klanten helpen 24/7, in elke branche.',
     cta: 'Bekijk onze oplossingen ↓',
     stats: [['24/7', 'Altijd bereikbaar'], ['10+', 'Talen ondersteund'], ['48u', 'Live in 48 uur']],
@@ -125,7 +125,7 @@ const T = {
     badge: 'AI Agents tailored for your industry',
     h1a: 'Every call answered.',
     h1em: 'Every appointment booked.',
-    h1b: '24/7.',
+    h1b: '24/7. With your own AI agents.',
     sub: 'We build AI agents that answer your phone, book appointments and help customers 24/7, in every industry.',
     cta: 'Discover our solutions ↓',
     stats: [['24/7', 'Always available'], ['10+', 'Languages supported'], ['48h', 'Live in 48 hours']],
@@ -179,7 +179,7 @@ const T = {
     badge: 'Agentes de IA para su sector',
     h1a: 'Cada llamada atendida.',
     h1em: 'Cada cita reservada.',
-    h1b: '24/7.',
+    h1b: '24/7. Con sus propios agentes de IA.',
     sub: 'Creamos agentes de IA que responden su teléfono, reservan citas y ayudan a clientes 24/7, en cualquier sector.',
     cta: 'Descubra nuestras soluciones ↓',
     stats: [['24/7', 'Siempre disponible'], ['10+', 'Idiomas'], ['48h', 'En directo en 48h']],
@@ -263,8 +263,8 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
             <img src="/logo-transparent.png" alt="agentmakers.io" style={{ height: 36, width: 'auto', display: 'block' }} />
           </a>
           <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-            <a href="/ai-agents" style={{ fontWeight: 600, color: '#0D9488', fontSize: '.9rem', textDecoration: 'none' }}>AI Agents</a>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <a className="nav-link" href="/ai-agents" style={{ fontWeight: 600, color: '#0D9488', fontSize: '.9rem', textDecoration: 'none' }}>AI Agents</a>
+            <div className="nav-flags" style={{ display: 'flex', gap: 8 }}>
               {(['nl', 'en', 'es'] as Lang[]).map(l => (
                 <a key={l} href={flagLinks[l]} title={l} style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: l === lang ? 1 : 0.45, lineHeight: 1 }}>
                   {flags[l]}
@@ -278,7 +278,7 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
       {/* HERO */}
       <section style={{ paddingTop: 120, paddingBottom: 80, background: 'linear-gradient(180deg, #F0FDFA 0%, #fff 100%)' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
-          <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'center' }}>
+          <div className="hero-grid">
             {/* LEFT */}
             <div>
               <div style={{ display: 'inline-block', background: 'rgba(13,148,136,.1)', color: '#0F766E', padding: '6px 16px', borderRadius: 100, fontSize: '.8rem', fontWeight: 600, letterSpacing: '.04em', marginBottom: 24 }}>
@@ -306,15 +306,6 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
             </div>
           </div>
         </div>
-        <style>{`
-          @media (max-width: 860px) {
-            .hero-grid { grid-template-columns: 1fr !important; }
-            .hero-grid > div:last-child { max-width: 520px; margin: 0 auto; width: 100%; }
-          }
-          @media (max-width: 480px) {
-            .hero-grid > div:last-child { max-width: 100%; }
-          }
-        `}</style>
       </section>
 
       {/* BRANCHES */}
@@ -402,7 +393,7 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
             <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', lineHeight: 1.15, marginBottom: 20, maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}>{tx.demoH2}</h2>
             <p style={{ color: 'rgba(240,244,248,0.55)', fontSize: '1.05rem', maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>{tx.demoSub}</p>
           </div>
-          <div className="demo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center', maxWidth: 960, margin: '0 auto' }}>
+          <div className="demo-grid">
             <OrbColumn>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                 <OrbPreview lang={lang} />
@@ -414,7 +405,6 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
             </div>
           </div>
         </div>
-        <style>{`@media (max-width: 720px) { #contact .demo-grid { grid-template-columns: 1fr !important; } }`}</style>
       </section>
 
       {/* FOOTER */}

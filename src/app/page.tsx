@@ -30,8 +30,8 @@ export default async function HomePage() {
             <img src="/logo-transparent.png" alt="agentmakers.io" style={{ height: 36, width: 'auto', display: 'block' }} />
           </a>
           <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-            <a href="/ai-agents" style={{ fontWeight: 600, color: '#0D9488', fontSize: '.9rem', textDecoration: 'none' }}>AI Agents</a>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <a className="nav-link" href="/ai-agents" style={{ fontWeight: 600, color: '#0D9488', fontSize: '.9rem', textDecoration: 'none' }}>AI Agents</a>
+            <div className="nav-flags" style={{ display: 'flex', gap: 8 }}>
               <span style={{ fontSize: '1.35rem', opacity: 1, lineHeight: 1 }} title="Nederlands">🇳🇱</span>
               <a href="/en" title="English" style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }}>🇬🇧</a>
               <a href="/es" title="Español" style={{ textDecoration: 'none', fontSize: '1.35rem', opacity: 0.45, lineHeight: 1 }}>🇪🇸</a>
@@ -52,7 +52,7 @@ export default async function HomePage() {
               <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.6rem, 2.8vw, 2.3rem)', fontWeight: 700, lineHeight: 1.18, marginBottom: 20 }}>
                 Elke oproep beantwoord.{' '}
                 <em style={{ fontStyle: 'normal', color: '#0D9488' }}>Elke afspraak ingeboekt.</em>{' '}
-                24/7.
+                24/7. Met uw eigen AI agents.
               </h1>
               <p style={{ fontSize: '1.05rem', color: '#64748B', marginBottom: 36, lineHeight: 1.7 }}>
                 Wij bouwen AI agents die uw telefoon beantwoorden, afspraken inboeken en klanten helpen 24/7, in elke branche.
@@ -75,15 +75,6 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
-        <style>{`
-          @media (max-width: 860px) {
-            .hero-grid { grid-template-columns: 1fr !important; }
-            .hero-grid > div:last-child { max-width: 520px; margin: 0 auto; width: 100%; }
-          }
-          @media (max-width: 480px) {
-            .hero-grid > div:last-child { max-width: 100%; }
-          }
-        `}</style>
       </section>
 
       {/* BRANCHES */}
@@ -191,7 +182,7 @@ export default async function HomePage() {
           </div>
 
           {/* Two-column: orb left, form right */}
-          <div className="demo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center', maxWidth: 960, margin: '0 auto' }}>
+          <div className="demo-grid">
 
             {/* Left: orb preview — hidden after form success */}
             <OrbColumn>
@@ -233,9 +224,6 @@ export default async function HomePage() {
           @keyframes dotPulseHome {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.4; transform: scale(0.7); }
-          }
-          @media (max-width: 720px) {
-            #contact .demo-grid { grid-template-columns: 1fr !important; }
           }
         `}</style>
       </section>
