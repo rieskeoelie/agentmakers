@@ -348,7 +348,7 @@ export function HeroDashboard() {
           <span style={{ fontSize: '.65rem', color: '#64748B' }}>
             <strong style={{ color: ch.color }}>{ch.footerStat.split(' ')[0]}</strong>{' '}{ch.footerStat.split(' ').slice(1).join(' ')}
           </span>
-          <a href="/ai-agents" style={{ fontSize: '.65rem', fontWeight: 600, color: ch.color, textDecoration: 'none' }}>{ch.footerLink}</a>
+          <span style={{ fontSize: '.65rem', fontWeight: 600, color: ch.color }}>{ch.footerLink}</span>
         </div>
       </div>
 
