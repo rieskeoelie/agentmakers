@@ -2110,100 +2110,140 @@ Agentmakers.io`)
       {/* ══════════════════════ ACCOUNTS TAB ══════════════════════ */}
       {tab === 'accounts' && currentUser?.isSuperAdmin && (
         <div>
+          {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
             <div>
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 4 }}>👥 Accounts</h2>
-              <p style={{ fontSize: '.85rem', color: '#64748B', margin: 0 }}>Overzicht van alle resellers en hun performance deze maand.</p>
+              <p style={{ fontSize: '.85rem', color: '#64748B', margin: 0 }}>Performance overzicht van alle partner accounts.</p>
             </div>
             <button onClick={fetchAccounts} disabled={accountsLoading} style={{ background: '#fff', border: '1.5px solid #7C3AED', color: '#7C3AED', padding: '9px 18px', borderRadius: 10, fontWeight: 700, fontSize: '.85rem', cursor: 'pointer', opacity: accountsLoading ? 0.6 : 1 }}>
               {accountsLoading ? '⏳ Laden…' : '↻ Verversen'}
             </button>
           </div>
 
+          {/* KPI row — top */}
+          {accounts.length > 0 && (() => {
+            const partners = accounts.filter(a => !a.isSuperAdmin)
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
+                {[
+                  { label: 'Partner accounts', val: partners.length, color: '#7C3AED', bg: '#F5F3FF', icon: '👥' },
+                  { label: 'Leads deze maand', val: partners.reduce((s, a) => s + a.leadsThisMonth, 0), color: '#0D9488', bg: '#F0FDFA', icon: '📥' },
+                  { label: "Demo's verstuurd", val: partners.reduce((s, a) => s + a.demosGenerated, 0), color: '#1D4ED8', bg: '#EFF6FF', icon: '🎯' },
+                  { label: 'Gesprekken totaal', val: partners.reduce((s, a) => s + a.conversations, 0), color: '#DB2777', bg: '#FDF2F8', icon: '🎙' },
+                ].map(({ label, val, color, bg, icon }) => (
+                  <div key={label} style={{ background: bg, borderRadius: 14, border: `1.5px solid ${color}22`, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ fontSize: '1.6rem', lineHeight: 1 }}>{icon}</div>
+                    <div>
+                      <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.7rem', fontWeight: 700, color, lineHeight: 1.1 }}>{val}</div>
+                      <div style={{ fontSize: '.73rem', color: '#64748B', marginTop: 3, fontWeight: 600 }}>{label}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+
           {accountsLoading && accounts.length === 0 && (
             <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}>Accounts laden…</div>
           )}
-
           {!accountsLoading && accounts.length === 0 && (
             <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}>Geen accounts gevonden.</div>
           )}
 
-          {accounts.length > 0 && (
-            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.88rem' }}>
-                <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
-                    {['Account', 'Rol', 'Leads totaal', 'Deze maand', "Demo's", 'Gesprekken', 'Laatste activiteit', 'Acties'].map(h => (
-                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: '.78rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '.05em', whiteSpace: 'nowrap' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {accounts.map((acc, i) => {
+          {/* Account cards grid */}
+          {accounts.length > 0 && (() => {
+            const partners = accounts.filter(a => !a.isSuperAdmin)
+            const maxLeads = Math.max(...partners.map(a => a.leadsTotal), 1)
+            const maxMonth = Math.max(...partners.map(a => a.leadsThisMonth), 1)
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+                {partners
+                  .sort((a, b) => b.leadsThisMonth - a.leadsThisMonth || b.leadsTotal - a.leadsTotal)
+                  .map((acc, rank) => {
                     const isViewing = viewAsUser?.id === acc.id
+                    const initials = (acc.displayName || acc.username).slice(0, 2).toUpperCase()
                     const lastActive = acc.lastActiveAt
                       ? new Date(acc.lastActiveAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
-                      : '—'
+                      : 'Nog niet actief'
+                    const convRate = acc.leadsTotal > 0
+                      ? Math.round((acc.conversations / acc.leadsTotal) * 100)
+                      : 0
+                    const AVATAR_COLORS = ['#7C3AED','#0D9488','#1D4ED8','#DB2777','#EA580C','#0891B2']
+                    const avatarColor = AVATAR_COLORS[rank % AVATAR_COLORS.length]
                     return (
-                      <tr key={acc.id} style={{ borderBottom: i < accounts.length - 1 ? '1px solid #F1F5F9' : 'none', background: isViewing ? '#FFF7ED' : 'transparent' }}>
-                        <td style={{ padding: '14px 16px' }}>
-                          <div style={{ fontWeight: 700, color: '#1E293B' }}>{acc.displayName}</div>
-                          <div style={{ fontSize: '.75rem', color: '#94A3B8' }}>@{acc.username}</div>
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          {acc.isSuperAdmin
-                            ? <span style={{ background: '#7C3AED', color: '#fff', borderRadius: 99, padding: '2px 10px', fontSize: '.72rem', fontWeight: 700 }}>Superadmin</span>
-                            : acc.isAdmin
-                            ? <span style={{ background: '#0D9488', color: '#fff', borderRadius: 99, padding: '2px 10px', fontSize: '.72rem', fontWeight: 700 }}>Admin</span>
-                            : <span style={{ background: '#E2E8F0', color: '#64748B', borderRadius: 99, padding: '2px 10px', fontSize: '.72rem', fontWeight: 700 }}>Gebruiker</span>
-                          }
-                        </td>
-                        <td style={{ padding: '14px 16px', fontWeight: 700, color: '#0D9488', textAlign: 'center' }}>{acc.leadsTotal}</td>
-                        <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                          <span style={{ background: acc.leadsThisMonth > 0 ? '#DCFCE7' : '#F1F5F9', color: acc.leadsThisMonth > 0 ? '#16A34A' : '#94A3B8', borderRadius: 99, padding: '3px 10px', fontWeight: 700, fontSize: '.8rem' }}>
-                            {acc.leadsThisMonth > 0 ? `+${acc.leadsThisMonth}` : '0'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '14px 16px', textAlign: 'center', color: '#334155' }}>{acc.demosGenerated}</td>
-                        <td style={{ padding: '14px 16px', textAlign: 'center', color: '#334155' }}>{acc.conversations}</td>
-                        <td style={{ padding: '14px 16px', fontSize: '.8rem', color: '#64748B' }}>{lastActive}</td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            {!acc.isSuperAdmin && (
-                              isViewing
-                                ? <button onClick={() => setViewAsUser(null)} style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: 7, padding: '5px 12px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
-                                    ✕ Stop
-                                  </button>
-                                : <button onClick={() => { setViewAsUser({ id: acc.id, name: acc.displayName }); setTab('leads') }} style={{ background: '#F5F3FF', color: '#7C3AED', border: '1px solid #DDD6FE', borderRadius: 7, padding: '5px 12px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
-                                    👁 Bekijk als
-                                  </button>
-                            )}
+                      <div key={acc.id} style={{
+                        background: isViewing ? '#FFFBEB' : '#fff',
+                        borderRadius: 16,
+                        border: isViewing ? '2px solid #F59E0B' : '1.5px solid #E2E8F0',
+                        padding: '22px 22px 18px',
+                        boxShadow: isViewing ? '0 4px 20px rgba(245,158,11,.15)' : '0 2px 8px rgba(0,0,0,.04)',
+                        transition: 'box-shadow .2s',
+                        position: 'relative',
+                      }}>
+                        {/* Rank badge */}
+                        {rank === 0 && partners.length > 1 && (
+                          <div style={{ position: 'absolute', top: 14, right: 14, background: '#FEF9C3', color: '#854D0E', borderRadius: 99, fontSize: '.68rem', fontWeight: 800, padding: '2px 8px', letterSpacing: '.04em' }}>
+                            🏆 #1
                           </div>
-                        </td>
-                      </tr>
+                        )}
+
+                        {/* Avatar + name */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+                          <div style={{ width: 46, height: 46, borderRadius: '50%', background: avatarColor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1rem', fontFamily: "'Poppins',sans-serif", flexShrink: 0 }}>
+                            {initials}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: '.95rem', color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{acc.displayName}</div>
+                            <div style={{ fontSize: '.75rem', color: '#94A3B8' }}>@{acc.username}</div>
+                          </div>
+                          <span style={{ background: '#DCFCE7', color: '#15803D', borderRadius: 99, padding: '2px 9px', fontSize: '.7rem', fontWeight: 700, flexShrink: 0 }}>Admin</span>
+                        </div>
+
+                        {/* Stats grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+                          {[
+                            { label: 'Leads totaal', val: acc.leadsTotal, color: '#0D9488' },
+                            { label: 'Deze maand', val: acc.leadsThisMonth, color: acc.leadsThisMonth > 0 ? '#16A34A' : '#94A3B8', prefix: acc.leadsThisMonth > 0 ? '+' : '' },
+                            { label: "Demo's", val: acc.demosGenerated, color: '#1D4ED8' },
+                            { label: 'Gesprekken', val: acc.conversations, color: '#DB2777' },
+                          ].map(({ label, val, color, prefix = '' }) => (
+                            <div key={label} style={{ background: '#F8FAFC', borderRadius: 10, padding: '10px 12px' }}>
+                              <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', fontWeight: 700, color, lineHeight: 1 }}>{prefix}{val}</div>
+                              <div style={{ fontSize: '.68rem', color: '#94A3B8', marginTop: 2, fontWeight: 600 }}>{label}</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Activity bar — leads this month vs best performer */}
+                        <div style={{ marginBottom: 14 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.72rem', color: '#94A3B8', marginBottom: 5 }}>
+                            <span>Activiteit deze maand</span>
+                            <span style={{ color: convRate > 0 ? '#0D9488' : '#94A3B8', fontWeight: 700 }}>{convRate}% conv.</span>
+                          </div>
+                          <div style={{ background: '#F1F5F9', borderRadius: 99, height: 6, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', borderRadius: 99, background: `linear-gradient(90deg, ${avatarColor}, ${avatarColor}99)`, width: `${Math.round((acc.leadsThisMonth / maxMonth) * 100)}%`, minWidth: acc.leadsThisMonth > 0 ? '6px' : '0', transition: 'width .4s ease' }} />
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '.72rem', color: '#94A3B8' }}>⏱ {lastActive}</span>
+                          {isViewing
+                            ? <button onClick={() => setViewAsUser(null)} style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: 8, padding: '6px 14px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                                ✕ Stop bekijken
+                              </button>
+                            : <button onClick={() => { setViewAsUser({ id: acc.id, name: acc.displayName }); setTab('leads') }} style={{ background: '#F5F3FF', color: '#7C3AED', border: '1px solid #DDD6FE', borderRadius: 8, padding: '6px 14px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                                👁 Bekijk als
+                              </button>
+                          }
+                        </div>
+                      </div>
                     )
                   })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Summary cards */}
-          {accounts.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginTop: 24 }}>
-              {[
-                { label: 'Totaal accounts', val: accounts.filter(a => !a.isSuperAdmin).length, color: '#7C3AED' },
-                { label: 'Leads deze maand', val: accounts.reduce((s, a) => s + a.leadsThisMonth, 0), color: '#0D9488' },
-                { label: "Total demo's", val: accounts.reduce((s, a) => s + a.demosGenerated, 0), color: '#1D4ED8' },
-                { label: 'Gesprekken totaal', val: accounts.reduce((s, a) => s + a.conversations, 0), color: '#DB2777' },
-              ].map(({ label, val, color }) => (
-                <div key={label} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0', padding: '20px 24px', textAlign: 'center' }}>
-                  <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '2rem', fontWeight: 700, color }}>{val}</div>
-                  <div style={{ fontSize: '.78rem', color: '#64748B', marginTop: 4 }}>{label}</div>
-                </div>
-              ))}
-            </div>
-          )}
+              </div>
+            )
+          })()}
         </div>
       )}
 
