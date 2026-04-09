@@ -63,7 +63,7 @@ export default async function HomePage() {
             </div>
             {/* RIGHT */}
             <div>
-              <HeroDashboard />
+              <HeroDashboard lang="nl" />
             </div>
           </div>
         </div>

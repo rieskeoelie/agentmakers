@@ -294,7 +294,7 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
             </div>
             {/* RIGHT */}
             <div>
-              <HeroDashboard />
+              <HeroDashboard lang={lang} />
             </div>
           </div>
         </div>
