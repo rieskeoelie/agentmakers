@@ -3,6 +3,7 @@ import type { LandingPage } from '@/lib/supabase'
 import { DemoForm } from '@/components/landing/DemoForm'
 import { OrbPreview } from '@/components/landing/OrbPreview'
 import { OrbColumn } from '@/components/landing/OrbColumn'
+import { HeroDashboard } from '@/components/landing/HeroDashboard'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,31 +41,49 @@ export default async function HomePage() {
       </nav>
 
       {/* HERO */}
-      <section style={{ paddingTop: 160, paddingBottom: 100, textAlign: 'center', background: 'linear-gradient(180deg, #F0FDFA 0%, #fff 100%)' }}>
+      <section style={{ paddingTop: 120, paddingBottom: 80, background: 'linear-gradient(180deg, #F0FDFA 0%, #fff 100%)' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ display: 'inline-block', background: 'rgba(13,148,136,.1)', color: '#0F766E', padding: '6px 16px', borderRadius: 100, fontSize: '.8rem', fontWeight: 600, letterSpacing: '.04em', marginBottom: 24 }}>
-            AI Agents op maat voor uw branche
-          </div>
-          <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.15, marginBottom: 20, maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}>
-            Uw bedrijf verdient een{' '}
-            <em style={{ fontStyle: 'normal', color: '#0D9488' }}>AI medewerker</em>{' '}
-            die nooit slaapt
-          </h1>
-          <p style={{ fontSize: '1.15rem', color: '#64748B', maxWidth: 560, margin: '0 auto 40px' }}>
-            Wij bouwen AI agents die uw telefoon beantwoorden, afspraken inboeken en klanten helpen — 24/7, in elke branche.
-          </p>
-          <a href="#branches" style={{ background: '#0D9488', color: '#fff', padding: '16px 36px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '1rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            Bekijk onze oplossingen ↓
-          </a>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 48, marginTop: 56, flexWrap: 'wrap' }}>
-            {[['24/7', 'Altijd bereikbaar'], ['10+', 'Talen ondersteund'], ['48u', 'Live in 48 uur']].map(([num, label]) => (
-              <div key={num} style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '2.2rem', fontWeight: 700, color: '#0F766E' }}>{num}</div>
-                <div style={{ fontSize: '.85rem', color: '#64748B', marginTop: 4 }}>{label}</div>
+          <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'center' }}>
+            {/* LEFT */}
+            <div>
+              <div style={{ display: 'inline-block', background: 'rgba(13,148,136,.1)', color: '#0F766E', padding: '6px 16px', borderRadius: 100, fontSize: '.8rem', fontWeight: 600, letterSpacing: '.04em', marginBottom: 24 }}>
+                AI Agents op maat voor uw branche
               </div>
-            ))}
+              <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.6rem, 2.8vw, 2.3rem)', lineHeight: 1.18, marginBottom: 20 }}>
+                Uw bedrijf verdient een{' '}
+                <em style={{ fontStyle: 'normal', color: '#0D9488' }}>AI medewerker</em>{' '}
+                die nooit slaapt
+              </h1>
+              <p style={{ fontSize: '1.05rem', color: '#64748B', marginBottom: 36, lineHeight: 1.7 }}>
+                Wij bouwen AI agents die uw telefoon beantwoorden, afspraken inboeken en klanten helpen — 24/7, in elke branche.
+              </p>
+              <a href="#branches" style={{ background: '#0D9488', color: '#fff', padding: '14px 32px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '1rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                Bekijk onze oplossingen ↓
+              </a>
+              <div style={{ display: 'flex', gap: 36, marginTop: 48, flexWrap: 'wrap' }}>
+                {[['24/7', 'Altijd bereikbaar'], ['10+', 'Talen ondersteund'], ['48u', 'Live in 48 uur']].map(([num, label]) => (
+                  <div key={num}>
+                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '2rem', fontWeight: 700, color: '#0F766E' }}>{num}</div>
+                    <div style={{ fontSize: '.82rem', color: '#64748B', marginTop: 2 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* RIGHT */}
+            <div>
+              <HeroDashboard />
+            </div>
           </div>
         </div>
+        <style>{`
+          @media (max-width: 860px) {
+            .hero-grid { grid-template-columns: 1fr !important; }
+            .hero-grid > div:last-child { max-width: 520px; margin: 0 auto; width: 100%; }
+          }
+          @media (max-width: 480px) {
+            .hero-grid > div:last-child { max-width: 100%; }
+          }
+        `}</style>
       </section>
 
       {/* BRANCHES */}
