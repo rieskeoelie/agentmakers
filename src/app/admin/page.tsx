@@ -1731,15 +1731,19 @@ Agentmakers.io`)
                 Voorbeeld laden
               </button>
             </div>
+            <div style={{ fontSize: '.8rem', color: '#64748B', marginBottom: 6 }}>
+              📋 <strong>Plak hier uw eigen data</strong> — kopieer rijen uit Excel of Google Sheets en plak ze hieronder (Ctrl+V). De grijze tekst is alleen een voorbeeld.
+            </div>
             <textarea
               id="csv-textarea"
               value={bulkCsv}
-              onChange={e => setBulkCsv(e.target.value)}
+              onChange={e => { setBulkCsv(e.target.value); setBulkError('') }}
               placeholder={'bedrijfsnaam,website,naam,email,telefoon\nLoodgieter Jansen,loodgieterjansen.nl,Kees,kees@test.nl,\nTandarts Smit,tandartsmit.nl,,,'}
               title="Plak hier uw CSV-data. Verplichte kolommen: bedrijfsnaam, website. Optioneel: naam, email, telefoon"
-              style={{ width: '100%', minHeight: 160, padding: 12, borderRadius: 8, border: '1.5px solid #E2E8F0', fontFamily: 'monospace', fontSize: '.82rem', color: '#334155', resize: 'vertical', outline: 'none', lineHeight: 1.6 }}
+              style={{ width: '100%', minHeight: 160, padding: 12, borderRadius: 8, border: `1.5px solid ${bulkError ? '#DC2626' : '#E2E8F0'}`, fontFamily: 'monospace', fontSize: '.82rem', color: '#334155', resize: 'vertical', outline: 'none', lineHeight: 1.6 }}
             />
-            {bulkError && <div style={{ marginTop: 8, color: '#DC2626', fontSize: '.83rem' }}>{bulkError}</div>}
+            {bulkError && <div style={{ marginTop: 8, color: '#DC2626', fontSize: '.83rem' }}>⚠️ {bulkError}</div>}
+            {bulkCsv.trim() === '' && <div style={{ marginTop: 6, fontSize: '.78rem', color: '#94A3B8' }}>Tip: klik op <strong>Voorbeeld laden</strong> om te zien hoe de opmaak eruit moet zien.</div>}
             <button onClick={handleBulkProcess}
               title="Verwerk de ingevoerde CSV-data en toon een voorbeeld van de prospects"
               style={{ marginTop: 12, background: '#0D9488', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
