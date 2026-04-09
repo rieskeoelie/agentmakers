@@ -137,7 +137,7 @@ export default async function HomePage() {
               ['1', 'Kies uw branche', 'Selecteer uw branche zodat wij de AI agents optimaal kunnen afstemmen.'],
               ['2', 'Wij configureren', 'We trainen de AI op uw bedrijf: diensten, prijzen, tone of voice en protocollen.'],
               ['3', 'Integratie', 'Koppeling met uw agenda, telefonie en bestaande systemen.'],
-              ['4', '48 uur live', 'Uw AI agents draaien binnen 48 uur 24/7, zonder onderbreking.'],
+              ['4', 'Binnen 1 week live', 'Uw AI agents draaien binnen 1 week 24/7, zonder onderbreking.'],
             ].map(([num, title, desc]) => (
               <div key={num} style={{ textAlign: 'center' }}>
                 <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#0D9488', color: '#fff', fontWeight: 700, fontSize: '1.3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>{num}</div>
