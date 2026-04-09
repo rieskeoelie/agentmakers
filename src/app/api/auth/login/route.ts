@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
     const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('id, username, display_name, password_hash, is_admin, is_superadmin')
+      .select('id, username, display_name, password_hash, is_admin')
       .eq('username', username.toLowerCase().trim())
       .single()
 

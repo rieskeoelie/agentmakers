@@ -75,9 +75,10 @@ export async function PATCH(req: NextRequest) {
   const { userId, isAdmin, isSuperAdmin } = await req.json()
   if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
 
+  // Only update is_admin for now (is_superadmin column may not exist yet)
   const { error } = await supabaseAdmin
     .from('users')
-    .update({ is_admin: isAdmin, is_superadmin: isSuperAdmin })
+    .update({ is_admin: isAdmin })
     .eq('id', userId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
