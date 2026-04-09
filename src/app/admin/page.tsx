@@ -128,6 +128,39 @@ export default function AdminDashboard() {
   // Analytics
   const [analyticsLang, setAnalyticsLang]   = useState<'all' | 'nl' | 'en' | 'es'>('all')
 
+  // Invite modal
+  const [inviteOpen, setInviteOpen]         = useState(false)
+  const [inviteNaam, setInviteNaam]         = useState('')
+  const [inviteBedrijf, setInviteBedrijf]   = useState('')
+  const [inviteEmail, setInviteEmail]       = useState('')
+  const [inviteWebsite, setInviteWebsite]   = useState('')
+  const [inviteLang, setInviteLang]         = useState<'nl' | 'en' | 'es'>('nl')
+  const [inviteLoading, setInviteLoading]   = useState(false)
+  const [inviteResult, setInviteResult]     = useState<{ demo_url: string; naam: string } | null>(null)
+  const [inviteError, setInviteError]       = useState('')
+
+  const resetInvite = () => {
+    setInviteNaam(''); setInviteBedrijf(''); setInviteEmail('')
+    setInviteWebsite(''); setInviteLang('nl'); setInviteResult(null); setInviteError('')
+  }
+
+  const sendInvite = async () => {
+    if (!inviteNaam || !inviteEmail || !inviteWebsite) { setInviteError('Naam, e-mail en website zijn verplicht'); return }
+    setInviteLoading(true); setInviteError('')
+    try {
+      const res = await fetch('/api/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ naam: inviteNaam, bedrijfsnaam: inviteBedrijf, email: inviteEmail, website: inviteWebsite, language: inviteLang }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setInviteError(data.error || 'Versturen mislukt'); return }
+      setInviteResult({ demo_url: data.demo_url, naam: inviteNaam })
+      fetchData() // refresh leads list
+    } catch { setInviteError('Netwerkfout. Probeer opnieuw.') }
+    finally { setInviteLoading(false) }
+  }
+
   // Bulk outreach
   interface BulkRow { bedrijfsnaam: string; website: string; naam: string; email: string; telefoon: string }
   interface BulkResult { bedrijfsnaam: string; website: string; naam: string; email: string; demo_token: string; demo_url: string; status: 'ok' | 'error'; error?: string }
@@ -852,8 +885,11 @@ Agentmakers.io`)
         </span>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           {currentUser && <span style={{ fontSize: '.84rem', color: '#64748B' }}>{currentUser.displayName}</span>}
-          <button onClick={() => fetchData()} title="Herlaad alle data (pagina's, leads en gesprekken)" style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>↻ Verversen</button>
-          <button onClick={logout} title="Uitloggen uit het admin dashboard" style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>Uitloggen</button>
+          <button onClick={() => { resetInvite(); setInviteOpen(true) }} style={{ background: '#0D9488', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: '.85rem', fontWeight: 700, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
+            ✉️ Nodig prospect uit
+          </button>
+          <button onClick={() => fetchData()} title="Herlaad alle data" style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>↻</button>
+          <button onClick={logout} style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>Uitloggen</button>
         </div>
       </div>
 
@@ -2168,6 +2204,83 @@ Agentmakers.io`)
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ══════════════════════ INVITE MODAL ══════════════════════ */}
+      {inviteOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 1000 }}
+          onClick={e => { if (e.target === e.currentTarget) { setInviteOpen(false) } }}>
+          <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 480, padding: 40, boxShadow: '0 24px 64px rgba(0,0,0,.2)' }}>
+
+            {!inviteResult ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                  <div>
+                    <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', margin: 0, marginBottom: 4 }}>✉️ Nodig prospect uit</h2>
+                    <p style={{ fontSize: '.82rem', color: '#64748B', margin: 0 }}>Prospect ontvangt direct een gepersonaliseerde voice demo link.</p>
+                  </div>
+                  <button onClick={() => setInviteOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94A3B8', lineHeight: 1 }}>✕</button>
+                </div>
+
+                {/* Language toggle */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+                  {([['nl','🇳🇱 NL'],['en','🇬🇧 EN'],['es','🇪🇸 ES']] as const).map(([code, label]) => (
+                    <button key={code} onClick={() => setInviteLang(code)}
+                      style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: `2px solid ${inviteLang === code ? '#0D9488' : '#E2E8F0'}`, background: inviteLang === code ? '#CCFBF1' : '#fff', color: inviteLang === code ? '#0D9488' : '#64748B', fontWeight: 700, fontSize: '.85rem', cursor: 'pointer' }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Fields */}
+                {[
+                  { label: 'Naam contactpersoon *', value: inviteNaam, set: setInviteNaam, placeholder: 'Jan de Vries', type: 'text' },
+                  { label: 'Bedrijfsnaam', value: inviteBedrijf, set: setInviteBedrijf, placeholder: 'Loodgieter Jansen BV', type: 'text' },
+                  { label: 'E-mailadres *', value: inviteEmail, set: setInviteEmail, placeholder: 'jan@bedrijf.nl', type: 'email' },
+                  { label: 'Website *', value: inviteWebsite, set: setInviteWebsite, placeholder: 'https://bedrijf.nl', type: 'url' },
+                ].map(({ label, value, set, placeholder, type }) => (
+                  <div key={label} style={{ marginBottom: 16 }}>
+                    <label style={{ display: 'block', fontSize: '.78rem', fontWeight: 700, color: '#475569', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</label>
+                    <input
+                      type={type} value={value}
+                      onChange={e => { set(e.target.value); setInviteError('') }}
+                      placeholder={placeholder}
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.92rem', color: '#1E293B', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                ))}
+
+                {inviteError && <div style={{ color: '#DC2626', fontSize: '.82rem', marginBottom: 12 }}>⚠️ {inviteError}</div>}
+
+                <button onClick={sendInvite} disabled={inviteLoading}
+                  style={{ width: '100%', padding: '13px', background: inviteLoading ? '#94A3B8' : '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: inviteLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", marginTop: 4 }}>
+                  {inviteLoading ? '⏳ Demo aanmaken en e-mail verzenden…' : '✉️ Verstuur demo uitnodiging'}
+                </button>
+              </>
+            ) : (
+              /* Success state */
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
+                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', marginBottom: 8 }}>Uitnodiging verstuurd!</h2>
+                <p style={{ color: '#64748B', fontSize: '.88rem', marginBottom: 24 }}>
+                  <strong>{inviteResult.naam}</strong> heeft een e-mail ontvangen met de gepersonaliseerde demo link. De AI wordt ondertussen getraind op hun website.
+                </p>
+                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '12px 16px', marginBottom: 24, wordBreak: 'break-all' }}>
+                  <div style={{ fontSize: '.72rem', color: '#16A34A', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.06em' }}>Demo link</div>
+                  <a href={inviteResult.demo_url} target="_blank" rel="noreferrer" style={{ fontSize: '.82rem', color: '#0D9488', wordBreak: 'break-all' }}>{inviteResult.demo_url}</a>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => { resetInvite() }} style={{ flex: 1, padding: '11px', background: '#F1F5F9', color: '#334155', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                    Nog een uitnodiging
+                  </button>
+                  <button onClick={() => { setInviteOpen(false); resetInvite() }} style={{ flex: 1, padding: '11px', background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                    Sluiten
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
