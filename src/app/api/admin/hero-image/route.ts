@@ -87,6 +87,19 @@ const NL_TO_EN_INDUSTRY: Record<string, string> = {
   'schilders':          'professional painter',
   'schilder':           'professional painter',
   'schoonmaak':         'professional cleaning',
+  'consultancy':        'business consultants meeting office',
+  'consultant':         'business consultants meeting office',
+  'adviesbureau':       'business consultants meeting office',
+  'coaching':           'professional business coaching session',
+  'coach':              'professional business coaching session',
+  'marketing':          'digital marketing agency office',
+  'recruitment':        'professional recruitment interview office',
+  'verzekering':        'insurance broker professional office',
+  'verzekeraar':        'insurance broker professional office',
+  'it-bedrijf':         'modern tech office software development',
+  'software':           'software development modern office',
+  'logistics':          'logistics warehouse professional',
+  'transport':          'transport logistics professional',
 }
 
 function translateIndustryForSearch(industry: string): string {
