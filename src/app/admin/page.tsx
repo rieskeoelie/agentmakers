@@ -948,7 +948,11 @@ Agentmakers.io`)
   // ─── Main dashboard ────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: '#F1F5F9', fontFamily: "'Nunito',sans-serif", overflowX: 'hidden' }}>
-      <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
+      <style>{`
+  @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+  *, *::before, *::after { box-sizing: border-box !important; }
+  body, html { overflow-x: hidden !important; max-width: 100vw; }
+`}</style>
 
       {/* Top nav */}
       <div style={{ background: '#fff', borderBottom: '1px solid #F1F5F9', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -977,7 +981,7 @@ Agentmakers.io`)
         </div>
       )}
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px', boxSizing: 'border-box' as const, width: '100%', overflowX: 'hidden' }}>
+      <div style={{ maxWidth: '100%', margin: '0 auto', padding: '28px 20px', boxSizing: 'border-box' as const, width: '100%', overflowX: 'hidden' }}>
 
         {/* ── KPI row ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, marginBottom: 28 }}>
@@ -1146,7 +1150,7 @@ Agentmakers.io`)
                     <div key={lead.id} style={{ borderTop: i > 0 ? '1px solid #F1F5F9' : 'none', background: selectedLeads.has(lead.id) ? '#EFF6FF' : isNew ? '#F0FDF4' : i % 2 === 0 ? '#fff' : '#FAFAFA', opacity: isHandled ? 0.55 : 1, transition: 'opacity .2s' }}>
 
                       {/* Main row */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 1fr 110px auto auto auto', gap: 12, alignItems: 'center', padding: '14px 16px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 1fr 90px auto auto auto', gap: 12, alignItems: 'center', padding: '14px 16px' }}>
 
                         {/* Checkbox */}
                         <input type="checkbox" checked={selectedLeads.has(lead.id)} onChange={() => toggleSelectLead(lead.id)} title="Selecteer voor bulk-verwijdering" style={{ cursor: 'pointer', width: 16, height: 16 }} />
@@ -1261,7 +1265,7 @@ Agentmakers.io`)
               </div>
             </div>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 20 }}>Analytics</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
               {[
                 ['Totaal bezoekers', totalVisits, '#0D9488'],
                 ['Totaal conversies', totalConversions, '#22C55E'],
@@ -1285,7 +1289,7 @@ Agentmakers.io`)
                   ))}
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 16 }}>
                 {[{ lang: 'nl', flag: '🇳🇱', label: 'Nederlands' }, { lang: 'en', flag: '🇬🇧', label: 'Engels' }, { lang: 'es', flag: '🇪🇸', label: 'Spaans' }].map(({ lang, flag, label }) => {
                   const count = leadsByLang[lang as 'nl' | 'en' | 'es']
                   const pct = leads.length > 0 ? Math.round((count / leads.length) * 100) : 0
@@ -1322,8 +1326,8 @@ Agentmakers.io`)
               </div>
             )}
 
-            <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #F1F5F9' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #F1F5F9', overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
                 <thead>
                   <tr style={{ background: '#F1F5F9' }}>
                     {['Pagina', 'Bezoekers', 'Conversies', 'Ratio', 'Status'].map(h => (
