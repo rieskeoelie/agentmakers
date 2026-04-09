@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
     const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('id, username, display_name, password_hash, is_admin')
+      .select('id, username, display_name, password_hash, is_admin, is_superadmin')
       .eq('username', username.toLowerCase().trim())
       .single()
 
@@ -29,11 +29,12 @@ export async function POST(req: NextRequest) {
       username: user.username,
       displayName: user.display_name,
       isAdmin: user.is_admin,
+      isSuperAdmin: user.is_superadmin ?? false,
     })
 
     const res = NextResponse.json({
       ok: true,
-      user: { username: user.username, displayName: user.display_name, isAdmin: user.is_admin },
+      user: { username: user.username, displayName: user.display_name, isAdmin: user.is_admin, isSuperAdmin: user.is_superadmin ?? false },
     })
     res.cookies.set(sessionCookieOptions(token))
     return res

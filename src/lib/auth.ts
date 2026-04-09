@@ -12,6 +12,7 @@ export interface SessionPayload {
   username: string
   displayName: string
   isAdmin: boolean
+  isSuperAdmin: boolean
   expiresAt: number
 }
 

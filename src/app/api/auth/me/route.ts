@@ -11,5 +11,6 @@ export async function GET(req: NextRequest) {
     username: session.username,
     displayName: session.displayName,
     isAdmin: session.isAdmin,
+    isSuperAdmin: session.isSuperAdmin ?? false,
   })
 }

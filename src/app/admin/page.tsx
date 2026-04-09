@@ -76,10 +76,19 @@ export default function AdminDashboard() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  interface CurrentUser { displayName: string; isAdmin: boolean }
+  interface CurrentUser { displayName: string; isAdmin: boolean; isSuperAdmin: boolean }
+  interface AccountStat {
+    id: string; username: string; displayName: string
+    isAdmin: boolean; isSuperAdmin: boolean; createdAt: string
+    leadsTotal: number; leadsThisMonth: number; demosGenerated: number
+    conversations: number; lastActiveAt: string | null
+  }
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
+  const [viewAsUser, setViewAsUser]   = useState<{ id: string; name: string } | null>(null)
+  const [accounts, setAccounts]       = useState<AccountStat[]>([])
+  const [accountsLoading, setAccountsLoading] = useState(false)
   const [authed, setAuthed]     = useState(false)
-  const [tab, setTab]           = useState<'pages' | 'leads' | 'analytics' | 'conversations' | 'outreach'>('leads')
+  const [tab, setTab]           = useState<'pages' | 'leads' | 'analytics' | 'conversations' | 'outreach' | 'accounts'>('leads')
   const [pages, setPages]       = useState<Page[]>([])
   const [leads, setLeads]       = useState<Lead[]>([])
   const [loading, setLoading]   = useState(false)
@@ -530,13 +539,23 @@ Agentmakers.io`)
     }
   }, [convDetails])
 
+  const fetchAccounts = useCallback(async () => {
+    setAccountsLoading(true)
+    const res = await fetch('/api/admin/users')
+    if (res.ok) {
+      const data = await res.json()
+      setAccounts(data.users ?? [])
+    }
+    setAccountsLoading(false)
+  }, [])
+
   // ─── Lifecycle ─────────────────────────────────────────────────
   useEffect(() => {
     // Check if already logged in via session cookie
     fetch('/api/auth/me').then(async res => {
       if (res.ok) {
         const user = await res.json()
-        setCurrentUser({ displayName: user.displayName, isAdmin: user.isAdmin })
+        setCurrentUser({ displayName: user.displayName, isAdmin: user.isAdmin, isSuperAdmin: user.isSuperAdmin ?? false })
         setAuthed(true)
         fetchData()
         const st = localStorage.getItem(LEAD_STATUS_STORAGE)
@@ -615,12 +634,19 @@ Agentmakers.io`)
     return undefined
   }
 
+  // visibleLeads: superadmin can view-as another user to filter their data
+  const visibleLeads = useMemo(() => {
+    if (viewAsUser) return leads.filter(l => (l as Lead & { user_id?: string }).user_id === viewAsUser.id)
+    return leads
+  }, [leads, viewAsUser])
+
   // For non-admins: filter conversations to only those matched to their own leads
   const visibleConversations = useMemo(() => {
-    if (currentUser?.isAdmin) return conversations
-    const myConvIds = new Set(leads.map(l => getMatchedConv(l)).filter(Boolean) as string[])
+    if (currentUser?.isAdmin && !viewAsUser) return conversations
+    const srcLeads = viewAsUser ? visibleLeads : leads
+    const myConvIds = new Set(srcLeads.map(l => getMatchedConv(l)).filter(Boolean) as string[])
     return conversations.filter(c => myConvIds.has(c.conversation_id))
-  }, [conversations, currentUser, leads, convByKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [conversations, currentUser, leads, visibleLeads, viewAsUser, convByKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Handlers ──────────────────────────────────────────────────
   const login = async () => {
@@ -633,7 +659,7 @@ Agentmakers.io`)
       })
       const data = await res.json()
       if (!res.ok) { setLoginError(data.error || 'Inloggen mislukt'); return }
-      setCurrentUser({ displayName: data.user.displayName, isAdmin: data.user.isAdmin })
+      setCurrentUser({ displayName: data.user.displayName, isAdmin: data.user.isAdmin, isSuperAdmin: data.user.isSuperAdmin ?? false })
       setAuthed(true)
       fetchData()
       const st = localStorage.getItem(LEAD_STATUS_STORAGE)
@@ -831,6 +857,18 @@ Agentmakers.io`)
         </div>
       </div>
 
+      {/* View-as banner */}
+      {viewAsUser && (
+        <div style={{ background: '#F59E0B', padding: '10px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontWeight: 700, fontSize: '.9rem', color: '#fff' }}>
+            👁 Je bekijkt als: <strong>{viewAsUser.name}</strong> — leads en gesprekken zijn gefilterd op dit account
+          </span>
+          <button onClick={() => setViewAsUser(null)} style={{ background: '#fff', color: '#B45309', border: 'none', borderRadius: 6, padding: '5px 14px', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer' }}>
+            ✕ Stop met bekijken
+          </button>
+        </div>
+      )}
+
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '36px 48px' }}>
 
         {/* ── KPI row ── */}
@@ -854,15 +892,27 @@ Agentmakers.io`)
 
         {/* ── Tabs ── */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          {(['leads', 'analytics', 'conversations', 'outreach', ...(currentUser?.isAdmin ? ['pages'] : [])] as const).map(t2 => (
+          {([
+            'leads', 'analytics', 'conversations', 'outreach',
+            ...(currentUser?.isAdmin ? ['pages'] : []),
+            ...(currentUser?.isSuperAdmin ? ['accounts'] : []),
+          ] as const).map(t2 => (
             <button key={t2} onClick={() => {
               setTab(t2 as typeof tab)
               if (t2 === 'leads') markAllSeen()
               if (t2 === 'conversations' && conversations.length === 0) fetchConversations()
+              if (t2 === 'accounts' && accounts.length === 0) fetchAccounts()
             }}
-              title={t2 === 'pages' ? "Beheer uw landingspagina's" : t2 === 'leads' ? 'Bekijk en beheer demo-aanvragen van prospects' : t2 === 'analytics' ? "Statistieken: bezoekers, conversies en ratio's" : t2 === 'conversations' ? 'Beluister en lees AI-gesprekken met prospects' : 'Verstuur gepersonaliseerde demo-links naar prospects'}
-              style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: tab === t2 ? '#0D9488' : '#fff', color: tab === t2 ? '#fff' : '#64748B', position: 'relative' }}>
-              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📥 Aanvragen' : t2 === 'analytics' ? '📊 Analytics' : t2 === 'conversations' ? '🎙 Gesprekken' : t2 === 'outreach' ? '🚀 Outreach' : t2}
+              title={
+                t2 === 'pages' ? "Beheer uw landingspagina's" :
+                t2 === 'leads' ? 'Bekijk en beheer demo-aanvragen van prospects' :
+                t2 === 'analytics' ? "Statistieken: bezoekers, conversies en ratio's" :
+                t2 === 'conversations' ? 'Beluister en lees AI-gesprekken met prospects' :
+                t2 === 'outreach' ? 'Verstuur gepersonaliseerde demo-links naar prospects' :
+                'Overzicht van alle accounts en hun performance'
+              }
+              style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: tab === t2 ? (t2 === 'accounts' ? '#7C3AED' : '#0D9488') : '#fff', color: tab === t2 ? '#fff' : '#64748B', position: 'relative' }}>
+              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📥 Aanvragen' : t2 === 'analytics' ? '📊 Analytics' : t2 === 'conversations' ? '🎙 Gesprekken' : t2 === 'outreach' ? '🚀 Outreach' : t2 === 'accounts' ? '👥 Accounts' : t2}
               {t2 === 'leads' && newLeadsCount > 0 && (
                 <span style={{ position: 'absolute', top: -6, right: -6, background: '#EF4444', color: '#fff', borderRadius: '50%', width: 20, height: 20, fontSize: '.7rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {newLeadsCount}
@@ -2018,6 +2068,106 @@ Agentmakers.io`)
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ══════════════════════ ACCOUNTS TAB ══════════════════════ */}
+      {tab === 'accounts' && currentUser?.isSuperAdmin && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div>
+              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 4 }}>👥 Accounts</h2>
+              <p style={{ fontSize: '.85rem', color: '#64748B', margin: 0 }}>Overzicht van alle resellers en hun performance deze maand.</p>
+            </div>
+            <button onClick={fetchAccounts} disabled={accountsLoading} style={{ background: '#fff', border: '1.5px solid #7C3AED', color: '#7C3AED', padding: '9px 18px', borderRadius: 10, fontWeight: 700, fontSize: '.85rem', cursor: 'pointer', opacity: accountsLoading ? 0.6 : 1 }}>
+              {accountsLoading ? '⏳ Laden…' : '↻ Verversen'}
+            </button>
+          </div>
+
+          {accountsLoading && accounts.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}>Accounts laden…</div>
+          )}
+
+          {!accountsLoading && accounts.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}>Geen accounts gevonden.</div>
+          )}
+
+          {accounts.length > 0 && (
+            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.88rem' }}>
+                <thead>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                    {['Account', 'Rol', 'Leads totaal', 'Deze maand', "Demo's", 'Gesprekken', 'Laatste activiteit', 'Acties'].map(h => (
+                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: '.78rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '.05em', whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {accounts.map((acc, i) => {
+                    const isViewing = viewAsUser?.id === acc.id
+                    const lastActive = acc.lastActiveAt
+                      ? new Date(acc.lastActiveAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+                      : '—'
+                    return (
+                      <tr key={acc.id} style={{ borderBottom: i < accounts.length - 1 ? '1px solid #F1F5F9' : 'none', background: isViewing ? '#FFF7ED' : 'transparent' }}>
+                        <td style={{ padding: '14px 16px' }}>
+                          <div style={{ fontWeight: 700, color: '#1E293B' }}>{acc.displayName}</div>
+                          <div style={{ fontSize: '.75rem', color: '#94A3B8' }}>@{acc.username}</div>
+                        </td>
+                        <td style={{ padding: '14px 16px' }}>
+                          {acc.isSuperAdmin
+                            ? <span style={{ background: '#7C3AED', color: '#fff', borderRadius: 99, padding: '2px 10px', fontSize: '.72rem', fontWeight: 700 }}>Superadmin</span>
+                            : acc.isAdmin
+                            ? <span style={{ background: '#0D9488', color: '#fff', borderRadius: 99, padding: '2px 10px', fontSize: '.72rem', fontWeight: 700 }}>Admin</span>
+                            : <span style={{ background: '#E2E8F0', color: '#64748B', borderRadius: 99, padding: '2px 10px', fontSize: '.72rem', fontWeight: 700 }}>Gebruiker</span>
+                          }
+                        </td>
+                        <td style={{ padding: '14px 16px', fontWeight: 700, color: '#0D9488', textAlign: 'center' }}>{acc.leadsTotal}</td>
+                        <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                          <span style={{ background: acc.leadsThisMonth > 0 ? '#DCFCE7' : '#F1F5F9', color: acc.leadsThisMonth > 0 ? '#16A34A' : '#94A3B8', borderRadius: 99, padding: '3px 10px', fontWeight: 700, fontSize: '.8rem' }}>
+                            {acc.leadsThisMonth > 0 ? `+${acc.leadsThisMonth}` : '0'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 16px', textAlign: 'center', color: '#334155' }}>{acc.demosGenerated}</td>
+                        <td style={{ padding: '14px 16px', textAlign: 'center', color: '#334155' }}>{acc.conversations}</td>
+                        <td style={{ padding: '14px 16px', fontSize: '.8rem', color: '#64748B' }}>{lastActive}</td>
+                        <td style={{ padding: '14px 16px' }}>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            {!acc.isSuperAdmin && (
+                              isViewing
+                                ? <button onClick={() => setViewAsUser(null)} style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: 7, padding: '5px 12px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                                    ✕ Stop
+                                  </button>
+                                : <button onClick={() => { setViewAsUser({ id: acc.id, name: acc.displayName }); setTab('leads') }} style={{ background: '#F5F3FF', color: '#7C3AED', border: '1px solid #DDD6FE', borderRadius: 7, padding: '5px 12px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                                    👁 Bekijk als
+                                  </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Summary cards */}
+          {accounts.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginTop: 24 }}>
+              {[
+                { label: 'Totaal accounts', val: accounts.filter(a => !a.isSuperAdmin).length, color: '#7C3AED' },
+                { label: 'Leads deze maand', val: accounts.reduce((s, a) => s + a.leadsThisMonth, 0), color: '#0D9488' },
+                { label: "Total demo's", val: accounts.reduce((s, a) => s + a.demosGenerated, 0), color: '#1D4ED8' },
+                { label: 'Gesprekken totaal', val: accounts.reduce((s, a) => s + a.conversations, 0), color: '#DB2777' },
+              ].map(({ label, val, color }) => (
+                <div key={label} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0', padding: '20px 24px', textAlign: 'center' }}>
+                  <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '2rem', fontWeight: 700, color }}>{val}</div>
+                  <div style={{ fontSize: '.78rem', color: '#64748B', marginTop: 4 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
