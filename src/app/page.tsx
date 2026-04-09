@@ -108,9 +108,9 @@ export default async function HomePage() {
       <section className="sp" style={{ background: '#F8FAFC' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <div style={{ display: 'inline-block', color: '#0D9488', fontWeight: 700, fontSize: '.78rem', letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 12 }}>Onze AI Agents</div>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 14, color: '#0F172A' }}>Eén agent voor elk kanaal</h2>
-            <p style={{ color: '#64748B', fontSize: '1.05rem', maxWidth: 540, margin: '0 auto', lineHeight: 1.7 }}>Elk contactmoment geautomatiseerd via telefoon, chat, e-mail en social media.</p>
+            <div style={{ display: 'inline-block', color: '#0D9488', fontWeight: 700, fontSize: '.78rem', letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 12 }}>Dit kan uw AI team zijn</div>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 14, color: '#0F172A' }}>Nooit meer een bericht missen, op elk kanaal</h2>
+            <p style={{ color: '#64748B', fontSize: '1.05rem', maxWidth: 540, margin: '0 auto', lineHeight: 1.7 }}>Telefoon, WhatsApp, Instagram, Facebook, SMS of e-mail. Uw AI agent staat op elk kanaal klaar.</p>
           </div>
           <div className="grid-3col">
             {[
