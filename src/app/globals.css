@@ -47,7 +47,23 @@ h1, h2, h3, h4 { font-family: 'Poppins', sans-serif; color: var(--slate-900); }
 /* ── Small tablet (≤860px): hero stacks ── */
 @media (max-width: 860px) {
   .hero-grid { grid-template-columns: 1fr !important; }
-  .hero-grid > div:last-child { max-width: 520px; margin: 0 auto; width: 100%; }
+  .hero-grid > div:last-child { max-width: 560px; margin: 0 auto; width: 100%; }
+}
+
+/* ── HeroDashboard responsive ── */
+.hero-dashboard { width: 100%; overflow: hidden; }
+
+/* Scale down dashboard on tablet */
+@media (max-width: 1023px) {
+  .hero-grid { gap: 32px; }
+  .hero-dashboard { font-size: 90%; }
+}
+
+/* On mobile (stacked): limit width, scale further */
+@media (max-width: 639px) {
+  .hero-dashboard { font-size: 82%; }
+  .hero-dashboard .hd-tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .hero-dashboard .hd-tab-btn { white-space: nowrap; flex-shrink: 0; }
 }
 
 /* ── Mobile (≤639px): everything stacks ── */

@@ -456,7 +456,7 @@ export function HeroDashboard({ lang = 'nl' }: { lang?: Lang }) {
   const selectChannel = useCallback((id: string) => setActiveId(id), [])
 
   return (
-    <div style={{ borderRadius: 22, boxShadow: '0 8px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
+    <div className="hero-dashboard" style={{ borderRadius: 22, boxShadow: '0 8px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden', border: '1px solid #E2E8F0', width: '100%', minWidth: 0 }}>
       {/* DARK HEADER */}
       <div style={{ padding: '22px 20px 18px', position: 'relative', overflow: 'hidden', background: ch.cardBg, transition: 'background .5s' }}>
         <div style={{ position: 'absolute', top: -40, left: '50%', transform: 'translateX(-50%)', width: 280, height: 280, borderRadius: '50%', background: `radial-gradient(circle, ${ch.glowColor} 0%, transparent 70%)`, pointerEvents: 'none' }} />
@@ -493,22 +493,23 @@ export function HeroDashboard({ lang = 'nl' }: { lang?: Lang }) {
 
       {/* WHITE BOTTOM */}
       <div style={{ background: '#fff' }}>
-        <div style={{ display: 'flex', padding: '0 12px', borderBottom: '1px solid #F1F5F9', overflowX: 'auto' }}>
+        <div className="hd-tab-bar" style={{ display: 'flex', padding: '0 12px', borderBottom: '1px solid #F1F5F9', overflowX: 'auto' }}>
           {CHANNELS.map(c => (
-            <button key={c.id} onClick={() => selectChannel(c.id)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '9px 7px 8px', border: 'none', background: 'none', fontSize: '.62rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', borderBottom: `2px solid ${c.id === activeId ? c.color : 'transparent'}`, color: c.id === activeId ? c.color : '#94A3B8', marginBottom: -1, transition: 'all .2s' }}>
+            <button key={c.id} onClick={() => selectChannel(c.id)} className="hd-tab-btn" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '9px 7px 8px', border: 'none', background: 'none', fontSize: '.62rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', borderBottom: `2px solid ${c.id === activeId ? c.color : 'transparent'}`, color: c.id === activeId ? c.color : '#94A3B8', marginBottom: -1, transition: 'all .2s' }}>
               <TabIcon icon={c.icon} />
               {c.label}
               {c.badge && <span style={{ background: '#FEE2E2', color: '#DC2626', borderRadius: 100, padding: '1px 5px', fontSize: '.52rem', fontWeight: 700 }}>{c.badge}</span>}
             </button>
           ))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: ch.cols, padding: '6px 14px', background: '#F8FAFC', borderBottom: '1px solid #F1F5F9' }}>
+        <div style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: ch.cols, padding: '6px 14px', background: '#F8FAFC', borderBottom: '1px solid #F1F5F9', minWidth: 260 }}>
           {ch.heads.map(h => (
             <span key={h} style={{ fontSize: '.57rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '.05em' }}>{h}</span>
           ))}
         </div>
         {ch.rows.map((row, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: ch.cols, padding: '8px 14px', alignItems: 'center', borderBottom: i < ch.rows.length - 1 ? '1px solid #F8FAFC' : 'none', background: row.btnActive ? '#F0FDFA' : '#fff' }}>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: ch.cols, padding: '8px 14px', alignItems: 'center', borderBottom: i < ch.rows.length - 1 ? '1px solid #F8FAFC' : 'none', background: row.btnActive ? '#F0FDFA' : '#fff', minWidth: 260 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
               <div style={{ width: 24, height: 24, borderRadius: '50%', background: `linear-gradient(135deg, ${row.avColor})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.55rem', fontWeight: 700, color: '#fff', flexShrink: 0 }}>{row.av}</div>
               <div style={{ minWidth: 0 }}>
@@ -524,6 +525,7 @@ export function HeroDashboard({ lang = 'nl' }: { lang?: Lang }) {
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, borderRadius: 5, padding: '3px 6px', fontSize: '.58rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', background: row.btnActive ? ch.color : '#F8FAFC', color: row.btnActive ? '#fff' : ch.color, border: `1px solid ${row.btnActive ? ch.color : '#E2E8F0'}` }}>{row.btn}</span>
           </div>
         ))}
+        </div>{/* end overflowX wrapper */}
         <div style={{ padding: '8px 14px', borderTop: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '.65rem', color: '#64748B' }}>
             <strong style={{ color: ch.color }}>{ch.footerStat.split(' ')[0]}</strong>{' '}{ch.footerStat.split(' ').slice(1).join(' ')}
