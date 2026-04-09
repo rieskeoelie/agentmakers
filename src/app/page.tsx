@@ -49,7 +49,7 @@ export default async function HomePage() {
               <div style={{ display: 'inline-block', background: 'rgba(13,148,136,.1)', color: '#0F766E', padding: '6px 16px', borderRadius: 100, fontSize: '.8rem', fontWeight: 600, letterSpacing: '.04em', marginBottom: 24 }}>
                 AI Agents op maat voor uw branche
               </div>
-              <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.6rem, 2.8vw, 2.3rem)', lineHeight: 1.18, marginBottom: 20 }}>
+              <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.6rem, 2.8vw, 2.3rem)', fontWeight: 700, lineHeight: 1.18, marginBottom: 20 }}>
                 Elke oproep beantwoord.{' '}
                 <em style={{ fontStyle: 'normal', color: '#0D9488' }}>Elke afspraak ingeboekt.</em>{' '}
                 24/7.

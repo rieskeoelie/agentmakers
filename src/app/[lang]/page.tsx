@@ -284,7 +284,7 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
               <div style={{ display: 'inline-block', background: 'rgba(13,148,136,.1)', color: '#0F766E', padding: '6px 16px', borderRadius: 100, fontSize: '.8rem', fontWeight: 600, letterSpacing: '.04em', marginBottom: 24 }}>
                 {tx.badge}
               </div>
-              <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.6rem, 2.8vw, 2.3rem)', lineHeight: 1.18, marginBottom: 20 }}>
+              <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 'clamp(1.6rem, 2.8vw, 2.3rem)', fontWeight: 700, lineHeight: 1.18, marginBottom: 20 }}>
                 {tx.h1a}{' '}<em style={{ fontStyle: 'normal', color: '#0D9488' }}>{tx.h1em}</em>{' '}{tx.h1b}
               </h1>
               <p style={{ fontSize: '1.05rem', color: '#64748B', marginBottom: 36, lineHeight: 1.7 }}>{tx.sub}</p>
