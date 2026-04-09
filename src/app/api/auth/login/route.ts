@@ -24,17 +24,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
+    // Fallback: treat 'richard' as superadmin until DB migration adds is_superadmin column
+    const isSuperAdmin = user.is_superadmin ?? (user.username === 'richard')
+
     const token = createSession({
       userId: user.id,
       username: user.username,
       displayName: user.display_name,
       isAdmin: user.is_admin,
-      isSuperAdmin: user.is_superadmin ?? false,
+      isSuperAdmin,
     })
 
     const res = NextResponse.json({
       ok: true,
-      user: { username: user.username, displayName: user.display_name, isAdmin: user.is_admin, isSuperAdmin: user.is_superadmin ?? false },
+      user: { username: user.username, displayName: user.display_name, isAdmin: user.is_admin, isSuperAdmin },
     })
     res.cookies.set(sessionCookieOptions(token))
     return res

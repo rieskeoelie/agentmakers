@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   // All users
   const { data: users, error } = await supabaseAdmin
     .from('users')
-    .select('id, username, display_name, is_admin, is_superadmin, created_at')
+    .select('id, username, display_name, is_admin, created_at')
     .order('created_at', { ascending: true })
 
   if (error || !users) {
@@ -44,12 +44,15 @@ export async function GET(req: NextRequest) {
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )[0]
 
+    // Fallback until is_superadmin column exists in DB
+    const isSuperAdmin = (u as typeof u & { is_superadmin?: boolean }).is_superadmin ?? (u.username === 'richard')
+
     return {
       id: u.id,
       username: u.username,
       displayName: u.display_name,
       isAdmin: u.is_admin,
-      isSuperAdmin: u.is_superadmin ?? false,
+      isSuperAdmin,
       createdAt: u.created_at,
       leadsTotal: userLeads.length,
       leadsThisMonth,
