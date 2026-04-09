@@ -58,16 +58,8 @@ export default async function HomePage() {
                 Wij bouwen AI agents die uw telefoon beantwoorden, afspraken inboeken en klanten helpen 24/7, in elke branche.
               </p>
               <a href="#branches" style={{ background: '#0D9488', color: '#fff', padding: '14px 32px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '1rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                Bekijk onze oplossingen ↓
+                Bekijk onze AI agents
               </a>
-              <div style={{ display: 'flex', gap: 36, marginTop: 48, flexWrap: 'wrap' }}>
-                {[['24/7', 'Altijd bereikbaar'], ['10+', 'Talen ondersteund'], ['48u', 'Live in 48 uur']].map(([num, label]) => (
-                  <div key={num}>
-                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '2rem', fontWeight: 700, color: '#0F766E' }}>{num}</div>
-                    <div style={{ fontSize: '.82rem', color: '#64748B', marginTop: 2 }}>{label}</div>
-                  </div>
-                ))}
-              </div>
             </div>
             {/* RIGHT */}
             <div>

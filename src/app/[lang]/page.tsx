@@ -73,7 +73,7 @@ const T = {
     h1em: 'Elke afspraak ingeboekt.',
     h1b: '24/7. Met uw eigen AI agents.',
     sub: 'Wij bouwen AI agents die uw telefoon beantwoorden, afspraken inboeken en klanten helpen 24/7, in elke branche.',
-    cta: 'Bekijk onze oplossingen ↓',
+    cta: 'Bekijk onze AI agents',
     stats: [['24/7', 'Altijd bereikbaar'], ['10+', 'Talen ondersteund'], ['48u', 'Live in 48 uur']],
     sectionLabel: 'Onze oplossingen',
     sectionH2: 'AI agents voor elke branche',
@@ -127,7 +127,7 @@ const T = {
     h1em: 'Every appointment booked.',
     h1b: '24/7. With your own AI agents.',
     sub: 'We build AI agents that answer your phone, book appointments and help customers 24/7, in every industry.',
-    cta: 'Discover our solutions ↓',
+    cta: 'View our AI agents',
     stats: [['24/7', 'Always available'], ['10+', 'Languages supported'], ['48h', 'Live in 48 hours']],
     sectionLabel: 'Our solutions',
     sectionH2: 'AI agents for every industry',
@@ -181,7 +181,7 @@ const T = {
     h1em: 'Cada cita reservada.',
     h1b: '24/7. Con sus propios agentes de IA.',
     sub: 'Creamos agentes de IA que responden su teléfono, reservan citas y ayudan a clientes 24/7, en cualquier sector.',
-    cta: 'Descubra nuestras soluciones ↓',
+    cta: 'Ver nuestros agentes de IA',
     stats: [['24/7', 'Siempre disponible'], ['10+', 'Idiomas'], ['48h', 'En directo en 48h']],
     sectionLabel: 'Nuestras soluciones',
     sectionH2: 'Agentes de IA para cada sector',
@@ -291,14 +291,6 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
               <a href="#branches" style={{ background: '#0D9488', color: '#fff', padding: '14px 32px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '1rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 {tx.cta}
               </a>
-              <div style={{ display: 'flex', gap: 36, marginTop: 48, flexWrap: 'wrap' }}>
-                {tx.stats.map(([num, label]) => (
-                  <div key={num}>
-                    <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '2rem', fontWeight: 700, color: '#0F766E' }}>{num}</div>
-                    <div style={{ fontSize: '.82rem', color: '#64748B', marginTop: 2 }}>{label}</div>
-                  </div>
-                ))}
-              </div>
             </div>
             {/* RIGHT */}
             <div>
