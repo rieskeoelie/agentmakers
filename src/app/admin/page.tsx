@@ -1725,11 +1725,27 @@ Agentmakers.io`)
                 <span style={{ background: '#0D9488', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>2</span>
                 <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>CSV plakken of importeren</h3>
               </div>
-              <button onClick={() => setBulkCsv('Loodgieter Jansen,loodgieterJansen.nl,Kees Jansen,kees@loodgieterjansen.nl,0612345678\nTandarts Smit,tandartsmit.nl,Dr. Smit,info@tandartsmit.nl,')}
-                title="Vul het CSV-veld met voorbeelddata om te zien hoe het formaat werkt"
-                style={{ fontSize: '.75rem', color: '#0D9488', background: 'none', border: '1px solid #0D9488', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
-                Voorbeeld laden
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <label title="Upload een .csv bestand van uw computer" style={{ fontSize: '.75rem', color: '#0D9488', background: 'none', border: '1px solid #0D9488', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  📂 CSV uploaden
+                  <input type="file" accept=".csv,.tsv,.txt" style={{ display: 'none' }} onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const reader = new FileReader()
+                    reader.onload = ev => {
+                      setBulkCsv(ev.target?.result as string ?? '')
+                      setBulkError('')
+                    }
+                    reader.readAsText(file, 'UTF-8')
+                    e.target.value = ''
+                  }} />
+                </label>
+                <button onClick={() => setBulkCsv('Loodgieter Jansen,loodgieterJansen.nl,Kees Jansen,kees@loodgieterjansen.nl,0612345678\nTandarts Smit,tandartsmit.nl,Dr. Smit,info@tandartsmit.nl,')}
+                  title="Vul het CSV-veld met voorbeelddata om te zien hoe het formaat werkt"
+                  style={{ fontSize: '.75rem', color: '#64748B', background: 'none', border: '1px solid #E2E8F0', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+                  Voorbeeld laden
+                </button>
+              </div>
             </div>
             <div style={{ fontSize: '.8rem', color: '#64748B', marginBottom: 6 }}>
               📋 <strong>Plak hier uw eigen data</strong> — kopieer rijen uit Excel of Google Sheets en plak ze hieronder (Ctrl+V). De grijze tekst is alleen een voorbeeld.
