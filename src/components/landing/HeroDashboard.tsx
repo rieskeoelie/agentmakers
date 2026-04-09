@@ -293,39 +293,106 @@ const T = {
   },
 }
 
-// ── Row base data (names/emails/times stay the same across langs) ──────────────
-const ROW_BASE = [
-  [
-    { av:'MV', avColor:'#0D9488,#0891b2', name:'Mark van der Berg',  email:'m.vandenberg@gmail.com',  badgeColor:'#DCFCE7', badgeTextColor:'#16A34A', btnActive:true  },
-    { av:'SJ', avColor:'#7C3AED,#a855f7', name:'Sophie Jansen',      email:'s.jansen@outlook.com',    btnActive:false },
-    { av:'PK', avColor:'#DB2777,#f472b6', name:'Peter de Kok',       email:'pdekok@bedrijf.nl',        btnActive:false },
+// ── Row base data — names/emails differ per language ───────────────────────────
+type RowBase = { av:string; avColor:string; name:string; email:string; badgeColor?:string; badgeTextColor?:string; btnActive:boolean; isLead?:boolean }
+const ROW_BASE: Record<Lang, RowBase[][]> = {
+  nl: [
+    [
+      { av:'MV', avColor:'#0D9488,#0891b2', name:'Mark van der Berg',  email:'m.vandenberg@gmail.com',  badgeColor:'#DCFCE7', badgeTextColor:'#16A34A', btnActive:true  },
+      { av:'SJ', avColor:'#7C3AED,#a855f7', name:'Sophie Jansen',      email:'s.jansen@outlook.com',    btnActive:false },
+      { av:'PK', avColor:'#DB2777,#f472b6', name:'Peter de Kok',       email:'pdekok@bedrijf.nl',       btnActive:false },
+    ],
+    [
+      { av:'FL', avColor:'#16A34A,#4ade80', name:'Fatima el Lachkar', email:'+31 6 12 34 56 78', badgeColor:'#DCFCE7', badgeTextColor:'#16A34A', btnActive:true  },
+      { av:'TH', avColor:'#0D9488,#5EEAD4', name:'Thomas Huizing',    email:'+31 6 87 65 43 21', btnActive:false },
+      { av:'AM', avColor:'#7C3AED,#a855f7', name:'Anna Mulder',       email:'+31 6 55 44 33 22', btnActive:false },
+    ],
+    [
+      { av:'YB', avColor:'#DB2777,#f472b6', name:'Yasmine Bouali', email:'@yasmine.style',    badgeColor:'#FCE7F3', badgeTextColor:'#DB2777', btnActive:true, isLead:true },
+      { av:'RV', avColor:'#7C3AED,#a855f7', name:'Robin Visser',   email:'@robinv_official', btnActive:false },
+      { av:'NK', avColor:'#B45309,#f59e0b', name:'Nora Kuijpers',  email:'@nora.beauty',     btnActive:false },
+    ],
+    [
+      { av:'JB', avColor:'#1D4ED8,#60a5fa', name:'Jan van den Berg', email:'facebook.com/janvdberg', badgeColor:'#DBEAFE', badgeTextColor:'#1D4ED8', btnActive:true  },
+      { av:'KS', avColor:'#0D9488,#5EEAD4', name:'Karen Smits',      email:'facebook.com/karen.sm',  btnActive:false },
+      { av:'DP', avColor:'#DB2777,#f9a8d4', name:'David Peters',     email:'facebook.com/davidp',    btnActive:false },
+    ],
+    [
+      { av:'HM', avColor:'#B45309,#fbbf24', name:'Hans Meijer',   email:'+31 6 23 45 67 89', badgeColor:'#FEF3C7', badgeTextColor:'#B45309', btnActive:true  },
+      { av:'EV', avColor:'#16A34A,#4ade80', name:'Els Vermeulen', email:'+31 6 98 76 54 32', btnActive:false },
+      { av:'BK', avColor:'#1D4ED8,#93c5fd', name:'Bas Kramer',    email:'+31 6 44 55 66 77', btnActive:false },
+    ],
+    [
+      { av:'MR', avColor:'#6366F1,#c7d2fe', name:'Melissa Roos',   email:'m.roos@company.nl',  badgeColor:'#EEF2FF', badgeTextColor:'#6366F1', btnActive:true  },
+      { av:'GW', avColor:'#0D9488,#5EEAD4', name:'Gerrit Wolters', email:'g.wolters@gmail.com', btnActive:false },
+      { av:'LB', avColor:'#DB2777,#f9a8d4', name:'Laura Bakker',   email:'l.bakker@werk.nl',    btnActive:false },
+    ],
   ],
-  [
-    { av:'FL', avColor:'#16A34A,#4ade80', name:'Fatima el Lachkar', email:'+31 6 12 34 56 78', badgeColor:'#DCFCE7', badgeTextColor:'#16A34A', btnActive:true  },
-    { av:'TH', avColor:'#0D9488,#5EEAD4', name:'Thomas Huizing',    email:'+31 6 87 65 43 21', btnActive:false },
-    { av:'AM', avColor:'#7C3AED,#a855f7', name:'Anna Mulder',       email:'+31 6 55 44 33 22', btnActive:false },
+  en: [
+    [
+      { av:'JW', avColor:'#0D9488,#0891b2', name:'James Williams',   email:'j.williams@gmail.com',    badgeColor:'#DCFCE7', badgeTextColor:'#16A34A', btnActive:true  },
+      { av:'ET', avColor:'#7C3AED,#a855f7', name:'Emma Thompson',    email:'e.thompson@outlook.com',  btnActive:false },
+      { av:'OB', avColor:'#DB2777,#f472b6', name:'Oliver Bennett',   email:'obennett@company.co.uk',  btnActive:false },
+    ],
+    [
+      { av:'AC', avColor:'#16A34A,#4ade80', name:'Amelia Clarke',   email:'+44 7700 900123', badgeColor:'#DCFCE7', badgeTextColor:'#16A34A', btnActive:true  },
+      { av:'LH', avColor:'#0D9488,#5EEAD4', name:'Liam Harrison',   email:'+44 7911 123456', btnActive:false },
+      { av:'SP', avColor:'#7C3AED,#a855f7', name:'Sophie Parker',   email:'+44 7800 654321', btnActive:false },
+    ],
+    [
+      { av:'CI', avColor:'#DB2777,#f472b6', name:'Charlotte Irving', email:'@charlotte.style',   badgeColor:'#FCE7F3', badgeTextColor:'#DB2777', btnActive:true, isLead:true },
+      { av:'NM', avColor:'#7C3AED,#a855f7', name:'Noah Mitchell',    email:'@noahmitch',         btnActive:false },
+      { av:'IW', avColor:'#B45309,#f59e0b', name:'Isla Watson',      email:'@isla.beauty',       btnActive:false },
+    ],
+    [
+      { av:'GE', avColor:'#1D4ED8,#60a5fa', name:'George Evans',    email:'facebook.com/georgeevans', badgeColor:'#DBEAFE', badgeTextColor:'#1D4ED8', btnActive:true  },
+      { av:'HR', avColor:'#0D9488,#5EEAD4', name:'Hannah Roberts',  email:'facebook.com/hannahrob',   btnActive:false },
+      { av:'FT', avColor:'#DB2777,#f9a8d4', name:'Freddie Turner',  email:'facebook.com/freddiet',    btnActive:false },
+    ],
+    [
+      { av:'AJ', avColor:'#B45309,#fbbf24', name:'Arthur Jones',    email:'+44 7777 111222', badgeColor:'#FEF3C7', badgeTextColor:'#B45309', btnActive:true  },
+      { av:'GL', avColor:'#16A34A,#4ade80', name:'Grace Lewis',     email:'+44 7888 333444', btnActive:false },
+      { av:'HW', avColor:'#1D4ED8,#93c5fd', name:'Henry Walker',    email:'+44 7999 555666', btnActive:false },
+    ],
+    [
+      { av:'PH', avColor:'#6366F1,#c7d2fe', name:'Poppy Hughes',    email:'p.hughes@company.co.uk', badgeColor:'#EEF2FF', badgeTextColor:'#6366F1', btnActive:true  },
+      { av:'TC', avColor:'#0D9488,#5EEAD4', name:'Thomas Clark',    email:'t.clark@gmail.com',      btnActive:false },
+      { av:'RA', avColor:'#DB2777,#f9a8d4', name:'Ruby Adams',      email:'r.adams@work.co.uk',     btnActive:false },
+    ],
   ],
-  [
-    { av:'YB', avColor:'#DB2777,#f472b6', name:'Yasmine Bouali', email:'@yasmine.style',     badgeColor:'#FCE7F3', badgeTextColor:'#DB2777', btnActive:true, isLead:true },
-    { av:'RV', avColor:'#7C3AED,#a855f7', name:'Robin Visser',   email:'@robinv_official', btnActive:false },
-    { av:'NK', avColor:'#B45309,#f59e0b', name:'Nora Kuijpers',  email:'@nora.beauty',      btnActive:false },
+  es: [
+    [
+      { av:'CA', avColor:'#0D9488,#0891b2', name:'Carlos Alvárez',    email:'c.alvarez@gmail.com',     badgeColor:'#DCFCE7', badgeTextColor:'#16A34A', btnActive:true  },
+      { av:'LG', avColor:'#7C3AED,#a855f7', name:'Lucía García',      email:'l.garcia@outlook.com',    btnActive:false },
+      { av:'PM', avColor:'#DB2777,#f472b6', name:'Pablo Martínez',    email:'pmartinez@empresa.es',    btnActive:false },
+    ],
+    [
+      { av:'SR', avColor:'#16A34A,#4ade80', name:'Sofía Rodríguez',  email:'+34 612 345 678', badgeColor:'#DCFCE7', badgeTextColor:'#16A34A', btnActive:true  },
+      { av:'JL', avColor:'#0D9488,#5EEAD4', name:'Javier López',     email:'+34 678 901 234', btnActive:false },
+      { av:'AF', avColor:'#7C3AED,#a855f7', name:'Andrea Fernández', email:'+34 654 321 987', btnActive:false },
+    ],
+    [
+      { av:'IM', avColor:'#DB2777,#f472b6', name:'Isabella Moreno', email:'@isabella.style',   badgeColor:'#FCE7F3', badgeTextColor:'#DB2777', btnActive:true, isLead:true },
+      { av:'DS', avColor:'#7C3AED,#a855f7', name:'Diego Sánchez',   email:'@diegosanch',       btnActive:false },
+      { av:'VJ', avColor:'#B45309,#f59e0b', name:'Valentina Jiménez', email:'@valen.beauty',   btnActive:false },
+    ],
+    [
+      { av:'MH', avColor:'#1D4ED8,#60a5fa', name:'Miguel Hernández', email:'facebook.com/miguelhern', badgeColor:'#DBEAFE', badgeTextColor:'#1D4ED8', btnActive:true  },
+      { av:'EC', avColor:'#0D9488,#5EEAD4', name:'Elena Castro',     email:'facebook.com/elenacast',  btnActive:false },
+      { av:'RD', avColor:'#DB2777,#f9a8d4', name:'Rafael Díaz',      email:'facebook.com/rafaeld',    btnActive:false },
+    ],
+    [
+      { av:'FT', avColor:'#B45309,#fbbf24', name:'Fernando Torres',  email:'+34 623 456 789', badgeColor:'#FEF3C7', badgeTextColor:'#B45309', btnActive:true  },
+      { av:'CR', avColor:'#16A34A,#4ade80', name:'Carmen Ruiz',      email:'+34 689 012 345', btnActive:false },
+      { av:'AO', avColor:'#1D4ED8,#93c5fd', name:'Alejandro Ortega', email:'+34 645 678 901', btnActive:false },
+    ],
+    [
+      { av:'NP', avColor:'#6366F1,#c7d2fe', name:'Natalia Pérez',    email:'n.perez@empresa.es',    badgeColor:'#EEF2FF', badgeTextColor:'#6366F1', btnActive:true  },
+      { av:'MV', avColor:'#0D9488,#5EEAD4', name:'Marcos Vargas',    email:'m.vargas@gmail.com',    btnActive:false },
+      { av:'BR', avColor:'#DB2777,#f9a8d4', name:'Beatriz Romero',   email:'b.romero@trabajo.es',   btnActive:false },
+    ],
   ],
-  [
-    { av:'JB', avColor:'#1D4ED8,#60a5fa', name:'Jan van den Berg', email:'facebook.com/janvdberg', badgeColor:'#DBEAFE', badgeTextColor:'#1D4ED8', btnActive:true  },
-    { av:'KS', avColor:'#0D9488,#5EEAD4', name:'Karen Smits',      email:'facebook.com/karen.sm',  btnActive:false },
-    { av:'DP', avColor:'#DB2777,#f9a8d4', name:'David Peters',     email:'facebook.com/davidp',    btnActive:false },
-  ],
-  [
-    { av:'HM', avColor:'#B45309,#fbbf24', name:'Hans Meijer',    email:'+31 6 23 45 67 89', badgeColor:'#FEF3C7', badgeTextColor:'#B45309', btnActive:true  },
-    { av:'EV', avColor:'#16A34A,#4ade80', name:'Els Vermeulen',  email:'+31 6 98 76 54 32', btnActive:false },
-    { av:'BK', avColor:'#1D4ED8,#93c5fd', name:'Bas Kramer',     email:'+31 6 44 55 66 77', btnActive:false },
-  ],
-  [
-    { av:'MR', avColor:'#6366F1,#c7d2fe', name:'Melissa Roos',   email:'m.roos@company.nl',  badgeColor:'#EEF2FF', badgeTextColor:'#6366F1', btnActive:true  },
-    { av:'GW', avColor:'#0D9488,#5EEAD4', name:'Gerrit Wolters', email:'g.wolters@gmail.com', btnActive:false },
-    { av:'LB', avColor:'#DB2777,#f9a8d4', name:'Laura Bakker',   email:'l.bakker@werk.nl',    btnActive:false },
-  ],
-]
+}
 
 const ROW_TIMES = [
   ['Nu','09:41','08:17'],
@@ -341,7 +408,7 @@ function getChannels(lang: Lang): Channel[] {
   return CHANNEL_VISUALS.map((vis, ci) => {
     const tx = t.channels[ci]
     const times = ROW_TIMES[ci]
-    const rows: Row[] = ROW_BASE[ci].map((rb, ri) => ({
+    const rows: Row[] = ROW_BASE[lang][ci].map((rb, ri) => ({
       ...rb,
       meta: ri === 0 ? t.now : times[ri],
       meta2: tx.rows[ri].meta2,
