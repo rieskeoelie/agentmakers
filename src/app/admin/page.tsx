@@ -2185,7 +2185,7 @@ Agentmakers.io`)
 
       {/* ══════════════════════ ACCOUNTS TAB ══════════════════════ */}
       {tab === 'accounts' && currentUser?.isSuperAdmin && (
-        <div>
+        <div style={{ padding: '28px 20px', boxSizing: 'border-box' as const, width: '100%' }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
             <div>
