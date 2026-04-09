@@ -947,7 +947,7 @@ Agentmakers.io`)
 
   // ─── Main dashboard ────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: '#F1F5F9', fontFamily: "'Nunito',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#F1F5F9', fontFamily: "'Nunito',sans-serif", overflowX: 'hidden' }}>
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
 
       {/* Top nav */}
@@ -977,10 +977,10 @@ Agentmakers.io`)
         </div>
       )}
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '36px 48px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px', boxSizing: 'border-box' as const, width: '100%', overflowX: 'hidden' }}>
 
         {/* ── KPI row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16, marginBottom: 36 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, marginBottom: 28 }}>
           {[
             { icon: '📄', val: pages.length,              label: "Pagina's",       sub: `${pages.filter(p => p.status === 'live').length} live` },
             { icon: '👁️', val: totalVisits,               label: 'Bezoekers',      sub: 'totaal' },
@@ -2197,7 +2197,7 @@ Agentmakers.io`)
           {accounts.length > 0 && (() => {
             const partners = accounts.filter(a => !a.isSuperAdmin)
             return (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
                 {[
                   { label: 'Partner accounts', val: partners.length, color: '#7C3AED', bg: '#F5F3FF', icon: '👥' },
                   { label: 'Leads deze maand', val: partners.reduce((s, a) => s + a.leadsThisMonth, 0), color: '#0D9488', bg: '#F0FDFA', icon: '📥' },
