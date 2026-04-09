@@ -1,9 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 48" fill="none">
-  <!-- Icon: dot + slash -->
-  <circle cx="10" cy="28" r="5" fill="#6B7280"/>
-  <line x1="22" y1="42" x2="34" y2="10" stroke="#F97316" stroke-width="4.5" stroke-linecap="round"/>
-  <!-- "agent" in orange -->
-  <text x="44" y="36" font-family="'Poppins', 'Inter', Arial, sans-serif" font-size="26" font-weight="600" fill="#F97316">agent</text>
-  <!-- "makers.io" in dark charcoal -->
-  <text x="131" y="36" font-family="'Poppins', 'Inter', Arial, sans-serif" font-size="26" font-weight="600" fill="#374151">makers.io</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 40" fill="none">
+  <!-- Pulse ring orb -->
+  <circle cx="20" cy="20" r="18"   stroke="#0D9488" stroke-width="1.5" opacity=".22"/>
+  <circle cx="20" cy="20" r="12.5" stroke="#0D9488" stroke-width="1.5" opacity=".52"/>
+  <circle cx="20" cy="20" r="5.5"  fill="#0D9488"/>
+  <!-- Wordmark: agent (dark grey) + makers (teal) — one continuous text -->
+  <text x="46" y="27" font-family="-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Arial,sans-serif" font-size="21" font-weight="700" letter-spacing="-0.7">
+    <tspan fill="#334155">agent</tspan><tspan fill="#0D9488">makers</tspan>
+  </text>
 </svg>

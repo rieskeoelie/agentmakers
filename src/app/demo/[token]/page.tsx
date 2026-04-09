@@ -280,13 +280,10 @@ export default async function DemoPage({ params }: Props) {
           margin-bottom: 48px;
         }
         .logo-wordmark {
-          font-family: 'Poppins', sans-serif;
-          font-weight: 800;
-          font-size: 1.05rem;
-          color: #fff;
-          letter-spacing: -0.03em;
+          display: flex;
+          align-items: center;
+          height: 32px;
         }
-        .logo-wordmark span { color: #2DD4BF; }
         .demo-badge {
           font-size: 0.65rem;
           font-weight: 600;
@@ -395,7 +392,7 @@ export default async function DemoPage({ params }: Props) {
             padding: 16px 12px 40px;
           }
           .logo-wordmark {
-            font-size: 0.9rem;
+            height: 28px;
           }
         }
 
@@ -744,7 +741,9 @@ export default async function DemoPage({ params }: Props) {
 
           {/* Top bar */}
           <div className="topbar">
-            <span className="logo-wordmark">agent<span>makers</span>.io</span>
+            <span className="logo-wordmark">
+              <img src="/logo-dark.svg" alt="agentmakers.io" style={{ height: 32, width: 'auto', display: 'block' }} />
+            </span>
             <span className="demo-badge">AI Demo</span>
           </div>
 
