@@ -370,17 +370,17 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="sp" style={{ background: '#0F172A' }}>
+      <section className="sp" style={{ background: '#fff' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
-          <div style={{ color: '#CCFBF1', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>{tx.howLabel}</div>
-          <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16 }}>{tx.howH2}</h2>
-          <p style={{ color: '#CBD5E1', fontSize: '1.05rem', maxWidth: 560, margin: '0 auto 56px' }}>{tx.howSub}</p>
+          <div style={{ color: '#0D9488', fontWeight: 600, fontSize: '.8rem', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>{tx.howLabel}</div>
+          <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#0F172A', fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', marginBottom: 16 }}>{tx.howH2}</h2>
+          <p style={{ color: '#64748B', fontSize: '1.05rem', maxWidth: 560, margin: '0 auto 56px' }}>{tx.howSub}</p>
           <div className="grid-4col">
             {tx.steps.map(([num, title, desc]) => (
               <div key={num} style={{ textAlign: 'center' }}>
                 <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#0D9488', color: '#fff', fontWeight: 700, fontSize: '1.3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>{num}</div>
-                <h3 style={{ fontFamily: "'Nunito',sans-serif", color: '#fff', fontSize: '1rem', fontWeight: 700, marginBottom: 8 }}>{title}</h3>
-                <p style={{ fontSize: '.88rem', color: '#CBD5E1', maxWidth: 220, margin: '0 auto' }}>{desc}</p>
+                <h3 style={{ fontFamily: "'Nunito',sans-serif", color: '#0F172A', fontSize: '1rem', fontWeight: 700, marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontSize: '.88rem', color: '#64748B', maxWidth: 220, margin: '0 auto' }}>{desc}</p>
               </div>
             ))}
           </div>
