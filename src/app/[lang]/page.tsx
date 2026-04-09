@@ -399,7 +399,7 @@ export default async function LangHomePage({ params }: { params: Promise<{ lang:
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2DD4BF', display: 'inline-block' }} />
               <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#2DD4BF' }}>{tx.demoBadge}</span>
             </div>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.15, marginBottom: 20, maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}>{tx.demoH2}</h2>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', lineHeight: 1.15, marginBottom: 20, maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}>{tx.demoH2}</h2>
             <p style={{ color: 'rgba(240,244,248,0.55)', fontSize: '1.05rem', maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>{tx.demoSub}</p>
           </div>
           <div className="demo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center', maxWidth: 960, margin: '0 auto' }}>

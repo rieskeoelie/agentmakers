@@ -182,7 +182,7 @@ export default async function HomePage() {
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2DD4BF', display: 'inline-block', animation: 'dotPulseHome 2s ease-in-out infinite' }} />
               <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#2DD4BF' }}>Gratis demo</span>
             </div>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: 20, maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", color: '#fff', fontSize: 'clamp(1.4rem, 2.8vw, 2rem)', lineHeight: 1.15, marginBottom: 20, maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}>
               Zie direct uw AI receptioniste in actie
             </h2>
             <p style={{ color: 'rgba(240,244,248,0.55)', fontSize: '1.05rem', maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>
