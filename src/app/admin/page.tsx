@@ -893,12 +893,12 @@ Agentmakers.io`)
 
   // ─── Password reset handlers ────────────────────────────────────
   async function sendResetRequest() {
-    if (!resetEmail.trim()) { setResetError('Vul uw e-mailadres in'); return }
+    if (!resetEmail.trim()) { setResetError('Vul uw gebruikersnaam in'); return }
     setResetLoading(true); setResetError('')
     try {
       await fetch('/api/auth/reset-request', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: resetEmail.trim() }),
+        body: JSON.stringify({ username: resetEmail.trim() }),
       })
       setLoginScreen('forgot-sent')
     } finally { setResetLoading(false) }
@@ -920,27 +920,124 @@ Agentmakers.io`)
   }
 
   // ─── Login screen ──────────────────────────────────────────────
-  // ─── Login screen (tijdelijk: directe toegang) ──────────────
   if (!authed) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F1F5F9' }}>
-      <div style={{ background: '#fff', padding: '48px 40px', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,.08)', maxWidth: 400, width: '100%', textAlign: 'center' }}>
-        <h1 style={{ fontFamily: "\'Poppins\',sans-serif", fontSize: '1.5rem', marginBottom: 8 }}>
-          <span style={{ color: '#334155' }}>agent</span><span style={{ color: '#0D9488' }}>makers</span>.io
-        </h1>
-        <p style={{ color: '#64748B', fontSize: '.9rem', marginBottom: 32 }}>Dashboard</p>
-        <button
-          onClick={async () => {
-            const res = await fetch('/api/auth/bypass')
-            if (!res.ok) { alert('Bypass mislukt'); return }
-            const data = await res.json()
-            setCurrentUser({ displayName: data.displayName || 'Richard', isAdmin: true, isSuperAdmin: true })
-            setAuthed(true)
-            // fetchData() is triggered by the useEffect below that watches authed
-          }}
-          style={{ width: '100%', padding: 16, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: '1.1rem', cursor: 'pointer', fontFamily: "\'Nunito\',sans-serif" }}
-        >
-          Ga naar dashboard →
-        </button>
+      <div style={{ background: '#fff', padding: '48px 40px', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,.08)', maxWidth: 400, width: '100%' }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.5rem', marginBottom: 8 }}>
+            <span style={{ color: '#334155' }}>agent</span><span style={{ color: '#0D9488' }}>makers</span>.io
+          </h1>
+          <p style={{ color: '#64748B', fontSize: '.9rem', margin: 0 }}>Dashboard</p>
+        </div>
+
+        {/* ── Inloggen ── */}
+        {loginScreen === 'login' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <input
+              style={inp} placeholder="Gebruikersnaam" value={username}
+              onChange={e => setUsername(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && login()}
+              autoComplete="username"
+            />
+            <input
+              style={inp} placeholder="Wachtwoord" type="password" value={password}
+              onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && login()}
+              autoComplete="current-password"
+            />
+            {loginError && <p style={{ color: '#DC2626', fontSize: '.84rem', margin: 0 }}>{loginError}</p>}
+            <button
+              onClick={login}
+              style={{ width: '100%', padding: '14px 0', background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}
+            >
+              Inloggen →
+            </button>
+            <button
+              onClick={() => { setResetError(''); setResetEmail(''); setLoginScreen('forgot') }}
+              style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '.83rem', cursor: 'pointer', textDecoration: 'underline', padding: 0, alignSelf: 'center' }}
+            >
+              Wachtwoord vergeten?
+            </button>
+          </div>
+        )}
+
+        {/* ── Wachtwoord vergeten ── */}
+        {loginScreen === 'forgot' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <p style={{ color: '#64748B', fontSize: '.9rem', margin: 0 }}>Vul uw gebruikersnaam in en we sturen een herstelkoppeling.</p>
+            <input
+              style={inp} placeholder="Gebruikersnaam" type="text" value={resetEmail}
+              onChange={e => setResetEmail(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && sendResetRequest()}
+            />
+            {resetError && <p style={{ color: '#DC2626', fontSize: '.84rem', margin: 0 }}>{resetError}</p>}
+            <button
+              onClick={sendResetRequest} disabled={resetLoading}
+              style={{ width: '100%', padding: '14px 0', background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif', opacity: resetLoading ? .6 : 1" }}
+            >
+              {resetLoading ? 'Versturen…' : 'Stuur herstelkoppeling'}
+            </button>
+            <button
+              onClick={() => setLoginScreen('login')}
+              style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '.83rem', cursor: 'pointer', textDecoration: 'underline', padding: 0, alignSelf: 'center' }}
+            >
+              ← Terug naar inloggen
+            </button>
+          </div>
+        )}
+
+        {/* ── E-mail verstuurd ── */}
+        {loginScreen === 'forgot-sent' && (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>✉️</div>
+            <p style={{ color: '#334155', fontWeight: 700, marginBottom: 8 }}>Check uw inbox</p>
+            <p style={{ color: '#64748B', fontSize: '.9rem', marginBottom: 24 }}>Als dit e-mailadres bekend is, ontvangt u een herstelkoppeling.</p>
+            <button
+              onClick={() => setLoginScreen('login')}
+              style={{ background: 'none', border: 'none', color: '#0D9488', fontSize: '.9rem', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              ← Terug naar inloggen
+            </button>
+          </div>
+        )}
+
+        {/* ── Nieuw wachtwoord instellen ── */}
+        {loginScreen === 'reset' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <p style={{ color: '#64748B', fontSize: '.9rem', margin: 0 }}>Kies een nieuw wachtwoord (minimaal 8 tekens).</p>
+            <input
+              style={inp} placeholder="Nieuw wachtwoord" type="password" value={resetPw1}
+              onChange={e => setResetPw1(e.target.value)}
+            />
+            <input
+              style={inp} placeholder="Bevestig wachtwoord" type="password" value={resetPw2}
+              onChange={e => setResetPw2(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && confirmReset()}
+            />
+            {resetError && <p style={{ color: '#DC2626', fontSize: '.84rem', margin: 0 }}>{resetError}</p>}
+            <button
+              onClick={confirmReset} disabled={resetLoading}
+              style={{ width: '100%', padding: '14px 0', background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}
+            >
+              {resetLoading ? 'Opslaan…' : 'Wachtwoord instellen'}
+            </button>
+          </div>
+        )}
+
+        {/* ── Reset gelukt ── */}
+        {loginScreen === 'reset-done' && (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>✅</div>
+            <p style={{ color: '#334155', fontWeight: 700, marginBottom: 8 }}>Wachtwoord ingesteld!</p>
+            <p style={{ color: '#64748B', fontSize: '.9rem', marginBottom: 24 }}>U kunt nu inloggen met uw nieuwe wachtwoord.</p>
+            <button
+              onClick={() => setLoginScreen('login')}
+              style={{ background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 32px', fontWeight: 700, fontSize: '.95rem', cursor: 'pointer' }}
+            >
+              Ga naar inloggen
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -9,6 +9,9 @@ const FROM = FROM_EMAIL.includes('<') ? FROM_EMAIL : `agentmakers.io <${FROM_EMA
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://agentmakers.io'
 const RESET_TTL_MS = 60 * 60 * 1000 // 1 hour
 
+// Superadmin e-mail (geen email kolom in DB nodig)
+const SUPERADMIN_EMAIL = process.env.ADMIN_EMAIL || process.env.RESEND_FROM_EMAIL || ''
+
 function getSecret(): string {
   const s = process.env.SESSION_SECRET
   if (!s) throw new Error('SESSION_SECRET not set')
@@ -30,7 +33,6 @@ export function verifyResetToken(token: string): { userId: string } | null {
     const payload = token.substring(0, dot)
     const sig = token.substring(dot + 1)
     const expected = createHmac('sha256', getSecret()).update(payload).digest('base64url')
-    // timing-safe length check first
     if (sig.length !== expected.length) return null
     if (
       Buffer.from(sig, 'base64url').compare(Buffer.from(expected, 'base64url')) !== 0
@@ -48,19 +50,52 @@ export function verifyResetToken(token: string): { userId: string } | null {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json()
-    if (!email || typeof email !== 'string') {
-      return NextResponse.json({ error: 'E-mailadres vereist' }, { status: 400 })
+    const body = await req.json()
+    // Accept either 'username' or 'email' field (UI sends username)
+    const identifier = (body.username || body.email || '').toLowerCase().trim()
+    if (!identifier) {
+      return NextResponse.json({ error: 'Gebruikersnaam vereist' }, { status: 400 })
     }
 
-    const { data: user } = await supabaseAdmin
+    // Try to find user by username first, then fall back to email column if it exists
+    let user: { id: string; username: string; display_name: string; email?: string } | null = null
+
+    const byUsername = await supabaseAdmin
       .from('users')
-      .select('id, username, display_name, email')
-      .eq('email', email.toLowerCase().trim())
+      .select('id, username, display_name')
+      .eq('username', identifier)
       .single()
 
-    // Always respond ok — don't leak whether email exists
+    if (byUsername.data) {
+      user = byUsername.data
+    } else {
+      // Try email column (may not exist — catches the error gracefully)
+      try {
+        const byEmail = await supabaseAdmin
+          .from('users')
+          .select('id, username, display_name, email')
+          .eq('email', identifier)
+          .single()
+        if (byEmail.data) user = byEmail.data
+      } catch {
+        // email column doesn't exist yet — ignore
+      }
+    }
+
+    // Always respond ok — don't leak whether user exists
     if (!user) {
+      return NextResponse.json({ ok: true })
+    }
+
+    // Determine destination email:
+    // 1. Use email column if available
+    // 2. Fall back to ADMIN_EMAIL for superadmin (richard)
+    // 3. Otherwise we can't send — still return ok silently
+    const toEmail =
+      (user as { email?: string }).email ||
+      (user.username === 'richard' ? SUPERADMIN_EMAIL : null)
+
+    if (!toEmail) {
       return NextResponse.json({ ok: true })
     }
 
@@ -69,7 +104,7 @@ export async function POST(req: NextRequest) {
 
     await resend.emails.send({
       from: FROM,
-      to: user.email,
+      to: toEmail,
       subject: 'Wachtwoord resetten — agentmakers.io',
       html: `
         <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;color:#1E293B">

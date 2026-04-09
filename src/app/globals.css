@@ -32,6 +32,7 @@ h1, h2, h3, h4 { font-family: 'Poppins', sans-serif; color: var(--slate-900); }
 
 /* Hero two-column */
 .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.hero-grid > div { min-width: 0; }
 
 /* Demo two-column */
 .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; max-width: 960px; margin: 0 auto; }
@@ -59,11 +60,21 @@ h1, h2, h3, h4 { font-family: 'Poppins', sans-serif; color: var(--slate-900); }
   .hero-dashboard { font-size: 90%; }
 }
 
+/* Extra squeeze between 860-1023px (two-column, tight space) */
+@media (max-width: 960px) and (min-width: 861px) {
+  .hero-grid { grid-template-columns: 1fr 1.1fr; gap: 24px; }
+  .hero-dashboard { font-size: 84%; }
+}
+
 /* On mobile (stacked): limit width, scale further */
 @media (max-width: 639px) {
-  .hero-dashboard { font-size: 82%; }
+  .hero-dashboard { font-size: 80%; }
   .hero-dashboard .hd-tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .hero-dashboard .hd-tab-btn { white-space: nowrap; flex-shrink: 0; }
+}
+
+@media (max-width: 400px) {
+  .hero-dashboard { font-size: 74%; }
 }
 
 /* ── Mobile (≤639px): everything stacks ── */
