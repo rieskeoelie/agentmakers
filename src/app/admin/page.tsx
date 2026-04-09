@@ -76,6 +76,21 @@ export default function AdminDashboard() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
+  // ── Password reset state ──────────────────────────────────────────
+  type LoginScreen = 'login' | 'forgot' | 'forgot-sent' | 'reset' | 'reset-done'
+  const [loginScreen, setLoginScreen] = useState<LoginScreen>('login')
+  const [resetEmail, setResetEmail]   = useState('')
+  const [resetToken, setResetToken]   = useState('')
+  const [resetPw1, setResetPw1]       = useState('')
+  const [resetPw2, setResetPw2]       = useState('')
+  const [resetError, setResetError]   = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  // ── Superadmin set-password state ─────────────────────────────────
+  const [setPwTarget, setSetPwTarget] = useState<{ id: string; name: string } | null>(null)
+  const [setPwValue, setSetPwValue]   = useState('')
+  const [setPwLoading, setSetPwLoading] = useState(false)
+  const [setPwError, setSetPwError]   = useState('')
+  const [setPwDone, setSetPwDone]     = useState(false)
   interface CurrentUser { displayName: string; isAdmin: boolean; isSuperAdmin: boolean }
   interface AccountStat {
     id: string; username: string; displayName: string
@@ -584,6 +599,16 @@ Agentmakers.io`)
 
   // ─── Lifecycle ─────────────────────────────────────────────────
   useEffect(() => {
+    // Check for password reset token in URL
+    const params = new URLSearchParams(window.location.search)
+    const rt = params.get('reset')
+    if (rt) {
+      setResetToken(rt)
+      setLoginScreen('reset')
+      // Clean URL
+      window.history.replaceState({}, '', '/admin')
+    }
+
     // Check if already logged in via session cookie
     fetch('/api/auth/me').then(async res => {
       if (res.ok) {
@@ -859,16 +884,131 @@ Agentmakers.io`)
     fontFamily: "'Nunito',sans-serif", color: '#0F172A', outline: 'none', width: '100%'
   }
 
+  // ─── Password reset handlers ────────────────────────────────────
+  async function sendResetRequest() {
+    if (!resetEmail.trim()) { setResetError('Vul uw e-mailadres in'); return }
+    setResetLoading(true); setResetError('')
+    try {
+      await fetch('/api/auth/reset-request', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail.trim() }),
+      })
+      setLoginScreen('forgot-sent')
+    } finally { setResetLoading(false) }
+  }
+
+  async function confirmReset() {
+    if (!resetPw1 || resetPw1.length < 8) { setResetError('Minimaal 8 tekens'); return }
+    if (resetPw1 !== resetPw2) { setResetError('Wachtwoorden komen niet overeen'); return }
+    setResetLoading(true); setResetError('')
+    try {
+      const res = await fetch('/api/auth/reset-confirm', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: resetToken, password: resetPw1 }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setResetError(data.error || 'Mislukt'); return }
+      setLoginScreen('reset-done')
+    } finally { setResetLoading(false) }
+  }
+
   // ─── Login screen ──────────────────────────────────────────────
   if (!authed) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F1F5F9' }}>
       <div style={{ background: '#fff', padding: '48px 40px', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,.08)', maxWidth: 400, width: '100%' }}>
-        <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.5rem', marginBottom: 8 }}>Agentmakers.io</h1>
-        <p style={{ color: '#64748B', fontSize: '.92rem', marginBottom: 32 }}>Log in om door te gaan naar het dashboard.</p>
-        <input type="text" value={username} onChange={e => setUsername(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="Gebruikersnaam" autoComplete="username" style={{ ...inp, marginBottom: 12 }} />
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="Wachtwoord" autoComplete="current-password" style={{ ...inp, marginBottom: 16 }} />
-        {loginError && <p style={{ color: '#EF4444', fontSize: '.84rem', marginBottom: 12, textAlign: 'center' }}>{loginError}</p>}
-        <button onClick={login} style={{ width: '100%', padding: 14, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>Inloggen</button>
+
+        {/* Logo */}
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.5rem', margin: 0, marginBottom: 6 }}>
+            <span style={{ color: '#334155' }}>agent</span><span style={{ color: '#0D9488' }}>makers</span>.io
+          </h1>
+          <p style={{ color: '#64748B', fontSize: '.88rem', margin: 0 }}>
+            {loginScreen === 'login' && 'Log in om door te gaan naar het dashboard.'}
+            {loginScreen === 'forgot' && 'Wachtwoord vergeten'}
+            {loginScreen === 'forgot-sent' && 'E-mail verstuurd'}
+            {loginScreen === 'reset' && 'Nieuw wachtwoord instellen'}
+            {loginScreen === 'reset-done' && 'Wachtwoord gewijzigd'}
+          </p>
+        </div>
+
+        {/* ── Normal login ── */}
+        {loginScreen === 'login' && (
+          <>
+            <input type="text" value={username} onChange={e => setUsername(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="Gebruikersnaam" autoComplete="username" style={{ ...inp, marginBottom: 12 }} />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="Wachtwoord" autoComplete="current-password" style={{ ...inp, marginBottom: 8 }} />
+            <div style={{ textAlign: 'right', marginBottom: 16 }}>
+              <button onClick={() => { setResetError(''); setLoginScreen('forgot') }} style={{ background: 'none', border: 'none', color: '#0D9488', fontSize: '.82rem', cursor: 'pointer', padding: 0, fontFamily: "'Nunito',sans-serif" }}>
+                Wachtwoord vergeten?
+              </button>
+            </div>
+            {loginError && <p style={{ color: '#EF4444', fontSize: '.84rem', marginBottom: 12, textAlign: 'center' }}>{loginError}</p>}
+            <button onClick={login} style={{ width: '100%', padding: 14, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>Inloggen</button>
+          </>
+        )}
+
+        {/* ── Forgot: enter email ── */}
+        {loginScreen === 'forgot' && (
+          <>
+            <p style={{ fontSize: '.86rem', color: '#475569', marginBottom: 20, marginTop: -8 }}>
+              Vul het e-mailadres in dat gekoppeld is aan uw account. U ontvangt een link om uw wachtwoord te resetten.
+            </p>
+            <input type="email" value={resetEmail} onChange={e => setResetEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendResetRequest()} placeholder="uw@email.nl" autoComplete="email" style={{ ...inp, marginBottom: 16 }} />
+            {resetError && <p style={{ color: '#EF4444', fontSize: '.84rem', marginBottom: 12 }}>{resetError}</p>}
+            <button onClick={sendResetRequest} disabled={resetLoading} style={{ width: '100%', padding: 14, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: resetLoading ? 0.7 : 1 }}>
+              {resetLoading ? 'Versturen…' : 'Stuur reset-link'}
+            </button>
+            <button onClick={() => setLoginScreen('login')} style={{ width: '100%', padding: 10, marginTop: 10, background: 'none', border: 'none', color: '#64748B', fontSize: '.85rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+              ← Terug naar inloggen
+            </button>
+          </>
+        )}
+
+        {/* ── Forgot: email sent ── */}
+        {loginScreen === 'forgot-sent' && (
+          <>
+            <div style={{ textAlign: 'center', padding: '16px 0 24px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: 12 }}>📬</div>
+              <p style={{ color: '#475569', fontSize: '.9rem', lineHeight: 1.6 }}>
+                Als dit e-mailadres bekend is in ons systeem, ontvangt u binnen enkele minuten een e-mail met een reset-link.<br /><br />
+                <strong>Link is 1 uur geldig.</strong>
+              </p>
+            </div>
+            <button onClick={() => { setLoginScreen('login'); setResetEmail('') }} style={{ width: '100%', padding: 12, background: '#F1F5F9', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', color: '#334155', fontFamily: "'Nunito',sans-serif" }}>
+              ← Terug naar inloggen
+            </button>
+          </>
+        )}
+
+        {/* ── Reset: new password form ── */}
+        {loginScreen === 'reset' && (
+          <>
+            <p style={{ fontSize: '.86rem', color: '#475569', marginBottom: 20, marginTop: -8 }}>
+              Kies een nieuw wachtwoord van minimaal 8 tekens.
+            </p>
+            <input type="password" value={resetPw1} onChange={e => setResetPw1(e.target.value)} placeholder="Nieuw wachtwoord" autoComplete="new-password" style={{ ...inp, marginBottom: 12 }} />
+            <input type="password" value={resetPw2} onChange={e => setResetPw2(e.target.value)} onKeyDown={e => e.key === 'Enter' && confirmReset()} placeholder="Herhaal wachtwoord" autoComplete="new-password" style={{ ...inp, marginBottom: 16 }} />
+            {resetError && <p style={{ color: '#EF4444', fontSize: '.84rem', marginBottom: 12 }}>{resetError}</p>}
+            <button onClick={confirmReset} disabled={resetLoading} style={{ width: '100%', padding: 14, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: resetLoading ? 0.7 : 1 }}>
+              {resetLoading ? 'Opslaan…' : 'Wachtwoord instellen'}
+            </button>
+          </>
+        )}
+
+        {/* ── Reset done ── */}
+        {loginScreen === 'reset-done' && (
+          <>
+            <div style={{ textAlign: 'center', padding: '16px 0 24px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: 12 }}>✅</div>
+              <p style={{ color: '#475569', fontSize: '.9rem' }}>
+                Uw wachtwoord is succesvol gewijzigd. U kunt nu inloggen.
+              </p>
+            </div>
+            <button onClick={() => { setLoginScreen('login'); setResetPw1(''); setResetPw2('') }} style={{ width: '100%', padding: 12, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+              Inloggen
+            </button>
+          </>
+        )}
+
       </div>
     </div>
   )
@@ -2227,16 +2367,22 @@ Agentmakers.io`)
                         </div>
 
                         {/* Footer */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
                           <span style={{ fontSize: '.72rem', color: '#94A3B8' }}>⏱ {lastActive}</span>
-                          {isViewing
-                            ? <button onClick={() => setViewAsUser(null)} style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: 8, padding: '6px 14px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
-                                ✕ Stop bekijken
-                              </button>
-                            : <button onClick={() => { setViewAsUser({ id: acc.id, name: acc.displayName }); setTab('leads') }} style={{ background: '#F5F3FF', color: '#7C3AED', border: '1px solid #DDD6FE', borderRadius: 8, padding: '6px 14px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
-                                👁 Bekijk als
-                              </button>
-                          }
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => { setSetPwTarget({ id: acc.id, name: acc.displayName }); setSetPwValue(''); setSetPwError(''); setSetPwDone(false) }}
+                              style={{ background: '#F8FAFC', color: '#475569', border: '1px solid #E2E8F0', borderRadius: 8, padding: '6px 12px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                              🔑
+                            </button>
+                            {isViewing
+                              ? <button onClick={() => setViewAsUser(null)} style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: 8, padding: '6px 12px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                                  ✕ Stop
+                                </button>
+                              : <button onClick={() => { setViewAsUser({ id: acc.id, name: acc.displayName }); setTab('leads') }} style={{ background: '#F5F3FF', color: '#7C3AED', border: '1px solid #DDD6FE', borderRadius: 8, padding: '6px 12px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                                  👁 Bekijk als
+                                </button>
+                            }
+                          </div>
                         </div>
                       </div>
                     )
@@ -2244,6 +2390,74 @@ Agentmakers.io`)
               </div>
             )
           })()}
+        </div>
+      )}
+
+      {/* ══════════════════════ SET PASSWORD MODAL (superadmin) ══════════════════════ */}
+      {setPwTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 1000 }}
+          onClick={e => { if (e.target === e.currentTarget) setSetPwTarget(null) }}>
+          <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 400, padding: 36, boxShadow: '0 24px 64px rgba(0,0,0,.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div>
+                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', margin: 0, marginBottom: 4 }}>🔑 Wachtwoord instellen</h2>
+                <p style={{ fontSize: '.82rem', color: '#64748B', margin: 0 }}>Voor account: <strong>{setPwTarget.name}</strong></p>
+              </div>
+              <button onClick={() => setSetPwTarget(null)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94A3B8' }}>✕</button>
+            </div>
+
+            {setPwDone ? (
+              <div style={{ textAlign: 'center', padding: '12px 0 20px' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>✅</div>
+                <p style={{ color: '#16A34A', fontWeight: 700, marginBottom: 20 }}>Wachtwoord succesvol gewijzigd</p>
+                <button onClick={() => setSetPwTarget(null)} style={{ background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 24px', fontWeight: 700, cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>Sluiten</button>
+              </div>
+            ) : (
+              <>
+                <input
+                  type="password"
+                  value={setPwValue}
+                  onChange={e => setSetPwValue(e.target.value)}
+                  onKeyDown={async e => {
+                    if (e.key !== 'Enter') return
+                    if (!setPwValue || setPwValue.length < 8) { setSetPwError('Minimaal 8 tekens'); return }
+                    setSetPwLoading(true); setSetPwError('')
+                    try {
+                      const res = await fetch('/api/auth/set-password', {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: setPwTarget.id, password: setPwValue }),
+                      })
+                      const data = await res.json()
+                      if (!res.ok) { setSetPwError(data.error || 'Mislukt'); return }
+                      setSetPwDone(true)
+                    } finally { setSetPwLoading(false) }
+                  }}
+                  placeholder="Nieuw wachtwoord (min. 8 tekens)"
+                  style={{ width: '100%', padding: '13px 16px', borderRadius: 10, border: '1.5px solid #CBD5E1', fontSize: '.92rem', fontFamily: "'Nunito',sans-serif", color: '#0F172A', outline: 'none', marginBottom: 14, boxSizing: 'border-box' }}
+                  autoFocus
+                />
+                {setPwError && <p style={{ color: '#EF4444', fontSize: '.84rem', marginBottom: 12 }}>{setPwError}</p>}
+                <button
+                  disabled={setPwLoading}
+                  onClick={async () => {
+                    if (!setPwValue || setPwValue.length < 8) { setSetPwError('Minimaal 8 tekens'); return }
+                    setSetPwLoading(true); setSetPwError('')
+                    try {
+                      const res = await fetch('/api/auth/set-password', {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: setPwTarget.id, password: setPwValue }),
+                      })
+                      const data = await res.json()
+                      if (!res.ok) { setSetPwError(data.error || 'Mislukt'); return }
+                      setSetPwDone(true)
+                    } finally { setSetPwLoading(false) }
+                  }}
+                  style={{ width: '100%', padding: 13, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: setPwLoading ? 0.7 : 1 }}>
+                  {setPwLoading ? 'Opslaan…' : 'Wachtwoord instellen'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 
