@@ -913,102 +913,24 @@ Agentmakers.io`)
   }
 
   // ─── Login screen ──────────────────────────────────────────────
+  // ─── Login screen (tijdelijk: directe toegang) ──────────────
   if (!authed) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F1F5F9' }}>
-      <div style={{ background: '#fff', padding: '48px 40px', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,.08)', maxWidth: 400, width: '100%' }}>
-
-        {/* Logo */}
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.5rem', margin: 0, marginBottom: 6 }}>
-            <span style={{ color: '#334155' }}>agent</span><span style={{ color: '#0D9488' }}>makers</span>.io
-          </h1>
-          <p style={{ color: '#64748B', fontSize: '.88rem', margin: 0 }}>
-            {loginScreen === 'login' && 'Log in om door te gaan naar het dashboard.'}
-            {loginScreen === 'forgot' && 'Wachtwoord vergeten'}
-            {loginScreen === 'forgot-sent' && 'E-mail verstuurd'}
-            {loginScreen === 'reset' && 'Nieuw wachtwoord instellen'}
-            {loginScreen === 'reset-done' && 'Wachtwoord gewijzigd'}
-          </p>
-        </div>
-
-        {/* ── Normal login ── */}
-        {loginScreen === 'login' && (
-          <>
-            <input type="text" value={username} onChange={e => setUsername(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="Gebruikersnaam" autoComplete="username" style={{ ...inp, marginBottom: 12 }} />
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="Wachtwoord" autoComplete="current-password" style={{ ...inp, marginBottom: 8 }} />
-            <div style={{ textAlign: 'right', marginBottom: 16 }}>
-              <button onClick={() => { setResetError(''); setLoginScreen('forgot') }} style={{ background: 'none', border: 'none', color: '#0D9488', fontSize: '.82rem', cursor: 'pointer', padding: 0, fontFamily: "'Nunito',sans-serif" }}>
-                Wachtwoord vergeten?
-              </button>
-            </div>
-            {loginError && <p style={{ color: '#EF4444', fontSize: '.84rem', marginBottom: 12, textAlign: 'center' }}>{loginError}</p>}
-            <button onClick={login} style={{ width: '100%', padding: 14, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>Inloggen</button>
-          </>
-        )}
-
-        {/* ── Forgot: enter email ── */}
-        {loginScreen === 'forgot' && (
-          <>
-            <p style={{ fontSize: '.86rem', color: '#475569', marginBottom: 20, marginTop: -8 }}>
-              Vul het e-mailadres in dat gekoppeld is aan uw account. U ontvangt een link om uw wachtwoord te resetten.
-            </p>
-            <input type="email" value={resetEmail} onChange={e => setResetEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendResetRequest()} placeholder="uw@email.nl" autoComplete="email" style={{ ...inp, marginBottom: 16 }} />
-            {resetError && <p style={{ color: '#EF4444', fontSize: '.84rem', marginBottom: 12 }}>{resetError}</p>}
-            <button onClick={sendResetRequest} disabled={resetLoading} style={{ width: '100%', padding: 14, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: resetLoading ? 0.7 : 1 }}>
-              {resetLoading ? 'Versturen…' : 'Stuur reset-link'}
-            </button>
-            <button onClick={() => setLoginScreen('login')} style={{ width: '100%', padding: 10, marginTop: 10, background: 'none', border: 'none', color: '#64748B', fontSize: '.85rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-              ← Terug naar inloggen
-            </button>
-          </>
-        )}
-
-        {/* ── Forgot: email sent ── */}
-        {loginScreen === 'forgot-sent' && (
-          <>
-            <div style={{ textAlign: 'center', padding: '16px 0 24px' }}>
-              <div style={{ fontSize: '3rem', marginBottom: 12 }}>📬</div>
-              <p style={{ color: '#475569', fontSize: '.9rem', lineHeight: 1.6 }}>
-                Als dit e-mailadres bekend is in ons systeem, ontvangt u binnen enkele minuten een e-mail met een reset-link.<br /><br />
-                <strong>Link is 1 uur geldig.</strong>
-              </p>
-            </div>
-            <button onClick={() => { setLoginScreen('login'); setResetEmail('') }} style={{ width: '100%', padding: 12, background: '#F1F5F9', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', color: '#334155', fontFamily: "'Nunito',sans-serif" }}>
-              ← Terug naar inloggen
-            </button>
-          </>
-        )}
-
-        {/* ── Reset: new password form ── */}
-        {loginScreen === 'reset' && (
-          <>
-            <p style={{ fontSize: '.86rem', color: '#475569', marginBottom: 20, marginTop: -8 }}>
-              Kies een nieuw wachtwoord van minimaal 8 tekens.
-            </p>
-            <input type="password" value={resetPw1} onChange={e => setResetPw1(e.target.value)} placeholder="Nieuw wachtwoord" autoComplete="new-password" style={{ ...inp, marginBottom: 12 }} />
-            <input type="password" value={resetPw2} onChange={e => setResetPw2(e.target.value)} onKeyDown={e => e.key === 'Enter' && confirmReset()} placeholder="Herhaal wachtwoord" autoComplete="new-password" style={{ ...inp, marginBottom: 16 }} />
-            {resetError && <p style={{ color: '#EF4444', fontSize: '.84rem', marginBottom: 12 }}>{resetError}</p>}
-            <button onClick={confirmReset} disabled={resetLoading} style={{ width: '100%', padding: 14, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: resetLoading ? 0.7 : 1 }}>
-              {resetLoading ? 'Opslaan…' : 'Wachtwoord instellen'}
-            </button>
-          </>
-        )}
-
-        {/* ── Reset done ── */}
-        {loginScreen === 'reset-done' && (
-          <>
-            <div style={{ textAlign: 'center', padding: '16px 0 24px' }}>
-              <div style={{ fontSize: '3rem', marginBottom: 12 }}>✅</div>
-              <p style={{ color: '#475569', fontSize: '.9rem' }}>
-                Uw wachtwoord is succesvol gewijzigd. U kunt nu inloggen.
-              </p>
-            </div>
-            <button onClick={() => { setLoginScreen('login'); setResetPw1(''); setResetPw2('') }} style={{ width: '100%', padding: 12, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-              Inloggen
-            </button>
-          </>
-        )}
-
+      <div style={{ background: '#fff', padding: '48px 40px', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,.08)', maxWidth: 400, width: '100%', textAlign: 'center' }}>
+        <h1 style={{ fontFamily: "\'Poppins\',sans-serif", fontSize: '1.5rem', marginBottom: 8 }}>
+          <span style={{ color: '#334155' }}>agent</span><span style={{ color: '#0D9488' }}>makers</span>.io
+        </h1>
+        <p style={{ color: '#64748B', fontSize: '.9rem', marginBottom: 32 }}>Dashboard</p>
+        <button
+          onClick={() => {
+            setCurrentUser({ displayName: 'Richard', isAdmin: true, isSuperAdmin: true })
+            setAuthed(true)
+            fetch('/api/leads').then(r => r.ok ? r.json() : null).then(d => { if (d) setLeads(d) }).catch(() => {})
+          }}
+          style={{ width: '100%', padding: 16, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: '1.1rem', cursor: 'pointer', fontFamily: "\'Nunito\',sans-serif" }}
+        >
+          Ga naar dashboard →
+        </button>
       </div>
     </div>
   )

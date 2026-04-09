@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Fallback: treat 'richard' as superadmin until DB migration adds is_superadmin column
-    const isSuperAdmin = user.is_superadmin ?? (user.username === 'richard')
+    const isSuperAdmin = (user as typeof user & { is_superadmin?: boolean }).is_superadmin ?? (user.username === 'richard')
 
     const token = createSession({
       userId: user.id,
