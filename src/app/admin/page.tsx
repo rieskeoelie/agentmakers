@@ -216,6 +216,12 @@ export default function AdminDashboard() {
   const [emailSending, setEmailSending]     = useState(false)
   const [emailGenError, setEmailGenError]   = useState('')
 
+  // Bulk mail send
+  const [bulkMailOpen, setBulkMailOpen]     = useState(false)
+  const [bulkMailSending, setBulkMailSending] = useState(false)
+  const [bulkMailProgress, setBulkMailProgress] = useState<{ done: number; total: number } | null>(null)
+  const [bulkMailDone, setBulkMailDone]     = useState(false)
+
   const parseCsv = (raw: string): BulkRow[] => {
     const lines = raw.trim().split('\n').filter(l => l.trim())
     if (lines.length === 0) return []
@@ -518,6 +524,54 @@ Agentmakers.io`)
     setBulkParsed(parsed)
     setBulkResults([])
     setBulkError('')
+  }
+
+  const updateBulkRow = (i: number, field: 'naam' | 'email', value: string) => {
+    setBulkParsed(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r))
+  }
+
+  const sendBulkMails = async () => {
+    const withEmail = bulkResults.filter(r => r.status === 'ok' && r.email && !outreachSent[r.demo_token] && !sentIdx.has(bulkResults.indexOf(r)))
+    if (!withEmail.length) return
+    setBulkMailSending(true)
+    setBulkMailProgress({ done: 0, total: withEmail.length })
+    setBulkMailDone(false)
+    let done = 0
+    for (const r of withEmail) {
+      try {
+        // Generate AI email
+        let business_info = ''
+        try {
+          const si = await fetch(`/api/admin/lead-info?token=${r.demo_token}`)
+          if (si.ok) { const d = await si.json(); business_info = d.business_info || '' }
+        } catch { /* ignore */ }
+        const gen = await fetch('/api/admin/generate-email', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bedrijfsnaam: r.bedrijfsnaam, naam: r.naam, demo_url: r.demo_url, business_info, language: bulkLanguage ?? 'nl' }),
+        })
+        if (!gen.ok) { done++; setBulkMailProgress({ done, total: withEmail.length }); continue }
+        const { subject, body } = await gen.json()
+
+        // Send
+        await fetch('/api/admin/send-outreach', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ naam: r.naam, email: r.email, bedrijfsnaam: r.bedrijfsnaam, demo_url: r.demo_url, subject, body }),
+        })
+        // Mark sent
+        const sentAt = new Date().toISOString()
+        setOutreachSent(prev => {
+          const updated = { ...prev, [r.demo_token]: sentAt }
+          localStorage.setItem(OUTREACH_SENT_STORAGE, JSON.stringify(updated))
+          return updated
+        })
+        const origIdx = bulkResults.indexOf(r)
+        if (origIdx >= 0) setSentIdx(prev => new Set(prev).add(origIdx))
+      } catch { /* continue on error */ }
+      done++
+      setBulkMailProgress({ done, total: withEmail.length })
+    }
+    setBulkMailDone(true)
+    setBulkMailSending(false)
   }
 
   const handleScrapeQueue = async () => {
@@ -2064,7 +2118,7 @@ Agentmakers.io`)
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.83rem' }}>
                   <thead>
                     <tr style={{ background: '#F8FAFC' }}>
-                      {['Bedrijf', 'Website', 'Naam', 'Email'].map(h => (
+                      {['Bedrijf', 'Website', 'Naam (optioneel)', 'E-mailadres ✏️'].map(h => (
                         <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #F1F5F9' }}>{h}</th>
                       ))}
                     </tr>
@@ -2073,13 +2127,32 @@ Agentmakers.io`)
                     {bulkParsed.map((r, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}>
                         <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1E293B' }}>{r.bedrijfsnaam}</td>
-                        <td style={{ padding: '10px 14px', color: '#64748B' }}>{r.website}</td>
-                        <td style={{ padding: '10px 14px', color: '#64748B' }}>{r.naam || '—'}</td>
-                        <td style={{ padding: '10px 14px', color: '#64748B' }}>{r.email || '—'}</td>
+                        <td style={{ padding: '10px 14px', color: '#64748B', fontSize: '.78rem' }}>{r.website}</td>
+                        <td style={{ padding: '6px 10px' }}>
+                          <input
+                            value={r.naam}
+                            onChange={e => updateBulkRow(i, 'naam', e.target.value)}
+                            placeholder="Voornaam"
+                            style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: '.82rem', color: '#334155', outline: 'none', fontFamily: "'Nunito',sans-serif" }}
+                          />
+                        </td>
+                        <td style={{ padding: '6px 10px' }}>
+                          <input
+                            value={r.email}
+                            onChange={e => updateBulkRow(i, 'email', e.target.value)}
+                            placeholder="info@bedrijf.nl"
+                            type="email"
+                            style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${r.email ? '#0D9488' : '#E2E8F0'}`, fontSize: '.82rem', color: '#334155', outline: 'none', fontFamily: "'Nunito',sans-serif" }}
+                          />
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+              <div style={{ marginTop: 12, padding: '10px 14px', background: '#F0FDFA', borderRadius: 8, fontSize: '.8rem', color: '#0F766E', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>💡</span>
+                <span>Vul de <strong>e-mailadressen</strong> in om na het genereren direct outreach-mails te versturen. Naam is optioneel maar maakt de mail persoonlijker.</span>
               </div>
             </div>
           )}
@@ -2202,8 +2275,8 @@ Agentmakers.io`)
                 </table>
               </div>
 
-              {/* Export all links */}
-              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
+              {/* Export + Bulk mail */}
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <button onClick={() => {
                   const rows = ['bedrijfsnaam,demo_url,email'].concat(
                     bulkResults.filter(r => r.status === 'ok').map(r => `"${r.bedrijfsnaam}","${r.demo_url}","${r.email}"`)
@@ -2213,9 +2286,23 @@ Agentmakers.io`)
                   const a = document.createElement('a')
                   a.href = url; a.download = 'demo-links.csv'; a.click()
                   URL.revokeObjectURL(url)
-                }} title="Download een CSV met alle gegenereerde demo-links — handig om in te laden in een e-mailtool zoals Mailchimp of HubSpot" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', color: '#334155', padding: '10px 20px', borderRadius: 9, fontWeight: 600, fontSize: '.85rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                }} style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', color: '#334155', padding: '10px 20px', borderRadius: 9, fontWeight: 600, fontSize: '.85rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
                   ⬇ Download alle links als CSV
                 </button>
+
+                {(() => {
+                  const toSend = bulkResults.filter(r => r.status === 'ok' && r.email && !outreachSent[r.demo_token])
+                  if (!toSend.length) return null
+                  return (
+                    <button
+                      onClick={() => { setBulkMailOpen(true); setBulkMailDone(false); setBulkMailProgress(null) }}
+                      disabled={!scrapeDone}
+                      title={scrapeDone ? `Verstuur gepersonaliseerde AI-mails naar ${toSend.length} bedrijven met een e-mailadres` : 'Wacht tot de AI-agent gepersonaliseerd is'}
+                      style={{ background: scrapeDone ? '#0D9488' : '#94A3B8', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 9, fontWeight: 700, fontSize: '.85rem', cursor: scrapeDone ? 'pointer' : 'not-allowed', fontFamily: "'Nunito',sans-serif", display: 'flex', alignItems: 'center', gap: 8 }}>
+                      📧 Verstuur {toSend.length} outreach-mail{toSend.length !== 1 ? 's' : ''} →
+                    </button>
+                  )
+                })()}
               </div>
             </div>
           )}
@@ -2276,6 +2363,86 @@ Agentmakers.io`)
                 {emailSending ? '⏳ Verzenden…' : `📤 Verstuur naar ${emailModal.email}`}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════ BULK MAIL MODAL ══════════════════════ */}
+      {bulkMailOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 1000 }}>
+          <div style={{ background: '#fff', borderRadius: 20, maxWidth: 520, width: '100%', padding: 36, boxShadow: '0 24px 64px rgba(0,0,0,.25)' }}>
+            {bulkMailDone ? (
+              <>
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
+                  <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', marginBottom: 8 }}>Mails verstuurd!</h2>
+                  <p style={{ color: '#64748B', fontSize: '.9rem', marginBottom: 28 }}>
+                    {bulkMailProgress?.done} outreach-mail{(bulkMailProgress?.done ?? 0) !== 1 ? 's' : ''} zijn verstuurd naar de bedrijven met een e-mailadres.
+                  </p>
+                  <button onClick={() => setBulkMailOpen(false)}
+                    style={{ background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 32px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                    Sluiten ✓
+                  </button>
+                </div>
+              </>
+            ) : bulkMailSending ? (
+              <>
+                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', marginBottom: 20 }}>📧 Mails versturen…</h2>
+                <p style={{ color: '#64748B', fontSize: '.88rem', marginBottom: 20 }}>
+                  De AI schrijft en verstuurt voor elk bedrijf een gepersonaliseerde outreach-mail. Even geduld…
+                </p>
+                {bulkMailProgress && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.82rem', color: '#64748B', marginBottom: 8 }}>
+                      <span>{bulkMailProgress.done} van {bulkMailProgress.total} verstuurd</span>
+                      <span>{Math.round((bulkMailProgress.done / bulkMailProgress.total) * 100)}%</span>
+                    </div>
+                    <div style={{ background: '#E2E8F0', borderRadius: 99, height: 8, overflow: 'hidden' }}>
+                      <div style={{ background: '#0D9488', height: '100%', borderRadius: 99, width: `${Math.round((bulkMailProgress.done / bulkMailProgress.total) * 100)}%`, transition: 'width .4s ease' }} />
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+                  <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', margin: 0 }}>📧 Bulk outreach versturen</h2>
+                  <button onClick={() => setBulkMailOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: '#94A3B8', lineHeight: 1 }}>×</button>
+                </div>
+                {(() => {
+                  const toSend = bulkResults.filter(r => r.status === 'ok' && r.email && !outreachSent[r.demo_token])
+                  return (
+                    <>
+                      <p style={{ color: '#334155', fontSize: '.9rem', marginBottom: 16, lineHeight: 1.6 }}>
+                        De AI schrijft voor elk bedrijf een <strong>gepersonaliseerde outreach-mail</strong> op basis van hun website en verstuurt die direct. Je hoeft niets te doen.
+                      </p>
+                      <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '14px 18px', marginBottom: 24 }}>
+                        <div style={{ fontSize: '.82rem', color: '#64748B', marginBottom: 8, fontWeight: 700 }}>Ontvangers ({toSend.length})</div>
+                        {toSend.slice(0, 5).map((r, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0', borderBottom: i < Math.min(toSend.length, 5) - 1 ? '1px solid #F1F5F9' : 'none' }}>
+                            <span style={{ fontWeight: 600, fontSize: '.83rem', color: '#1E293B', flex: 1 }}>{r.bedrijfsnaam}</span>
+                            <span style={{ fontSize: '.78rem', color: '#64748B' }}>{r.email}</span>
+                          </div>
+                        ))}
+                        {toSend.length > 5 && (
+                          <div style={{ fontSize: '.78rem', color: '#94A3B8', marginTop: 8 }}>+ {toSend.length - 5} meer…</div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        <button onClick={() => setBulkMailOpen(false)}
+                          style={{ flex: 1, padding: '12px', background: '#F8FAFC', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: 10, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                          Annuleren
+                        </button>
+                        <button onClick={sendBulkMails}
+                          style={{ flex: 2, padding: '12px', background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                          📤 Verstuur {toSend.length} mail{toSend.length !== 1 ? 's' : ''} nu
+                        </button>
+                      </div>
+                    </>
+                  )
+                })()}
+              </>
+            )}
           </div>
         </div>
       )}
