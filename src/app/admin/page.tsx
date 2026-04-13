@@ -2389,9 +2389,9 @@ Agentmakers.io`)
                                   <button
                                     onClick={() => openEmailModal(r, i)}
                                     disabled={!scrapeDone}
-                                    title={scrapeDone ? 'Laat AI een gepersonaliseerde outreach-mail schrijven op basis van de website van dit bedrijf' : 'Wacht tot de AI-agent gepersonaliseerd is…'}
+                                    title="AI schrijft een mail — jij ziet hem eerst en past aan vóór versturen"
                                     style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #7C3AED', background: '#7C3AED', color: '#fff', fontWeight: 700, fontSize: '.75rem', cursor: !scrapeDone ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: !scrapeDone ? 0.4 : 1 }}>
-                                    ✨ AI-mail schrijven
+                                    ✏️ Bekijk mail eerst
                                   </button>
                                 )
                               })()}
@@ -2406,33 +2406,56 @@ Agentmakers.io`)
               </div>
 
               {/* Export + Bulk mail */}
-              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <button onClick={() => {
-                  const rows = ['bedrijfsnaam,demo_url,email'].concat(
-                    bulkResults.filter(r => r.status === 'ok').map(r => `"${r.bedrijfsnaam}","${r.demo_url}","${r.email}"`)
-                  )
-                  const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url; a.download = 'demo-links.csv'; a.click()
-                  URL.revokeObjectURL(url)
-                }} style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', color: '#334155', padding: '10px 20px', borderRadius: 9, fontWeight: 600, fontSize: '.85rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                  ⬇ Download alle links als CSV
-                </button>
-
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
+                {/* Uitleg twee opties */}
                 {(() => {
                   const toSend = bulkResults.filter(r => r.status === 'ok' && r.email && !outreachSent[r.demo_token])
                   if (!toSend.length) return null
                   return (
-                    <button
-                      onClick={() => { setBulkMailOpen(true); setBulkMailDone(false); setBulkMailProgress(null) }}
-                      disabled={!scrapeDone}
-                      title={scrapeDone ? `Verstuur gepersonaliseerde AI-mails naar ${toSend.length} bedrijven met een e-mailadres` : 'Wacht tot de AI-agent gepersonaliseerd is'}
-                      style={{ background: scrapeDone ? '#0D9488' : '#94A3B8', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 9, fontWeight: 700, fontSize: '.85rem', cursor: scrapeDone ? 'pointer' : 'not-allowed', fontFamily: "'Nunito',sans-serif", display: 'flex', alignItems: 'center', gap: 8 }}>
-                      📧 Verstuur {toSend.length} outreach-mail{toSend.length !== 1 ? 's' : ''} →
-                    </button>
+                    <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: '14px 18px', marginBottom: 16, fontSize: '.83rem', color: '#334155', lineHeight: 1.7 }}>
+                      <div style={{ fontWeight: 700, marginBottom: 6, color: '#0F172A' }}>Hoe wil je de mails versturen?</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 14px' }}>
+                          <div style={{ fontWeight: 700, color: '#7C3AED', marginBottom: 4 }}>✏️ Per stuk — bekijk eerst</div>
+                          <div style={{ fontSize: '.78rem', color: '#64748B' }}>Klik "Bekijk mail eerst" naast een bedrijf. AI schrijft de mail, jij leest hem, past aan indien nodig, dan pas versturen.</div>
+                        </div>
+                        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 14px' }}>
+                          <div style={{ fontWeight: 700, color: '#0D9488', marginBottom: 4 }}>🚀 Alles in één keer — zonder preview</div>
+                          <div style={{ fontSize: '.78rem', color: '#64748B' }}>AI schrijft voor elk bedrijf automatisch een gepersonaliseerde mail en verstuurt direct. Geen handmatige controle.</div>
+                        </div>
+                      </div>
+                    </div>
                   )
                 })()}
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <button onClick={() => {
+                    const rows = ['bedrijfsnaam,demo_url,email'].concat(
+                      bulkResults.filter(r => r.status === 'ok').map(r => `"${r.bedrijfsnaam}","${r.demo_url}","${r.email}"`)
+                    )
+                    const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url; a.download = 'demo-links.csv'; a.click()
+                    URL.revokeObjectURL(url)
+                  }} style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', color: '#334155', padding: '10px 20px', borderRadius: 9, fontWeight: 600, fontSize: '.85rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                    ⬇ Download alle links als CSV
+                  </button>
+
+                  {(() => {
+                    const toSend = bulkResults.filter(r => r.status === 'ok' && r.email && !outreachSent[r.demo_token])
+                    if (!toSend.length) return null
+                    return (
+                      <button
+                        onClick={() => { setBulkMailOpen(true); setBulkMailDone(false); setBulkMailProgress(null) }}
+                        disabled={!scrapeDone}
+                        title={scrapeDone ? `AI schrijft automatisch voor elk bedrijf een gepersonaliseerde mail en verstuurt direct — geen preview` : 'Wacht tot de AI-agent gepersonaliseerd is'}
+                        style={{ background: scrapeDone ? '#0D9488' : '#94A3B8', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 9, fontWeight: 700, fontSize: '.85rem', cursor: scrapeDone ? 'pointer' : 'not-allowed', fontFamily: "'Nunito',sans-serif", display: 'flex', alignItems: 'center', gap: 8 }}>
+                        🚀 Stuur alle {toSend.length} mails automatisch
+                      </button>
+                    )
+                  })()}
+                </div>
               </div>
             </div>
           )}
