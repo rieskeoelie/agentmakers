@@ -1332,10 +1332,10 @@ Agentmakers.io`)
             <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>📋</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#1D4ED8', marginBottom: 6 }}>Dit zijn je leads — bedrijven die de AI-demo hebben bezocht</div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#1D4ED8', marginBottom: 6 }}>Dit zijn je leads — inbound aanvragen én geïmporteerde prospects</div>
                 <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 24px' }}>
                   <div>📌 <strong>Status</strong> — verander de status per lead: <em>Nieuw → Contact → Demo gepland → Gewonnen</em></div>
-                  <div>✉ <strong>Stuur AI-mail</strong> — AI schrijft een persoonlijke e-mail met de demo-link. Jij controleert en verstuurt met één klik. (Alleen als er een e-mail bekend is.)</div>
+                  <div>✉ <strong>Stuur AI-mail</strong> — AI schrijft een persoonlijke opvolgmail. Jij controleert en verstuurt met één klik. (Alleen als er een e-mailadres bekend is.)</div>
                   <div>▼ <strong>Notities</strong> — klik op het pijltje rechts van een lead om een notitie toe te voegen</div>
                   <div>✓ <strong>Klaar</strong> — lead volledig afgehandeld? Klik Klaar zodat hij uit je lijst verdwijnt</div>
                 </div>
