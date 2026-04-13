@@ -713,17 +713,7 @@ Agentmakers.io`)
         if (st) setLeadStatus(JSON.parse(st))
         const sn = localStorage.getItem(LEAD_NOTES_STORAGE)
         if (sn) setLeadNotes(JSON.parse(sn))
-        // Laad outreach-history: DB is leading, localStorage als fallback
-        fetch(`/api/admin/outreach-history?user_id=${user.userId}`)
-          .then(r => r.ok ? r.json() : null)
-          .then(dbMap => {
-            const localRaw = localStorage.getItem(outreachStorageKey(user.userId))
-            const localMap = localRaw ? JSON.parse(localRaw) : {}
-            setOutreachSent({ ...localMap, ...(dbMap ?? {}) })
-          }).catch(() => {
-            const os = localStorage.getItem(outreachStorageKey(user.userId))
-            if (os) setOutreachSent(JSON.parse(os))
-          })
+        // outreach-history wordt geladen via de viewAsUser/authed useEffect hieronder
       }
     }).catch(() => {})
   }, [fetchData])
@@ -749,6 +739,33 @@ Agentmakers.io`)
     const timers = intervals.map((delay, i) => setTimeout(() => setGenerationStep(i + 1), delay))
     return () => timers.forEach(clearTimeout)
   }, [creating])
+
+  // Wanneer viewAsUser verandert: altijd outreach workflow-state en sent-history resetten
+  useEffect(() => {
+    setBulkParsed([])
+    setBulkResults([])
+    setProspectResults([])
+    setSelectedProspects(new Set())
+    setSentIdx(new Set())
+    setBulkError('')
+    setOutreachSent({}) // direct leeg — fetch hieronder vult aan indien data beschikbaar
+
+    if (!authed) return
+    const userId = viewAsUser?.id ?? currentUser?.userId
+    if (!userId) return
+
+    fetch(`/api/admin/outreach-history?user_id=${userId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(dbMap => {
+        const localRaw = localStorage.getItem(outreachStorageKey(userId))
+        const localMap = localRaw ? JSON.parse(localRaw) : {}
+        setOutreachSent({ ...localMap, ...(dbMap ?? {}) })
+      })
+      .catch(() => {
+        const localRaw = localStorage.getItem(outreachStorageKey(userId))
+        setOutreachSent(localRaw ? JSON.parse(localRaw) : {})
+      })
+  }, [viewAsUser, authed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Zichtbaarheid (view-as isolatie) ─────────────────────────
 
@@ -842,17 +859,7 @@ Agentmakers.io`)
       if (st) setLeadStatus(JSON.parse(st))
       const sn = localStorage.getItem(LEAD_NOTES_STORAGE)
       if (sn) setLeadNotes(JSON.parse(sn))
-      // Laad outreach-history: DB is leading, localStorage als fallback
-      fetch(`/api/admin/outreach-history?user_id=${data.user.userId}`)
-        .then(r => r.ok ? r.json() : null)
-        .then(dbMap => {
-          const localRaw = localStorage.getItem(outreachStorageKey(data.user.userId))
-          const localMap = localRaw ? JSON.parse(localRaw) : {}
-          setOutreachSent({ ...localMap, ...(dbMap ?? {}) })
-        }).catch(() => {
-          const os = localStorage.getItem(outreachStorageKey(data.user.userId))
-          if (os) setOutreachSent(JSON.parse(os))
-        })
+      // outreach-history wordt geladen via de viewAsUser/authed useEffect hieronder
     } catch { setLoginError('Netwerkfout. Probeer opnieuw.') }
   }
 
@@ -2678,7 +2685,9 @@ Agentmakers.io`)
                                   setProspectResults([])
                                   setSelectedProspects(new Set())
                                   setBulkError('')
-                                  // Laad outreach-history van deze partner (DB + localStorage)
+                                  // Direct leegmaken — geen vertraging meer
+                                  setOutreachSent({})
+                                  // Daarna DB + localStorage van deze partner inladen
                                   fetch(`/api/admin/outreach-history?user_id=${acc.id}`)
                                     .then(r => r.ok ? r.json() : null)
                                     .then(dbMap => {
