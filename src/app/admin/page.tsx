@@ -753,15 +753,16 @@ Agentmakers.io`)
     return undefined
   }
 
-  // visibleLeads: superadmin can view-as another user to filter their data
+  // visibleLeads: superadmin kan view-as gebruiken; partners zien altijd alleen eigen leads
+  // (de API filtert al op user_id voor niet-superadmins, maar viewAsUser kan superadmin verder filteren)
   const visibleLeads = useMemo(() => {
     if (viewAsUser) return leads.filter(l => (l as Lead & { user_id?: string }).user_id === viewAsUser.id)
     return leads
   }, [leads, viewAsUser])
 
-  // For non-admins: filter conversations to only those matched to their own leads
+  // Gesprekken: superadmin ziet alles (of gefilterd via viewAsUser), partners alleen hun eigen
   const visibleConversations = useMemo(() => {
-    if (currentUser?.isAdmin && !viewAsUser) return conversations
+    if (currentUser?.isSuperAdmin && !viewAsUser) return conversations
     const srcLeads = viewAsUser ? visibleLeads : leads
     const myConvIds = new Set(srcLeads.map(l => getMatchedConv(l)).filter(Boolean) as string[])
     return conversations.filter(c => myConvIds.has(c.conversation_id))
@@ -1159,7 +1160,7 @@ Agentmakers.io`)
             'leads', 'analytics', 'conversations', 'outreach',
             ...(currentUser?.isAdmin ? ['pages'] : []),
             ...(currentUser?.isSuperAdmin ? ['accounts'] : []),
-          ] as const).map(t2 => (
+          ] as ('leads'|'analytics'|'conversations'|'outreach'|'pages'|'accounts')[]).map(t2 => (
             <button key={t2} onClick={() => {
               setTab(t2 as typeof tab)
               if (t2 === 'leads') markAllSeen()
