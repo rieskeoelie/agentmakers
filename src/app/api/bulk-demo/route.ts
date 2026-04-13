@@ -108,7 +108,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { leads }: { leads: BulkLead[] } = await req.json()
+    const { leads, view_as_user_id }: { leads: BulkLead[]; view_as_user_id?: string } = await req.json()
+    const effectiveUserId = (session.isSuperAdmin && view_as_user_id) ? view_as_user_id : session.userId
 
     if (!Array.isArray(leads) || leads.length === 0) {
       return NextResponse.json({ error: 'Geen leads aangeleverd' }, { status: 400 })
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
     const batchSize = 10
     for (let i = 0; i < leads.length; i += batchSize) {
       const batch = leads.slice(i, i + batchSize)
-      const batchResults = await Promise.all(batch.map(lead => processLead(lead, session.userId)))
+      const batchResults = await Promise.all(batch.map(lead => processLead(lead, effectiveUserId)))
       results.push(...batchResults)
     }
 

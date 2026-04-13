@@ -266,7 +266,7 @@ export default function AdminDashboard() {
       const res = await fetch('/api/bulk-demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leads: bulkParsed.map(r => ({ ...r, language: bulkLanguage ?? 'nl' })) }),
+        body: JSON.stringify({ leads: bulkParsed.map(r => ({ ...r, language: bulkLanguage ?? 'nl' })), view_as_user_id: viewAsUser?.id ?? null }),
       })
       const data = await res.json()
       if (!res.ok) { setBulkError(data.error || 'Fout bij aanmaken'); return }
