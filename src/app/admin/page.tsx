@@ -1217,7 +1217,7 @@ Agentmakers.io`)
           {[
             { icon: '📄', val: pages.length,              label: "Pagina's",       sub: `${pages.filter(p => p.status === 'live').length} live` },
             { icon: '👁️', val: totalVisits,               label: 'Bezoekers',      sub: 'totaal' },
-            { icon: '📥', val: visibleLeads.length,        label: 'Aanvragen',      sub: leadsThisWeek > 0 ? `+${leadsThisWeek} deze week` : 'totaal', subColor: leadsThisWeek > 0 ? '#166534' : undefined },
+            { icon: '📋', val: visibleLeads.length,        label: 'Leads',          sub: leadsThisWeek > 0 ? `+${leadsThisWeek} deze week` : 'totaal', subColor: leadsThisWeek > 0 ? '#166534' : undefined },
             { icon: '🎙', val: conversations.length,      label: 'Gesprekken',     sub: conversations.length > 0 ? fmtDuration(avgDuration) + ' gem.' : '—' },
             { icon: '📊', val: totalVisits > 0 ? `${((totalConversions / totalVisits) * 100).toFixed(1)}%` : '—', label: 'Conv. ratio', sub: `${totalConversions} conversies` },
             { icon: '🏆', val: bestPage ? `${((bestPage.conversions / bestPage.visits) * 100).toFixed(1)}%` : '—', label: 'Beste pagina', sub: bestPage ? bestPage.industry : '—' },
@@ -1234,7 +1234,7 @@ Agentmakers.io`)
         {/* ── Tabs ── */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
           {([
-            'leads', 'analytics', 'conversations', 'outreach',
+            'leads', 'outreach', 'conversations', 'analytics',
             ...(currentUser?.isAdmin ? ['pages'] : []),
             ...(currentUser?.isSuperAdmin ? ['accounts'] : []),
           ] as ('leads'|'analytics'|'conversations'|'outreach'|'pages'|'accounts')[]).map(t2 => (
@@ -1245,15 +1245,15 @@ Agentmakers.io`)
               if (t2 === 'accounts' && accounts.length === 0) fetchAccounts()
             }}
               title={
-                t2 === 'pages' ? "Beheer uw landingspagina's" :
-                t2 === 'leads' ? 'Bekijk en beheer demo-aanvragen van prospects' :
-                t2 === 'analytics' ? "Statistieken: bezoekers, conversies en ratio's" :
-                t2 === 'conversations' ? 'Beluister en lees AI-gesprekken met prospects' :
-                t2 === 'outreach' ? 'Verstuur gepersonaliseerde demo-links naar prospects' :
+                t2 === 'pages' ? "Zet je AI-demo pagina's live of offline" :
+                t2 === 'leads' ? 'Wie heeft de demo bezocht? Stuur een mail en houd de opvolging bij.' :
+                t2 === 'analytics' ? 'Hoeveel bezoekers, conversies en welke pagina presteert het best?' :
+                t2 === 'conversations' ? 'Beluister wat prospects tegen de AI hebben gezegd' :
+                t2 === 'outreach' ? 'Zoek nieuwe bedrijven, maak een demo-link en stuur direct een mail' :
                 'Overzicht van alle accounts en hun performance'
               }
               style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: tab === t2 ? (t2 === 'accounts' ? '#7C3AED' : '#0D9488') : '#fff', color: tab === t2 ? '#fff' : '#64748B', position: 'relative' }}>
-              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📥 Aanvragen' : t2 === 'analytics' ? '📊 Analytics' : t2 === 'conversations' ? '🎙 Gesprekken' : t2 === 'outreach' ? '🚀 Outreach' : t2 === 'accounts' ? '👥 Accounts' : t2}
+              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📋 Leads' : t2 === 'analytics' ? '📊 Resultaten' : t2 === 'conversations' ? '🎙 Gesprekken' : t2 === 'outreach' ? '🎯 Prospects' : t2 === 'accounts' ? '👥 Team' : t2}
               {t2 === 'leads' && newLeadsCount > 0 && (
                 <span style={{ position: 'absolute', top: -6, right: -6, background: '#EF4444', color: '#fff', borderRadius: '50%', width: 20, height: 20, fontSize: '.7rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {newLeadsCount}
@@ -1327,14 +1327,14 @@ Agentmakers.io`)
           <div>
             {/* Uitlegbanner */}
             <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>📥</span>
+              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>📋</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#1D4ED8', marginBottom: 4 }}>Zo gebruik je dit overzicht</div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#1D4ED8', marginBottom: 6 }}>Dit zijn je leads — bedrijven die de AI-demo hebben bezocht</div>
                 <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 24px' }}>
-                  <div><strong>Status-dropdown</strong> — houd bij waar je staat: Nieuw → Contact → Demo gepland → Gewonnen / Verloren.</div>
-                  <div><strong>▼ Notities</strong> — klik op het pijltje rechts om een notitie toe te voegen aan een lead.</div>
-                  <div><strong>✉ Stuur AI-mail</strong> — AI schrijft een gepersonaliseerde e-mail met de demo-link en jij verstuurt hem met één klik. Alleen beschikbaar als er een e-mailadres bekend is.</div>
-                  <div><strong>✓ Klaar</strong> — markeer een lead als afgehandeld zodat hij uit je actieve lijst verdwijnt. Met <strong>⬇ Exporteer CSV</strong> download je alles.</div>
+                  <div>📌 <strong>Status</strong> — verander de status per lead: <em>Nieuw → Contact → Demo gepland → Gewonnen</em></div>
+                  <div>✉ <strong>Stuur AI-mail</strong> — AI schrijft een persoonlijke e-mail met de demo-link. Jij controleert en verstuurt met één klik. (Alleen als er een e-mail bekend is.)</div>
+                  <div>▼ <strong>Notities</strong> — klik op het pijltje rechts van een lead om een notitie toe te voegen</div>
+                  <div>✓ <strong>Klaar</strong> — lead volledig afgehandeld? Klik Klaar zodat hij uit je lijst verdwijnt</div>
                 </div>
               </div>
             </div>
@@ -1351,7 +1351,7 @@ Agentmakers.io`)
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Demo-aanvragen ({visibleLeads.length})</h2>
+              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Leads ({visibleLeads.length})</h2>
               <div style={{ display: 'flex', gap: 10 }}>
                 {selectedLeads.size > 0 && (
                   <button onClick={deleteSelectedLeads} disabled={deleteLeadsLoading} title={`Verwijder de ${selectedLeads.size} geselecteerde leads permanent`} style={{ background: '#FEF2F2', border: '1.5px solid #EF4444', color: '#DC2626', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: deleteLeadsLoading ? 0.5 : 1 }}>
@@ -1499,7 +1499,7 @@ Agentmakers.io`)
                 </div>
               </div>
             </div>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 20 }}>Analytics</h2>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 20 }}>📊 Resultaten</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
               {[
                 ['Totaal bezoekers', totalVisits, '#0D9488'],
@@ -1515,7 +1515,7 @@ Agentmakers.io`)
 
             <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 24 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem', fontWeight: 600 }}>Aanvragen per taal</h3>
+                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem', fontWeight: 600 }}>Leads per taal</h3>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {(['all', 'nl', 'en', 'es'] as const).map(lang => (
                     <button key={lang} onClick={() => setAnalyticsLang(lang)} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: '.82rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: analyticsLang === lang ? '#0D9488' : '#F1F5F9', color: analyticsLang === lang ? '#fff' : '#64748B' }}>
@@ -1599,11 +1599,11 @@ Agentmakers.io`)
             <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🎙</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#7C3AED', marginBottom: 4 }}>AI-gesprekken beluisteren & lezen</div>
-                <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.6 }}>
-                  Hier staan alle gesprekken die bezoekers hebben gevoerd met de AI-receptionist. Klik op een gesprek om het <strong>transcript te lezen</strong> en (indien beschikbaar) de
-                  <strong> geluidsopname te beluisteren</strong>. Als een gesprek gekoppeld is aan een lead uit de Aanvragen-tab, zie je een groene badge — klik daarop om direct naar die lead te gaan.
-                  Gebruik <strong>↻ Vernieuwen</strong> om nieuwe gesprekken te laden.
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#7C3AED', marginBottom: 4 }}>Wat heeft de AI tegen jouw prospects gezegd?</div>
+                <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.6, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 24px' }}>
+                  <div>👆 <strong>Klik op een gesprek</strong> om het transcript te lezen en de geluidsopname te beluisteren</div>
+                  <div>🟢 <strong>Groene badge</strong> — dit gesprek is gekoppeld aan een lead in je Leads-tab. Klik om direct naar die lead te gaan.</div>
+                  <div>↻ <strong>Vernieuwen</strong> — nieuwe gesprekken verschijnen niet automatisch, klik op Vernieuwen om de lijst bij te werken</div>
                 </div>
               </div>
             </div>
@@ -1990,17 +1990,18 @@ Agentmakers.io`)
       {tab === 'outreach' && (
         <div>
           <div style={{ marginBottom: 28 }}>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 16 }}>🚀 Bulk outreach</h2>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 16 }}>🎯 Nieuwe prospects zoeken</h2>
 
             {/* Uitlegbanner */}
             <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🗺️</span>
+              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>👋</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#C2410C', marginBottom: 8 }}>Zo werkt de outreach — 3 stappen</div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#C2410C', marginBottom: 8 }}>Zo vind en benader je nieuwe klanten — 3 stappen</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px', fontSize: '.82rem', color: '#334155', lineHeight: 1.6 }}>
-                  <div><strong>Stap 1 — Prospects zoeken:</strong> Gebruik de <em>Prospect finder</em> om bedrijven te zoeken via Google Maps. Vink de gewenste prospects aan en klik op <em>Importeer geselecteerd</em>.</div>
-                  <div><strong>Stap 2 — Controleer &amp; genereer:</strong> Controleer de lijst, kies een taal en klik op <em>Genereer demo-links</em>. Wil je handmatig een lijst invoeren? Gebruik het CSV-veld bovenaan.</div>
-                  <div><strong>Stap 3 — Versturen:</strong> Kopieer de links of klik op <em>✉ Verstuur mail</em> om direct een outreach-e-mail te sturen naar prospects met een e-mailadres.</div>
+                  <div>① <strong>Zoek bedrijven</strong> — typ een branche + stad (bijv. "tandartsen amsterdam"). Vink de bedrijven aan die je wilt benaderen.</div>
+                  <div>② <strong>Genereer demo-links</strong> — klik op <em>Genereer demo-links</em>. Voor elk bedrijf wordt een gepersonaliseerde AI-demopagina aangemaakt.</div>
+                  <div>③ <strong>Stuur de mail</strong> — klik op <em>✉ Verstuur mail</em>. AI schrijft een persoonlijke e-mail met de demo-link. Jij verstuurt met één klik.</div>
+                  <div style={{ color: '#64748B', fontStyle: 'italic' }}>💡 Heb je al een lijst? Plak die als CSV in het veld onderaan in plaats van stap ①.</div>
                 </div>
               </div>
             </div>
@@ -2546,8 +2547,8 @@ Agentmakers.io`)
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
             <div>
-              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 4 }}>👥 Accounts</h2>
-              <p style={{ fontSize: '.85rem', color: '#64748B', margin: 0 }}>Performance overzicht van alle partner accounts.</p>
+              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 4 }}>👥 Team</h2>
+              <p style={{ fontSize: '.85rem', color: '#64748B', margin: 0 }}>Overzicht van alle partners — klik op <strong>Bekijk als</strong> om het dashboard door hun ogen te zien.</p>
             </div>
             <button onClick={fetchAccounts} disabled={accountsLoading} style={{ background: '#fff', border: '1.5px solid #7C3AED', color: '#7C3AED', padding: '9px 18px', borderRadius: 10, fontWeight: 700, fontSize: '.85rem', cursor: 'pointer', opacity: accountsLoading ? 0.6 : 1 }}>
               {accountsLoading ? '⏳ Laden…' : '↻ Verversen'}
