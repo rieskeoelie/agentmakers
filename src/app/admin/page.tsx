@@ -790,26 +790,24 @@ Agentmakers.io`)
     return undefined
   }
 
-  // visibleLeads: superadmin kan view-as gebruiken; partners zien altijd alleen eigen leads
+  // visibleLeads: altijd gefilterd op eigen account; view-as toont account van de bekeken partner
   const visibleLeads = useMemo(() => {
-    if (viewAsUser) return leads.filter(l => (l as Lead & { user_id?: string }).user_id === viewAsUser.id)
-    return leads
-  }, [leads, viewAsUser])
+    const uid = viewAsUser?.id ?? currentUser?.userId
+    if (!uid) return leads
+    return leads.filter(l => (l as Lead & { user_id?: string }).user_id === uid)
+  }, [leads, viewAsUser, currentUser])
 
-  // Gesprekken: superadmin ziet alles (of gefilterd via viewAsUser), partners alleen hun eigen
+  // Gesprekken: altijd gefilterd op visibleLeads (eigen account of bekeken partner)
   const visibleConversations = useMemo(() => {
-    if (currentUser?.isSuperAdmin && !viewAsUser) return conversations
-    const srcLeads = viewAsUser ? visibleLeads : leads
-    const myConvIds = new Set(srcLeads.map(l => getMatchedConv(l)).filter(Boolean) as string[])
+    const myConvIds = new Set(visibleLeads.map(l => getMatchedConv(l)).filter(Boolean) as string[])
     return conversations.filter(c => myConvIds.has(c.conversation_id))
-  }, [conversations, currentUser, leads, visibleLeads, viewAsUser, convByKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [conversations, visibleLeads, convByKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Pagina's: superadmin ziet alles (of gefilterd via viewAsUser), partners alleen hun eigen
+  // Pagina's: altijd gefilterd op eigen leads-slugs (of bekeken partner)
   const visiblePages = useMemo(() => {
-    if (!viewAsUser) return pages
     const mySlugs = new Set(visibleLeads.map(l => (l as Lead & { landing_page_slug?: string }).landing_page_slug).filter(Boolean))
     return pages.filter(p => mySlugs.has(p.slug))
-  }, [pages, visibleLeads, viewAsUser])
+  }, [pages, visibleLeads])
 
   // ─── Computed ──────────────────────────────────────────────────
   const totalVisits      = visiblePages.reduce((acc, p) => acc + (p.visits || 0), 0)
