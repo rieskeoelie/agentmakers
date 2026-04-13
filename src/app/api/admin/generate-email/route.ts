@@ -5,7 +5,8 @@ import { getSessionFromRequest } from '@/lib/auth'
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: NextRequest) {
-  if (!getSessionFromRequest(req)) {
+  const session = getSessionFromRequest(req)
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -17,6 +18,8 @@ export async function POST(req: NextRequest) {
 
   const lang = language || 'nl'
   const voornaam = naam ? naam.split(' ')[0] : null
+  // Gebruik de voornaam van de ingelogde gebruiker als afzender
+  const afzenderVoornaam = session.displayName?.split(' ')[0] || session.username
 
   const langInstructions: Record<string, string> = {
     nl: 'Schrijf de e-mail in het Nederlands. Gebruik "u" (formeel).',
@@ -24,7 +27,7 @@ export async function POST(req: NextRequest) {
     es: 'Escribe el correo en español. Usa un tono profesional pero cercano. Usa "usted".',
   }
 
-  const prompt = `Je bent Richard van Agentmakers.io. Schrijf een korte, persoonlijke cold outreach e-mail aan een prospect voor wie je een AI demo hebt gemaakt.
+  const prompt = `Je bent ${afzenderVoornaam} van Agentmakers.io. Schrijf een korte, persoonlijke cold outreach e-mail aan een prospect voor wie je een AI demo hebt gemaakt.
 
 Bedrijfsnaam: ${bedrijfsnaam}
 ${voornaam ? `Contactpersoon voornaam: ${voornaam}` : ''}
@@ -37,7 +40,7 @@ Instructies:
 - Leg kort uit dat je een demo hebt gemaakt die specifiek getraind is op hun website
 - Gebruik de demo URL als centrale call-to-action
 - Houd het kort: max 5 alinea's
-- Eindig met "Richard" en "Agentmakers.io"
+- Eindig met "${afzenderVoornaam}" en "Agentmakers.io"
 - Geen marketingtaal of buzzwords
 - Klink als een echte e-mail van een mens, niet als een template
 - Gebruik zuiver Nederlands: geen anglicismen of code-switching (bijv. schrijf "spreekt voor zich" en NIET "spreekt voor itself")
