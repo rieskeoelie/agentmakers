@@ -93,11 +93,30 @@ export async function GET(req: NextRequest) {
       })
     )
 
+    // Domeinen die geen echte bedrijfswebsite zijn (directories, socials, review-sites)
+    const BLOCKED_DOMAINS = [
+      'holdetails.org', 'yelp.com', 'facebook.com', 'instagram.com', 'linkedin.com',
+      'tripadvisor.com', 'tripadvisor.nl', 'foursquare.com', 'trustpilot.com',
+      'google.com', 'goo.gl', 'maps.google', 'plus.google',
+      'twitter.com', 'x.com', 'youtube.com', 'pinterest.com',
+      'booking.com', 'thuisbezorgd.nl', 'uber.com', 'takeaway.com',
+      'zorgkaart.nl', 'dokteronline.com', 'independer.nl',
+      'kvk.nl', 'bedrijveninfo.nl', 'bedrijvengids.nl', 'detelefoongids.nl',
+      'yellowpages', 'hotfrog', 'cylex', 'n49.', 'opendi.',
+    ]
+
+    function isBlockedWebsite(url: string): boolean {
+      try {
+        const hostname = new URL(url).hostname.replace(/^www\./, '').toLowerCase()
+        return BLOCKED_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d) || hostname.includes(d))
+      } catch { return false }
+    }
+
     const results: ProspectResult[] = detailed
       .filter(r => r.status === 'fulfilled')
       .map(r => (r as PromiseFulfilledResult<ProspectResult>).value)
-      // Only include prospects with a website (needed for demo generation)
-      .filter(r => r.website)
+      // Only include prospects with a real website (needed for demo generation)
+      .filter(r => r.website && !isBlockedWebsite(r.website))
 
     return NextResponse.json({ results, total: results.length })
   } catch (err) {
