@@ -454,13 +454,18 @@ Agentmakers.io`)
       })
       if (res.ok) {
         setSentIdx(prev => new Set(prev).add(emailModal.idx))
-        // Persist to localStorage so status survives page reload
+        // Persist: localStorage (instant) + DB (duurzaam, cross-browser)
         const sentAt = new Date().toISOString()
         setOutreachSent(prev => {
           const updated = { ...prev, [emailModal.demo_token]: sentAt }
           localStorage.setItem(outreachStorageKey(viewAsUser?.id ?? currentUser?.userId), JSON.stringify(updated))
           return updated
         })
+        fetch('/api/admin/outreach-history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ demo_token: emailModal.demo_token }),
+        }).catch(() => {})
         setEmailModal(null)
       } else {
         const d = await res.json()
@@ -586,13 +591,18 @@ Agentmakers.io`)
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ naam: r.naam, email: r.email, bedrijfsnaam: r.bedrijfsnaam, demo_url: r.demo_url, subject, body }),
         })
-        // Mark sent
+        // Mark sent: localStorage (instant) + DB (duurzaam, cross-browser)
         const sentAt = new Date().toISOString()
         setOutreachSent(prev => {
           const updated = { ...prev, [r.demo_token]: sentAt }
           localStorage.setItem(outreachStorageKey(viewAsUser?.id ?? currentUser?.userId), JSON.stringify(updated))
           return updated
         })
+        fetch('/api/admin/outreach-history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ demo_token: r.demo_token }),
+        }).catch(() => {})
         const origIdx = bulkResults.indexOf(r)
         if (origIdx >= 0) setSentIdx(prev => new Set(prev).add(origIdx))
       } catch { /* continue on error */ }
@@ -703,8 +713,17 @@ Agentmakers.io`)
         if (st) setLeadStatus(JSON.parse(st))
         const sn = localStorage.getItem(LEAD_NOTES_STORAGE)
         if (sn) setLeadNotes(JSON.parse(sn))
-        const os = localStorage.getItem(outreachStorageKey(user.userId))
-        if (os) setOutreachSent(JSON.parse(os))
+        // Laad outreach-history: DB is leading, localStorage als fallback
+        fetch(`/api/admin/outreach-history?user_id=${user.userId}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(dbMap => {
+            const localRaw = localStorage.getItem(outreachStorageKey(user.userId))
+            const localMap = localRaw ? JSON.parse(localRaw) : {}
+            setOutreachSent({ ...localMap, ...(dbMap ?? {}) })
+          }).catch(() => {
+            const os = localStorage.getItem(outreachStorageKey(user.userId))
+            if (os) setOutreachSent(JSON.parse(os))
+          })
       }
     }).catch(() => {})
   }, [fetchData])
@@ -823,8 +842,17 @@ Agentmakers.io`)
       if (st) setLeadStatus(JSON.parse(st))
       const sn = localStorage.getItem(LEAD_NOTES_STORAGE)
       if (sn) setLeadNotes(JSON.parse(sn))
-      const os = localStorage.getItem(outreachStorageKey(data.user.userId))
-      if (os) setOutreachSent(JSON.parse(os))
+      // Laad outreach-history: DB is leading, localStorage als fallback
+      fetch(`/api/admin/outreach-history?user_id=${data.user.userId}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(dbMap => {
+          const localRaw = localStorage.getItem(outreachStorageKey(data.user.userId))
+          const localMap = localRaw ? JSON.parse(localRaw) : {}
+          setOutreachSent({ ...localMap, ...(dbMap ?? {}) })
+        }).catch(() => {
+          const os = localStorage.getItem(outreachStorageKey(data.user.userId))
+          if (os) setOutreachSent(JSON.parse(os))
+        })
     } catch { setLoginError('Netwerkfout. Probeer opnieuw.') }
   }
 
@@ -1166,6 +1194,7 @@ Agentmakers.io`)
           </span>
           <button onClick={() => {
             setViewAsUser(null)
+            setBulkParsed([]); setBulkResults([]); setProspectResults([]); setSelectedProspects(new Set()); setBulkError('')
             const os = localStorage.getItem(outreachStorageKey(currentUser?.userId))
             setOutreachSent(os ? JSON.parse(os) : {})
           }} style={{ background: '#fff', color: '#B45309', border: 'none', borderRadius: 6, padding: '5px 14px', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer' }}>
@@ -2628,6 +2657,12 @@ Agentmakers.io`)
                             {isViewing
                               ? <button onClick={() => {
                                   setViewAsUser(null)
+                                  // Reset outreach workflow state
+                                  setBulkParsed([])
+                                  setBulkResults([])
+                                  setProspectResults([])
+                                  setSelectedProspects(new Set())
+                                  setBulkError('')
                                   // Herstel superadmin's eigen outreach-history
                                   const os = localStorage.getItem(outreachStorageKey(currentUser?.userId))
                                   setOutreachSent(os ? JSON.parse(os) : {})
@@ -2637,9 +2672,23 @@ Agentmakers.io`)
                               : <button onClick={() => {
                                   setViewAsUser({ id: acc.id, name: acc.displayName })
                                   setTab('leads')
-                                  // Laad outreach-history van deze partner
-                                  const os = localStorage.getItem(outreachStorageKey(acc.id))
-                                  setOutreachSent(os ? JSON.parse(os) : {})
+                                  // Reset outreach workflow state zodat superadmin niet zijn eigen sessie ziet
+                                  setBulkParsed([])
+                                  setBulkResults([])
+                                  setProspectResults([])
+                                  setSelectedProspects(new Set())
+                                  setBulkError('')
+                                  // Laad outreach-history van deze partner (DB + localStorage)
+                                  fetch(`/api/admin/outreach-history?user_id=${acc.id}`)
+                                    .then(r => r.ok ? r.json() : null)
+                                    .then(dbMap => {
+                                      const localRaw = localStorage.getItem(outreachStorageKey(acc.id))
+                                      const localMap = localRaw ? JSON.parse(localRaw) : {}
+                                      setOutreachSent({ ...localMap, ...(dbMap ?? {}) })
+                                    }).catch(() => {
+                                      const os = localStorage.getItem(outreachStorageKey(acc.id))
+                                      setOutreachSent(os ? JSON.parse(os) : {})
+                                    })
                                 }} style={{ background: '#F5F3FF', color: '#7C3AED', border: '1px solid #DDD6FE', borderRadius: 8, padding: '6px 12px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
                                   👁 Bekijk als
                                 </button>
