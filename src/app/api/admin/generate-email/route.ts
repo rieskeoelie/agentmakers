@@ -40,6 +40,7 @@ Instructies:
 - Eindig met "Richard" en "Agentmakers.io"
 - Geen marketingtaal of buzzwords
 - Klink als een echte e-mail van een mens, niet als een template
+- Gebruik zuiver Nederlands: geen anglicismen of code-switching (bijv. schrijf "spreekt voor zich" en NIET "spreekt voor itself")
 
 Geef alleen de e-mail terug in dit JSON-formaat (geen markdown, alleen JSON):
 {"subject": "...", "body": "..."}
