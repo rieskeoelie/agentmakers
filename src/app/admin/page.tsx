@@ -2222,7 +2222,7 @@ Agentmakers.io`)
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                           <span style={{ fontSize: '.7rem', fontWeight: 700, color: bulkLanguage ? '#64748B' : '#DC2626', letterSpacing: '.04em', textTransform: 'uppercase' }}>
-                            {bulkLanguage ? 'Taal demo' : '⚠ Kies een taal'}
+                            {bulkLanguage ? 'Taal demo' : '⚠ Kies eerst een taal'}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#F8FAFC', border: `1px solid ${bulkLanguage ? '#E2E8F0' : '#FCA5A5'}`, borderRadius: 9, padding: '4px 6px' }}>
                             {(['nl', 'en', 'es'] as const).map(lang => (
