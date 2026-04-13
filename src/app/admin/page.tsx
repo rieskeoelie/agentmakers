@@ -204,6 +204,7 @@ export default function AdminDashboard() {
   const [prospectError, setProspectError]       = useState('')
   const [selectedProspects, setSelectedProspects] = useState<Set<number>>(new Set())
   const [hunterLookingUp, setHunterLookingUp] = useState<Set<number>>(new Set())
+  const [showIncomplete, setShowIncomplete]   = useState(false)
   const [prospectNoApiKey, setProspectNoApiKey] = useState(false)
   const [sendingIdx, setSendingIdx]     = useState<Set<number>>(new Set())
   const [sentIdx, setSentIdx]           = useState<Set<number>>(new Set())
@@ -266,7 +267,7 @@ export default function AdminDashboard() {
       const res = await fetch('/api/bulk-demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leads: bulkParsed.map(r => ({ ...r, language: bulkLanguage ?? 'nl' })), view_as_user_id: viewAsUser?.id ?? null }),
+        body: JSON.stringify({ leads: bulkParsed.filter(r => !!r.email).map(r => ({ ...r, language: bulkLanguage ?? 'nl' })), view_as_user_id: viewAsUser?.id ?? null }),
       })
       const data = await res.json()
       if (!res.ok) { setBulkError(data.error || 'Fout bij aanmaken'); return }
@@ -2171,87 +2172,117 @@ Agentmakers.io`)
           {/* Step 2: Preview */}
           {bulkParsed.length > 0 && bulkResults.length === 0 && (
             <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0', marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ background: '#7C3AED', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>2</span>
-                  <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>Controleer de lijst ({bulkParsed.length} prospects)</h3>
-                  <button onClick={() => { setBulkParsed([]); setBulkCsv('') }} style={{ fontSize: '.75rem', color: '#64748B', background: 'none', border: '1px solid #CBD5E1', borderRadius: 6, padding: '3px 10px', cursor: 'pointer' }}>← Terug</button>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {/* Language selector — mandatory */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                    <span style={{ fontSize: '.7rem', fontWeight: 700, color: bulkLanguage ? '#64748B' : '#DC2626', letterSpacing: '.04em', textTransform: 'uppercase' }}>
-                      {bulkLanguage ? 'Taal demo' : '⚠ Kies een taal'}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#F8FAFC', border: `1px solid ${bulkLanguage ? '#E2E8F0' : '#FCA5A5'}`, borderRadius: 9, padding: '4px 6px' }}
-                      title="Verplicht — kies de taal van de demo-pagina die de prospect te zien krijgt">
-                      {(['nl', 'en', 'es'] as const).map(lang => (
-                        <button key={lang} onClick={() => setBulkLanguage(lang)}
-                          style={{ padding: '5px 10px', borderRadius: 6, border: 'none', fontWeight: 700, fontSize: '.78rem', cursor: 'pointer', transition: 'all .15s',
-                            background: bulkLanguage === lang ? '#7C3AED' : 'transparent',
-                            color: bulkLanguage === lang ? '#fff' : '#64748B' }}>
-                          {lang === 'nl' ? '🇳🇱 NL' : lang === 'en' ? '🇬🇧 EN' : '🇪🇸 ES'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <button onClick={handleBulkGenerate} disabled={bulkLoading || !bulkLanguage}
-                    title={!bulkLanguage ? 'Kies eerst een taal voor de demo-pagina' : 'Genereer voor elke prospect een gepersonaliseerde demo-pagina en unieke link'}
-                    style={{ background: bulkLoading || !bulkLanguage ? '#94A3B8' : '#7C3AED', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: bulkLoading || !bulkLanguage ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", opacity: !bulkLanguage ? 0.6 : 1 }}>
-                    {bulkLoading ? '⏳ Aanmaken…' : `✨ Genereer ${bulkParsed.length} demo-links`}
-                  </button>
-                </div>
-              </div>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.83rem' }}>
+              {(() => {
+                const complete   = bulkParsed.map((r, i) => ({ r, i })).filter(({ r }) => !!r.email)
+                const incomplete = bulkParsed.map((r, i) => ({ r, i })).filter(({ r }) => !r.email)
+                const stillLooking = hunterLookingUp.size > 0
+
+                const renderRow = ({ r, i }: { r: typeof bulkParsed[0]; i: number }) => {
+                  const looking = hunterLookingUp.has(i)
+                  return (
+                    <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}>
+                      <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1E293B' }}>{r.bedrijfsnaam}</td>
+                      <td style={{ padding: '10px 14px', color: '#94A3B8', fontSize: '.78rem' }}>{r.website}</td>
+                      <td style={{ padding: '6px 10px' }}>
+                        <input value={r.naam} onChange={e => updateBulkRow(i, 'naam', e.target.value)}
+                          placeholder={looking ? '🔍 zoeken…' : 'Voornaam'} disabled={looking}
+                          style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${r.naam ? '#0D9488' : '#E2E8F0'}`, fontSize: '.82rem', color: '#334155', outline: 'none', fontFamily: "'Nunito',sans-serif", background: looking ? '#F8FAFC' : 'white' }} />
+                        {r.position && <div style={{ fontSize: '.7rem', color: '#7C3AED', marginTop: 3, paddingLeft: 2, fontStyle: 'italic' }}>{r.position}</div>}
+                      </td>
+                      <td style={{ padding: '6px 10px' }}>
+                        <input value={r.email} onChange={e => updateBulkRow(i, 'email', e.target.value)}
+                          placeholder={looking ? '🔍 zoeken…' : 'info@bedrijf.nl'} type="email" disabled={looking}
+                          style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${r.email ? '#0D9488' : '#E2E8F0'}`, fontSize: '.82rem', color: '#334155', outline: 'none', fontFamily: "'Nunito',sans-serif", background: looking ? '#F8FAFC' : 'white' }} />
+                      </td>
+                    </tr>
+                  )
+                }
+
+                const tableHeader = (
                   <thead>
                     <tr style={{ background: '#F8FAFC' }}>
-                      {['Bedrijf', 'Website', 'Naam (optioneel)', 'E-mailadres ✏️'].map(h => (
+                      {['Bedrijf', 'Website', 'Naam (optioneel)', 'E-mailadres'].map(h => (
                         <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #F1F5F9' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody>
-                    {bulkParsed.map((r, i) => {
-                      const looking = hunterLookingUp.has(i)
-                      return (
-                      <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}>
-                        <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1E293B' }}>{r.bedrijfsnaam}</td>
-                        <td style={{ padding: '10px 14px', color: '#64748B', fontSize: '.78rem' }}>{r.website}</td>
-                        <td style={{ padding: '6px 10px', position: 'relative' }}>
-                          <input
-                            value={r.naam}
-                            onChange={e => updateBulkRow(i, 'naam', e.target.value)}
-                            placeholder={looking ? '🔍 zoeken…' : 'Voornaam'}
-                            disabled={looking}
-                            style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${r.naam ? '#0D9488' : '#E2E8F0'}`, fontSize: '.82rem', color: '#334155', outline: 'none', fontFamily: "'Nunito',sans-serif", background: looking ? '#F8FAFC' : 'white' }}
-                          />
-                          {r.position && <div style={{ fontSize: '.7rem', color: '#7C3AED', marginTop: 3, paddingLeft: 2, fontStyle: 'italic' }}>{r.position}</div>}
-                        </td>
-                        <td style={{ padding: '6px 10px' }}>
-                          <input
-                            value={r.email}
-                            onChange={e => updateBulkRow(i, 'email', e.target.value)}
-                            placeholder={looking ? '🔍 zoeken…' : 'info@bedrijf.nl'}
-                            type="email"
-                            disabled={looking}
-                            style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${r.email ? '#0D9488' : '#E2E8F0'}`, fontSize: '.82rem', color: '#334155', outline: 'none', fontFamily: "'Nunito',sans-serif", background: looking ? '#F8FAFC' : 'white' }}
-                          />
-                        </td>
-                      </tr>
-                    )})}
-                  </tbody>
-                </table>
-              </div>
-              <div style={{ marginTop: 12, padding: '10px 14px', background: '#F0FDFA', borderRadius: 8, fontSize: '.8rem', color: '#0F766E', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>💡</span>
-                <span>
-                  {hunterLookingUp.size > 0
-                    ? <>🔍 Hunter.io zoekt contact­gegevens voor <strong>{hunterLookingUp.size}</strong> bedrijf{hunterLookingUp.size !== 1 ? 'en' : ''}… Niet gevonden? Vul handmatig in.</>
-                    : <>Naam en e-mail zijn automatisch opgezocht via Hunter.io. Niet gevonden of onjuist? Pas ze handmatig aan.</>
-                  }
-                </span>
-              </div>
+                )
+
+                return (
+                  <>
+                    {/* Header + knoppen */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ background: '#7C3AED', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>2</span>
+                        <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>
+                          Controleer de lijst — {stillLooking ? `${bulkParsed.length} prospects` : `${complete.length} compleet${incomplete.length > 0 ? `, ${incomplete.length} incompleet` : ''}`}
+                        </h3>
+                        <button onClick={() => { setBulkParsed([]); setBulkCsv(''); setShowIncomplete(false) }} style={{ fontSize: '.75rem', color: '#64748B', background: 'none', border: '1px solid #CBD5E1', borderRadius: 6, padding: '3px 10px', cursor: 'pointer' }}>← Terug</button>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                          <span style={{ fontSize: '.7rem', fontWeight: 700, color: bulkLanguage ? '#64748B' : '#DC2626', letterSpacing: '.04em', textTransform: 'uppercase' }}>
+                            {bulkLanguage ? 'Taal demo' : '⚠ Kies een taal'}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#F8FAFC', border: `1px solid ${bulkLanguage ? '#E2E8F0' : '#FCA5A5'}`, borderRadius: 9, padding: '4px 6px' }}>
+                            {(['nl', 'en', 'es'] as const).map(lang => (
+                              <button key={lang} onClick={() => setBulkLanguage(lang)}
+                                style={{ padding: '5px 10px', borderRadius: 6, border: 'none', fontWeight: 700, fontSize: '.78rem', cursor: 'pointer', transition: 'all .15s', background: bulkLanguage === lang ? '#7C3AED' : 'transparent', color: bulkLanguage === lang ? '#fff' : '#64748B' }}>
+                                {lang === 'nl' ? '🇳🇱 NL' : lang === 'en' ? '🇬🇧 EN' : '🇪🇸 ES'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <button onClick={handleBulkGenerate} disabled={bulkLoading || !bulkLanguage || complete.length === 0}
+                          title={!bulkLanguage ? 'Kies eerst een taal' : complete.length === 0 ? 'Geen complete prospects' : `Genereer demo-links voor ${complete.length} prospects met e-mailadres`}
+                          style={{ background: bulkLoading || !bulkLanguage || complete.length === 0 ? '#94A3B8' : '#7C3AED', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: bulkLoading || !bulkLanguage || complete.length === 0 ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                          {bulkLoading ? '⏳ Aanmaken…' : `✨ Genereer ${complete.length} demo-links`}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Hint */}
+                    <div style={{ marginBottom: 14, padding: '10px 14px', background: '#F0FDFA', borderRadius: 8, fontSize: '.8rem', color: '#0F766E', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>💡</span>
+                      <span>
+                        {stillLooking
+                          ? <>🔍 Hunter.io zoekt contactgegevens voor <strong>{hunterLookingUp.size}</strong> bedrijf{hunterLookingUp.size !== 1 ? 'en' : ''}…</>
+                          : <>Naam en e-mail zijn automatisch opgezocht. Alleen prospects <strong>met e-mailadres</strong> worden meegenomen.</>
+                        }
+                      </span>
+                    </div>
+
+                    {/* Complete rijen */}
+                    {complete.length > 0 && (
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.83rem' }}>
+                          {tableHeader}
+                          <tbody>{complete.map(renderRow)}</tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {/* Incomplete rijen — inklapbaar */}
+                    {incomplete.length > 0 && (
+                      <div style={{ marginTop: 12 }}>
+                        <button onClick={() => setShowIncomplete(v => !v)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.78rem', color: '#94A3B8', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: '.7rem' }}>{showIncomplete ? '▲' : '▼'}</span>
+                          {showIncomplete ? 'Verberg' : 'Toon'} {incomplete.length} incomplete resultaten (geen e-mail gevonden — zelf invullen)
+                        </button>
+                        {showIncomplete && (
+                          <div style={{ overflowX: 'auto', marginTop: 8, opacity: 0.85 }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.83rem' }}>
+                              {tableHeader}
+                              <tbody>{incomplete.map(renderRow)}</tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           )}
 
