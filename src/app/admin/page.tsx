@@ -180,8 +180,8 @@ export default function AdminDashboard() {
   }
 
   // Bulk outreach
-  interface BulkRow { bedrijfsnaam: string; website: string; naam: string; email: string; telefoon: string }
-  interface BulkResult { bedrijfsnaam: string; website: string; naam: string; email: string; demo_token: string; demo_url: string; status: 'ok' | 'error'; error?: string }
+  interface BulkRow { bedrijfsnaam: string; website: string; naam: string; email: string; telefoon: string; position?: string }
+  interface BulkResult { bedrijfsnaam: string; website: string; naam: string; email: string; demo_token: string; demo_url: string; status: 'ok' | 'error'; error?: string; position?: string }
   const [bulkCsv, setBulkCsv]           = useState('')
   const [bulkParsed, setBulkParsed]     = useState<BulkRow[]>([])
   const [bulkResults, setBulkResults]   = useState<BulkResult[]>([])
@@ -270,7 +270,11 @@ export default function AdminDashboard() {
       })
       const data = await res.json()
       if (!res.ok) { setBulkError(data.error || 'Fout bij aanmaken'); return }
-      const results: BulkResult[] = data.results
+      // Merge position from bulkParsed (Hunter data) into results (not returned by API)
+      const results: BulkResult[] = (data.results as BulkResult[]).map(r => {
+        const parsed = bulkParsed.find(p => p.website === r.website || p.bedrijfsnaam === r.bedrijfsnaam)
+        return parsed?.position ? { ...r, position: parsed.position } : r
+      })
       setBulkResults(results)
 
       const tokens = results.filter(r => r.status === 'ok').map(r => r.demo_token)
@@ -547,7 +551,7 @@ Agentmakers.io`)
           if (data.contact) {
             setBulkParsed(prev => prev.map((r, idx) =>
               idx === i
-                ? { ...r, naam: data.contact.naam || r.naam, email: data.contact.email || r.email }
+                ? { ...r, naam: data.contact.naam || r.naam, email: data.contact.email || r.email, position: data.contact.position || r.position }
                 : r
             ))
           }
@@ -2224,6 +2228,7 @@ Agentmakers.io`)
                             disabled={looking}
                             style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${r.naam ? '#0D9488' : '#E2E8F0'}`, fontSize: '.82rem', color: '#334155', outline: 'none', fontFamily: "'Nunito',sans-serif", background: looking ? '#F8FAFC' : 'white' }}
                           />
+                          {r.position && <div style={{ fontSize: '.7rem', color: '#7C3AED', marginTop: 3, paddingLeft: 2, fontStyle: 'italic' }}>{r.position}</div>}
                         </td>
                         <td style={{ padding: '6px 10px' }}>
                           <input
@@ -2320,6 +2325,7 @@ Agentmakers.io`)
                         <td style={{ padding: '10px 14px' }}>
                           <div style={{ fontWeight: 600, color: '#1E293B' }}>{r.bedrijfsnaam}</div>
                           {r.naam && <div style={{ fontSize: '.75rem', color: '#94A3B8' }}>{r.naam}</div>}
+                          {r.position && <div style={{ fontSize: '.7rem', color: '#7C3AED', fontStyle: 'italic' }}>{r.position}</div>}
                         </td>
                         <td style={{ padding: '10px 14px' }}>
                           {r.status === 'ok' ? (
