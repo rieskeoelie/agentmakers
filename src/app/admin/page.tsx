@@ -4,7 +4,10 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 const SEEN_LEADS_STORAGE   = 'agentmakers_seen_leads'
 const LEAD_STATUS_STORAGE  = 'agentmakers_lead_status'
 const LEAD_NOTES_STORAGE   = 'agentmakers_lead_notes'
-const OUTREACH_SENT_STORAGE = 'agentmakers_outreach_sent' // { [demo_token]: ISO date string }
+// Outreach history is namespaced per userId so each partner has their own sent history.
+// When superadmin views-as a partner, they read/write that partner's namespace.
+const outreachStorageKey = (userId?: string) =>
+  userId ? `agentmakers_outreach_sent_${userId}` : 'agentmakers_outreach_sent'
 
 const PIPELINE_STAGES = [
   { value: 'nieuw',    label: 'Nieuw',        color: '#64748B', bg: '#F1F5F9' },
@@ -91,7 +94,7 @@ export default function AdminDashboard() {
   const [setPwLoading, setSetPwLoading] = useState(false)
   const [setPwError, setSetPwError]   = useState('')
   const [setPwDone, setSetPwDone]     = useState(false)
-  interface CurrentUser { displayName: string; isAdmin: boolean; isSuperAdmin: boolean }
+  interface CurrentUser { userId: string; displayName: string; isAdmin: boolean; isSuperAdmin: boolean }
   interface AccountStat {
     id: string; username: string; displayName: string
     isAdmin: boolean; isSuperAdmin: boolean; createdAt: string
@@ -455,7 +458,7 @@ Agentmakers.io`)
         const sentAt = new Date().toISOString()
         setOutreachSent(prev => {
           const updated = { ...prev, [emailModal.demo_token]: sentAt }
-          localStorage.setItem(OUTREACH_SENT_STORAGE, JSON.stringify(updated))
+          localStorage.setItem(outreachStorageKey(viewAsUser?.id ?? currentUser?.userId), JSON.stringify(updated))
           return updated
         })
         setEmailModal(null)
@@ -587,7 +590,7 @@ Agentmakers.io`)
         const sentAt = new Date().toISOString()
         setOutreachSent(prev => {
           const updated = { ...prev, [r.demo_token]: sentAt }
-          localStorage.setItem(OUTREACH_SENT_STORAGE, JSON.stringify(updated))
+          localStorage.setItem(outreachStorageKey(viewAsUser?.id ?? currentUser?.userId), JSON.stringify(updated))
           return updated
         })
         const origIdx = bulkResults.indexOf(r)
@@ -693,14 +696,14 @@ Agentmakers.io`)
     fetch('/api/auth/me').then(async res => {
       if (res.ok) {
         const user = await res.json()
-        setCurrentUser({ displayName: user.displayName, isAdmin: user.isAdmin, isSuperAdmin: user.isSuperAdmin ?? false })
+        setCurrentUser({ userId: user.userId, displayName: user.displayName, isAdmin: user.isAdmin, isSuperAdmin: user.isSuperAdmin ?? false })
         setAuthed(true)
         fetchData()
         const st = localStorage.getItem(LEAD_STATUS_STORAGE)
         if (st) setLeadStatus(JSON.parse(st))
         const sn = localStorage.getItem(LEAD_NOTES_STORAGE)
         if (sn) setLeadNotes(JSON.parse(sn))
-        const os = localStorage.getItem(OUTREACH_SENT_STORAGE)
+        const os = localStorage.getItem(outreachStorageKey(user.userId))
         if (os) setOutreachSent(JSON.parse(os))
       }
     }).catch(() => {})
@@ -728,39 +731,7 @@ Agentmakers.io`)
     return () => timers.forEach(clearTimeout)
   }, [creating])
 
-  // ─── Computed ──────────────────────────────────────────────────
-  const totalVisits      = pages.reduce((acc, p) => acc + (p.visits || 0), 0)
-  const totalConversions = pages.reduce((acc, p) => acc + (p.conversions || 0), 0)
-  const newLeadsCount    = leads.filter(l => !seenLeadIds.has(l.id)).length
-
-  const startOfWeek = new Date()
-  startOfWeek.setHours(0, 0, 0, 0)
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
-  const leadsThisWeek = leads.filter(l => new Date(l.created_at) >= startOfWeek).length
-
-  const avgDuration = conversations.length > 0
-    ? conversations.reduce((sum, c) => sum + c.call_duration_secs, 0) / conversations.length : 0
-
-  const bestPage = [...pages].filter(p => p.visits > 0)
-    .sort((a, b) => (b.conversions / b.visits) - (a.conversions / a.visits))[0]
-
-  const sortedByRatio = [...pages].filter(p => p.visits > 0)
-    .sort((a, b) => (b.conversions / b.visits) - (a.conversions / a.visits))
-
-  const leadsByLang = {
-    nl: leads.filter(l => l.language === 'nl').length,
-    en: leads.filter(l => l.language === 'en').length,
-    es: leads.filter(l => l.language === 'es').length,
-  }
-  const filteredLeads = analyticsLang === 'all' ? leads : leads.filter(l => l.language === analyticsLang)
-
-  const pipelineCounts = useMemo(() => ({
-    nieuw:    leads.filter(l => !leadStatus[l.id] || leadStatus[l.id] === 'nieuw').length,
-    contact:  leads.filter(l => leadStatus[l.id] === 'contact').length,
-    demo:     leads.filter(l => leadStatus[l.id] === 'demo').length,
-    gewonnen: leads.filter(l => leadStatus[l.id] === 'gewonnen').length,
-    verloren: leads.filter(l => leadStatus[l.id] === 'verloren').length,
-  }), [leads, leadStatus])
+  // ─── Zichtbaarheid (view-as isolatie) ─────────────────────────
 
   // Map conversations to leads by company/website name
   const convByKey = useMemo(() => {
@@ -780,7 +751,6 @@ Agentmakers.io`)
   }
 
   // visibleLeads: superadmin kan view-as gebruiken; partners zien altijd alleen eigen leads
-  // (de API filtert al op user_id voor niet-superadmins, maar viewAsUser kan superadmin verder filteren)
   const visibleLeads = useMemo(() => {
     if (viewAsUser) return leads.filter(l => (l as Lead & { user_id?: string }).user_id === viewAsUser.id)
     return leads
@@ -794,6 +764,47 @@ Agentmakers.io`)
     return conversations.filter(c => myConvIds.has(c.conversation_id))
   }, [conversations, currentUser, leads, visibleLeads, viewAsUser, convByKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Pagina's: superadmin ziet alles (of gefilterd via viewAsUser), partners alleen hun eigen
+  const visiblePages = useMemo(() => {
+    if (!viewAsUser) return pages
+    const mySlugs = new Set(visibleLeads.map(l => (l as Lead & { landing_page_slug?: string }).landing_page_slug).filter(Boolean))
+    return pages.filter(p => mySlugs.has(p.slug))
+  }, [pages, visibleLeads, viewAsUser])
+
+  // ─── Computed ──────────────────────────────────────────────────
+  const totalVisits      = visiblePages.reduce((acc, p) => acc + (p.visits || 0), 0)
+  const totalConversions = visiblePages.reduce((acc, p) => acc + (p.conversions || 0), 0)
+  const newLeadsCount    = visibleLeads.filter(l => !seenLeadIds.has(l.id)).length
+
+  const startOfWeek = new Date()
+  startOfWeek.setHours(0, 0, 0, 0)
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
+  const leadsThisWeek = visibleLeads.filter(l => new Date(l.created_at) >= startOfWeek).length
+
+  const avgDuration = visibleConversations.length > 0
+    ? visibleConversations.reduce((sum, c) => sum + c.call_duration_secs, 0) / visibleConversations.length : 0
+
+  const bestPage = [...visiblePages].filter(p => p.visits > 0)
+    .sort((a, b) => (b.conversions / b.visits) - (a.conversions / a.visits))[0]
+
+  const sortedByRatio = [...visiblePages].filter(p => p.visits > 0)
+    .sort((a, b) => (b.conversions / b.visits) - (a.conversions / a.visits))
+
+  const leadsByLang = {
+    nl: visibleLeads.filter(l => l.language === 'nl').length,
+    en: visibleLeads.filter(l => l.language === 'en').length,
+    es: visibleLeads.filter(l => l.language === 'es').length,
+  }
+  const filteredLeads = analyticsLang === 'all' ? visibleLeads : visibleLeads.filter(l => l.language === analyticsLang)
+
+  const pipelineCounts = useMemo(() => ({
+    nieuw:    visibleLeads.filter(l => !leadStatus[l.id] || leadStatus[l.id] === 'nieuw').length,
+    contact:  visibleLeads.filter(l => leadStatus[l.id] === 'contact').length,
+    demo:     visibleLeads.filter(l => leadStatus[l.id] === 'demo').length,
+    gewonnen: visibleLeads.filter(l => leadStatus[l.id] === 'gewonnen').length,
+    verloren: visibleLeads.filter(l => leadStatus[l.id] === 'verloren').length,
+  }), [visibleLeads, leadStatus])
+
   // ─── Handlers ──────────────────────────────────────────────────
   const login = async () => {
     setLoginError('')
@@ -805,14 +816,14 @@ Agentmakers.io`)
       })
       const data = await res.json()
       if (!res.ok) { setLoginError(data.error || 'Inloggen mislukt'); return }
-      setCurrentUser({ displayName: data.user.displayName, isAdmin: data.user.isAdmin, isSuperAdmin: data.user.isSuperAdmin ?? false })
+      setCurrentUser({ userId: data.user.userId, displayName: data.user.displayName, isAdmin: data.user.isAdmin, isSuperAdmin: data.user.isSuperAdmin ?? false })
       setAuthed(true)
       fetchData()
       const st = localStorage.getItem(LEAD_STATUS_STORAGE)
       if (st) setLeadStatus(JSON.parse(st))
       const sn = localStorage.getItem(LEAD_NOTES_STORAGE)
       if (sn) setLeadNotes(JSON.parse(sn))
-      const os = localStorage.getItem(OUTREACH_SENT_STORAGE)
+      const os = localStorage.getItem(outreachStorageKey(data.user.userId))
       if (os) setOutreachSent(JSON.parse(os))
     } catch { setLoginError('Netwerkfout. Probeer opnieuw.') }
   }
@@ -1151,9 +1162,13 @@ Agentmakers.io`)
       {viewAsUser && (
         <div style={{ background: '#F59E0B', padding: '10px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontWeight: 700, fontSize: '.9rem', color: '#fff' }}>
-            👁 Je bekijkt als: <strong>{viewAsUser.name}</strong> — leads en gesprekken zijn gefilterd op dit account
+            👁 Je bekijkt als: <strong>{viewAsUser.name}</strong> — leads, pagina&apos;s, analytics, gesprekken en outreach zijn gefilterd op dit account
           </span>
-          <button onClick={() => setViewAsUser(null)} style={{ background: '#fff', color: '#B45309', border: 'none', borderRadius: 6, padding: '5px 14px', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer' }}>
+          <button onClick={() => {
+            setViewAsUser(null)
+            const os = localStorage.getItem(outreachStorageKey(currentUser?.userId))
+            setOutreachSent(os ? JSON.parse(os) : {})
+          }} style={{ background: '#fff', color: '#B45309', border: 'none', borderRadius: 6, padding: '5px 14px', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer' }}>
             ✕ Stop met bekijken
           </button>
         </div>
@@ -2611,10 +2626,21 @@ Agentmakers.io`)
                               🔑
                             </button>
                             {isViewing
-                              ? <button onClick={() => setViewAsUser(null)} style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: 8, padding: '6px 12px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                              ? <button onClick={() => {
+                                  setViewAsUser(null)
+                                  // Herstel superadmin's eigen outreach-history
+                                  const os = localStorage.getItem(outreachStorageKey(currentUser?.userId))
+                                  setOutreachSent(os ? JSON.parse(os) : {})
+                                }} style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: 8, padding: '6px 12px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
                                   ✕ Stop
                                 </button>
-                              : <button onClick={() => { setViewAsUser({ id: acc.id, name: acc.displayName }); setTab('leads') }} style={{ background: '#F5F3FF', color: '#7C3AED', border: '1px solid #DDD6FE', borderRadius: 8, padding: '6px 12px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                              : <button onClick={() => {
+                                  setViewAsUser({ id: acc.id, name: acc.displayName })
+                                  setTab('leads')
+                                  // Laad outreach-history van deze partner
+                                  const os = localStorage.getItem(outreachStorageKey(acc.id))
+                                  setOutreachSent(os ? JSON.parse(os) : {})
+                                }} style={{ background: '#F5F3FF', color: '#7C3AED', border: '1px solid #DDD6FE', borderRadius: 8, padding: '6px 12px', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}>
                                   👁 Bekijk als
                                 </button>
                             }

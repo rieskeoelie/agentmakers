@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const res = NextResponse.json({
       ok: true,
-      user: { username: user.username, displayName: user.display_name, isAdmin: user.is_admin, isSuperAdmin },
+      user: { userId: user.id, username: user.username, displayName: user.display_name, isAdmin: user.is_admin, isSuperAdmin },
     })
     res.cookies.set(sessionCookieOptions(token))
     return res
