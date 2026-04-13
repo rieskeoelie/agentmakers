@@ -1236,7 +1236,8 @@ Agentmakers.io`)
           {([
             'leads', 'outreach', 'conversations', 'analytics',
             ...(currentUser?.isAdmin ? ['pages'] : []),
-            ...(currentUser?.isSuperAdmin ? ['accounts'] : []),
+            // Team-tab alleen zichtbaar als superadmin én niet in view-as modus
+            ...(currentUser?.isSuperAdmin && !viewAsUser ? ['accounts'] : []),
           ] as ('leads'|'analytics'|'conversations'|'outreach'|'pages'|'accounts')[]).map(t2 => (
             <button key={t2} onClick={() => {
               setTab(t2 as typeof tab)
