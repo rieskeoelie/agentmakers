@@ -1329,11 +1329,12 @@ Agentmakers.io`)
             <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>📥</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#1D4ED8', marginBottom: 4 }}>Demo-aanvragen opvolgen</div>
-                <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.6 }}>
-                  Hier zie je alle prospects die een demo hebben aangevraagd. Gebruik de <strong>status-dropdown</strong> per lead om bij te houden waar je staat in het verkoopproces
-                  (Nieuw → Contact → Demo gepland → Gewonnen). Klik op <strong>▼</strong> om notities toe te voegen. Klik op <strong>✨ AI Opvolgen</strong> om een door AI geschreven, gepersonaliseerde mail te versturen.
-                  Gebruik <strong>✓ Klaar</strong> als een lead volledig is afgehandeld. Met <strong>⬇ Exporteer CSV</strong> download je de volledige lijst.
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#1D4ED8', marginBottom: 4 }}>Zo gebruik je dit overzicht</div>
+                <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 24px' }}>
+                  <div><strong>Status-dropdown</strong> — houd bij waar je staat: Nieuw → Contact → Demo gepland → Gewonnen / Verloren.</div>
+                  <div><strong>▼ Notities</strong> — klik op het pijltje rechts om een notitie toe te voegen aan een lead.</div>
+                  <div><strong>✉ Stuur AI-mail</strong> — AI schrijft een gepersonaliseerde e-mail met de demo-link en jij verstuurt hem met één klik. Alleen beschikbaar als er een e-mailadres bekend is.</div>
+                  <div><strong>✓ Klaar</strong> — markeer een lead als afgehandeld zodat hij uit je actieve lijst verdwijnt. Met <strong>⬇ Exporteer CSV</strong> download je alles.</div>
                 </div>
               </div>
             </div>
@@ -1422,16 +1423,21 @@ Agentmakers.io`)
 
                         {/* Opvolgen button — AI email modal */}
                         {outreachSent[lead.demo_token || ''] ? (
-                          <span title={`Outreach verstuurd op ${new Date(outreachSent[lead.demo_token || '']).toLocaleDateString('nl-NL')}`}
+                          <span title={`Mail verstuurd op ${new Date(outreachSent[lead.demo_token || '']).toLocaleDateString('nl-NL')}`}
                             style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: '1px solid #86EFAC', background: '#F0FDF4', color: '#166534', whiteSpace: 'nowrap' }}>
-                            ✓ Outreach verstuurd
+                            ✓ Mail verstuurd
                           </span>
-                        ) : (
-                          <button onClick={() => lead.email && openLeadEmailModal(lead)} disabled={!lead.email}
-                            title={lead.email ? 'Laat AI een gepersonaliseerde outreach-mail schrijven en verstuur direct vanuit het dashboard' : 'Geen e-mailadres bekend voor deze lead'}
-                            style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: '1px solid #7C3AED', background: '#7C3AED', color: '#fff', cursor: lead.email ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', opacity: lead.email ? 1 : 0.45, fontFamily: "'Nunito',sans-serif" }}>
-                            ✨ AI Opvolgen
+                        ) : lead.email ? (
+                          <button onClick={() => openLeadEmailModal(lead)}
+                            title="AI schrijft een gepersonaliseerde e-mail met de demo-link — jij controleert en verstuurt met één klik"
+                            style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: '1px solid #7C3AED', background: '#7C3AED', color: '#fff', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: "'Nunito',sans-serif" }}>
+                            ✉ Stuur AI-mail
                           </button>
+                        ) : (
+                          <span title="Voeg een e-mailadres toe aan deze lead om een mail te kunnen sturen"
+                            style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 600, border: '1px solid #E2E8F0', background: '#F8FAFC', color: '#94A3B8', whiteSpace: 'nowrap' }}>
+                            Geen e-mail
+                          </span>
                         )}
 
                         {/* Matched conversation badge */}
