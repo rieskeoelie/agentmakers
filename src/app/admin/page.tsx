@@ -869,7 +869,7 @@ Agentmakers.io`)
   }
 
   const markAllSeen = useCallback(() => {
-    const allIds = leads.map(l => l.id)
+    const allIds = visibleLeads.map(l => l.id)
     localStorage.setItem(SEEN_LEADS_STORAGE, JSON.stringify(allIds))
     setSeenLeadIds(new Set(allIds))
   }, [leads])
@@ -968,7 +968,7 @@ Agentmakers.io`)
     setSelectedLeads(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   }
   const toggleSelectAll = () => {
-    setSelectedLeads(selectedLeads.size === leads.length ? new Set() : new Set(leads.map(l => l.id)))
+    setSelectedLeads(selectedLeads.size === visibleLeads.length ? new Set() : new Set(visibleLeads.map(l => l.id)))
   }
 
   const deleteSelectedLeads = async () => {
@@ -988,7 +988,7 @@ Agentmakers.io`)
 
   const exportCSV = () => {
     const headers = ['Naam', 'E-mail', 'Telefoon', 'Bedrijf', 'Website', 'Pagina', 'Taal', 'Status', 'Notitie', 'Datum', 'Afgehandeld']
-    const rows = leads.map(l => [
+    const rows = visibleLeads.map(l => [
       l.naam, l.email, l.telefoon,
       l.bedrijfsnaam || '', l.website || '',
       '/' + l.landing_page_slug, l.language,
@@ -1217,7 +1217,7 @@ Agentmakers.io`)
           {[
             { icon: '📄', val: pages.length,              label: "Pagina's",       sub: `${pages.filter(p => p.status === 'live').length} live` },
             { icon: '👁️', val: totalVisits,               label: 'Bezoekers',      sub: 'totaal' },
-            { icon: '📥', val: leads.length,              label: 'Aanvragen',      sub: leadsThisWeek > 0 ? `+${leadsThisWeek} deze week` : 'totaal', subColor: leadsThisWeek > 0 ? '#166534' : undefined },
+            { icon: '📥', val: visibleLeads.length,        label: 'Aanvragen',      sub: leadsThisWeek > 0 ? `+${leadsThisWeek} deze week` : 'totaal', subColor: leadsThisWeek > 0 ? '#166534' : undefined },
             { icon: '🎙', val: conversations.length,      label: 'Gesprekken',     sub: conversations.length > 0 ? fmtDuration(avgDuration) + ' gem.' : '—' },
             { icon: '📊', val: totalVisits > 0 ? `${((totalConversions / totalVisits) * 100).toFixed(1)}%` : '—', label: 'Conv. ratio', sub: `${totalConversions} conversies` },
             { icon: '🏆', val: bestPage ? `${((bestPage.conversions / bestPage.visits) * 100).toFixed(1)}%` : '—', label: 'Beste pagina', sub: bestPage ? bestPage.industry : '—' },
@@ -1350,7 +1350,7 @@ Agentmakers.io`)
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Demo-aanvragen ({leads.length})</h2>
+              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Demo-aanvragen ({visibleLeads.length})</h2>
               <div style={{ display: 'flex', gap: 10 }}>
                 {selectedLeads.size > 0 && (
                   <button onClick={deleteSelectedLeads} disabled={deleteLeadsLoading} title={`Verwijder de ${selectedLeads.size} geselecteerde leads permanent`} style={{ background: '#FEF2F2', border: '1.5px solid #EF4444', color: '#DC2626', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: deleteLeadsLoading ? 0.5 : 1 }}>
@@ -1364,10 +1364,10 @@ Agentmakers.io`)
             </div>
 
             <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #F1F5F9' }}>
-              {leads.length === 0 ? (
+              {visibleLeads.length === 0 ? (
                 <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>Nog geen aanvragen ontvangen.</div>
               ) : (
-                leads.map((lead, i) => {
+                visibleLeads.map((lead, i) => {
                   const isNew      = !seenLeadIds.has(lead.id)
                   const isHandled  = handledLeads.has(lead.id)
                   const isExpanded = expandedLeadId === lead.id
@@ -1521,7 +1521,7 @@ Agentmakers.io`)
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 16 }}>
                 {[{ lang: 'nl', flag: '🇳🇱', label: 'Nederlands' }, { lang: 'en', flag: '🇬🇧', label: 'Engels' }, { lang: 'es', flag: '🇪🇸', label: 'Spaans' }].map(({ lang, flag, label }) => {
                   const count = leadsByLang[lang as 'nl' | 'en' | 'es']
-                  const pct = leads.length > 0 ? Math.round((count / leads.length) * 100) : 0
+                  const pct = visibleLeads.length > 0 ? Math.round((count / visibleLeads.length) * 100) : 0
                   return (
                     <div key={lang} style={{ textAlign: 'center', padding: '16px', background: '#F8FAFC', borderRadius: 10 }}>
                       <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{flag}</div>
