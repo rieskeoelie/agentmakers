@@ -200,6 +200,7 @@ export default function AdminDashboard() {
   const [prospectResults, setProspectResults]   = useState<ProspectResult[]>([])
   const [prospectError, setProspectError]       = useState('')
   const [selectedProspects, setSelectedProspects] = useState<Set<number>>(new Set())
+  const [hunterLookingUp, setHunterLookingUp] = useState<Set<number>>(new Set())
   const [prospectNoApiKey, setProspectNoApiKey] = useState(false)
   const [sendingIdx, setSendingIdx]     = useState<Set<number>>(new Set())
   const [sentIdx, setSentIdx]           = useState<Set<number>>(new Set())
@@ -512,7 +513,7 @@ Agentmakers.io`)
     }
   }
 
-  const importSelectedProspects = () => {
+  const importSelectedProspects = async () => {
     const toImport = prospectResults.filter((_, i) => selectedProspects.has(i))
     const parsed = toImport.map(p => ({
       bedrijfsnaam: p.bedrijfsnaam,
@@ -524,6 +525,31 @@ Agentmakers.io`)
     setBulkParsed(parsed)
     setBulkResults([])
     setBulkError('')
+
+    // Hunter.io lookup: zoek naam + email van eigenaar per bedrijfswebsite
+    const lookupIndices = new Set(parsed.map((_, i) => i))
+    setHunterLookingUp(lookupIndices)
+
+    await Promise.allSettled(
+      parsed.map(async (row, i) => {
+        if (!row.website) return
+        try {
+          const res = await fetch(`/api/admin/hunter-lookup?website=${encodeURIComponent(row.website)}`)
+          const data = await res.json()
+          if (data.contact) {
+            setBulkParsed(prev => prev.map((r, idx) =>
+              idx === i
+                ? { ...r, naam: data.contact.naam || r.naam, email: data.contact.email || r.email }
+                : r
+            ))
+          }
+        } catch {
+          // stil falen — gebruiker kan handmatig invullen
+        } finally {
+          setHunterLookingUp(prev => { const s = new Set(prev); s.delete(i); return s })
+        }
+      })
+    )
   }
 
   const updateBulkRow = (i: number, field: 'naam' | 'email', value: string) => {
@@ -2125,35 +2151,44 @@ Agentmakers.io`)
                     </tr>
                   </thead>
                   <tbody>
-                    {bulkParsed.map((r, i) => (
+                    {bulkParsed.map((r, i) => {
+                      const looking = hunterLookingUp.has(i)
+                      return (
                       <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}>
                         <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1E293B' }}>{r.bedrijfsnaam}</td>
                         <td style={{ padding: '10px 14px', color: '#64748B', fontSize: '.78rem' }}>{r.website}</td>
-                        <td style={{ padding: '6px 10px' }}>
+                        <td style={{ padding: '6px 10px', position: 'relative' }}>
                           <input
                             value={r.naam}
                             onChange={e => updateBulkRow(i, 'naam', e.target.value)}
-                            placeholder="Voornaam"
-                            style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: '.82rem', color: '#334155', outline: 'none', fontFamily: "'Nunito',sans-serif" }}
+                            placeholder={looking ? '🔍 zoeken…' : 'Voornaam'}
+                            disabled={looking}
+                            style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${r.naam ? '#0D9488' : '#E2E8F0'}`, fontSize: '.82rem', color: '#334155', outline: 'none', fontFamily: "'Nunito',sans-serif", background: looking ? '#F8FAFC' : 'white' }}
                           />
                         </td>
                         <td style={{ padding: '6px 10px' }}>
                           <input
                             value={r.email}
                             onChange={e => updateBulkRow(i, 'email', e.target.value)}
-                            placeholder="info@bedrijf.nl"
+                            placeholder={looking ? '🔍 zoeken…' : 'info@bedrijf.nl'}
                             type="email"
-                            style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${r.email ? '#0D9488' : '#E2E8F0'}`, fontSize: '.82rem', color: '#334155', outline: 'none', fontFamily: "'Nunito',sans-serif" }}
+                            disabled={looking}
+                            style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${r.email ? '#0D9488' : '#E2E8F0'}`, fontSize: '.82rem', color: '#334155', outline: 'none', fontFamily: "'Nunito',sans-serif", background: looking ? '#F8FAFC' : 'white' }}
                           />
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
               <div style={{ marginTop: 12, padding: '10px 14px', background: '#F0FDFA', borderRadius: 8, fontSize: '.8rem', color: '#0F766E', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span>💡</span>
-                <span>Vul de <strong>e-mailadressen</strong> in om na het genereren direct outreach-mails te versturen. Naam is optioneel maar maakt de mail persoonlijker.</span>
+                <span>
+                  {hunterLookingUp.size > 0
+                    ? <>🔍 Hunter.io zoekt contact­gegevens voor <strong>{hunterLookingUp.size}</strong> bedrijf{hunterLookingUp.size !== 1 ? 'en' : ''}… Niet gevonden? Vul handmatig in.</>
+                    : <>Naam en e-mail zijn automatisch opgezocht via Hunter.io. Niet gevonden of onjuist? Pas ze handmatig aan.</>
+                  }
+                </span>
               </div>
             </div>
           )}
