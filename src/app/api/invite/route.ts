@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const session = getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { naam, bedrijfsnaam, email, website, language } = await req.json()
+  const { naam, bedrijfsnaam, email, website, language, view_as_user_id } = await req.json()
 
   if (!naam || !email || !website) {
     return NextResponse.json({ error: 'naam, email en website zijn verplicht' }, { status: 400 })
@@ -44,7 +44,8 @@ export async function POST(req: NextRequest) {
       ip_address: '',
       user_agent: 'partner-invite',
       referrer: '',
-      user_id: session.userId,
+      // Superadmin in view-as modus: schrijf lead op naam van de bekeken partner
+      user_id: (session.isSuperAdmin && view_as_user_id) ? view_as_user_id : session.userId,
     }])
 
   if (dbError) {

@@ -169,7 +169,7 @@ export default function AdminDashboard() {
       const res = await fetch('/api/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ naam: inviteNaam, bedrijfsnaam: inviteBedrijf, email: inviteEmail, website: inviteWebsite, language: inviteLang }),
+        body: JSON.stringify({ naam: inviteNaam, bedrijfsnaam: inviteBedrijf, email: inviteEmail, website: inviteWebsite, language: inviteLang, view_as_user_id: viewAsUser?.id ?? null }),
       })
       const data = await res.json()
       if (!res.ok) { setInviteError(data.error || 'Versturen mislukt'); return }
