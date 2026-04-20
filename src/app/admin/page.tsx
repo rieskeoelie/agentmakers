@@ -91,6 +91,14 @@ export default function AdminDashboard() {
   const [resetLoading, setResetLoading] = useState(false)
   // ── Superadmin set-password state ─────────────────────────────────
   const [setPwTarget, setSetPwTarget] = useState<{ id: string; name: string } | null>(null)
+  // ── Superadmin create-account state ───────────────────────────────
+  const [createOpen, setCreateOpen]   = useState(false)
+  const [createUser, setCreateUser]   = useState('')
+  const [createName, setCreateName]   = useState('')
+  const [createPw, setCreatePw]       = useState('')
+  const [createLoading, setCreateLoading] = useState(false)
+  const [createError, setCreateError] = useState('')
+  const [createDone, setCreateDone]   = useState<string | null>(null)
   const [setPwValue, setSetPwValue]   = useState('')
   const [setPwLoading, setSetPwLoading] = useState(false)
   const [setPwError, setSetPwError]   = useState('')
@@ -2641,9 +2649,15 @@ Agentmakers.io`)
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 4 }}>👥 Team</h2>
               <p style={{ fontSize: '.85rem', color: '#64748B', margin: 0 }}>Overzicht van alle partners — klik op <strong>Bekijk als</strong> om het dashboard door hun ogen te zien.</p>
             </div>
-            <button onClick={fetchAccounts} disabled={accountsLoading} style={{ background: '#fff', border: '1.5px solid #7C3AED', color: '#7C3AED', padding: '9px 18px', borderRadius: 10, fontWeight: 700, fontSize: '.85rem', cursor: 'pointer', opacity: accountsLoading ? 0.6 : 1 }}>
-              {accountsLoading ? '⏳ Laden…' : '↻ Verversen'}
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { setCreateOpen(true); setCreateUser(''); setCreateName(''); setCreatePw(''); setCreateError(''); setCreateDone(null) }}
+                style={{ background: '#7C3AED', color: '#fff', border: 'none', padding: '9px 18px', borderRadius: 10, fontWeight: 700, fontSize: '.85rem', cursor: 'pointer' }}>
+                + Nieuw account
+              </button>
+              <button onClick={fetchAccounts} disabled={accountsLoading} style={{ background: '#fff', border: '1.5px solid #7C3AED', color: '#7C3AED', padding: '9px 18px', borderRadius: 10, fontWeight: 700, fontSize: '.85rem', cursor: 'pointer', opacity: accountsLoading ? 0.6 : 1 }}>
+                {accountsLoading ? '⏳ Laden…' : '↻ Verversen'}
+              </button>
+            </div>
           </div>
 
           {/* KPI row — top */}
@@ -2872,6 +2886,88 @@ Agentmakers.io`)
                   }}
                   style={{ width: '100%', padding: 13, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: setPwLoading ? 0.7 : 1 }}>
                   {setPwLoading ? 'Opslaan…' : 'Wachtwoord instellen'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════ CREATE ACCOUNT MODAL ══════════════════════ */}
+      {createOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 1000 }}
+          onClick={e => { if (e.target === e.currentTarget) setCreateOpen(false) }}>
+          <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, padding: 40, boxShadow: '0 24px 64px rgba(0,0,0,.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+              <div>
+                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.15rem', margin: 0, marginBottom: 4 }}>👤 Nieuw partneraccount</h2>
+                <p style={{ fontSize: '.82rem', color: '#64748B', margin: 0 }}>Account wordt direct aangemaakt. De partner kan daarna inloggen.</p>
+              </div>
+              <button onClick={() => setCreateOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94A3B8', lineHeight: 1 }}>✕</button>
+            </div>
+
+            {createDone ? (
+              <div style={{ textAlign: 'center', padding: '8px 0 16px' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🎉</div>
+                <p style={{ fontWeight: 700, color: '#0D9488', fontSize: '1rem', marginBottom: 8 }}>Account aangemaakt!</p>
+                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '12px 16px', marginBottom: 20, textAlign: 'left', fontSize: '.85rem' }}>
+                  <div><strong>Gebruikersnaam:</strong> {createDone}</div>
+                  <div><strong>Wachtwoord:</strong> {createPw}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => { setCreateDone(null); setCreateUser(''); setCreateName(''); setCreatePw(''); setCreateError('') }}
+                    style={{ flex: 1, padding: 11, background: '#F1F5F9', color: '#334155', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                    Nog een account
+                  </button>
+                  <button onClick={() => { setCreateOpen(false); fetchAccounts() }}
+                    style={{ flex: 1, padding: 11, background: '#7C3AED', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                    Sluiten ✓
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {[
+                  { label: 'Weergavenaam *', value: createName, set: setCreateName, placeholder: 'Gerard de Boer', type: 'text', tip: 'Naam zoals die verschijnt in het dashboard' },
+                  { label: 'Gebruikersnaam *', value: createUser, set: setCreateUser, placeholder: 'gerard', type: 'text', tip: 'Alleen letters, cijfers, _ . - (geen spaties)' },
+                  { label: 'Wachtwoord *', value: createPw, set: setCreatePw, placeholder: 'Min. 8 tekens', type: 'password', tip: 'Tijdelijk wachtwoord — partner kan dit later wijzigen' },
+                ].map(({ label, value, set, placeholder, type, tip }) => (
+                  <div key={label} style={{ marginBottom: 16 }}>
+                    <label style={{ display: 'block', fontSize: '.78rem', fontWeight: 700, color: '#475569', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</label>
+                    <input
+                      type={type} value={value}
+                      onChange={e => { set(e.target.value); setCreateError('') }}
+                      placeholder={placeholder}
+                      title={tip}
+                      style={{ width: '100%', padding: '11px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.92rem', color: '#1E293B', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                    <div style={{ fontSize: '.72rem', color: '#94A3B8', marginTop: 3 }}>{tip}</div>
+                  </div>
+                ))}
+
+                {createError && <div style={{ color: '#DC2626', fontSize: '.84rem', marginBottom: 12 }}>⚠️ {createError}</div>}
+
+                <button
+                  disabled={createLoading}
+                  onClick={async () => {
+                    if (!createName.trim() || !createUser.trim() || !createPw) {
+                      setCreateError('Vul alle verplichte velden in'); return
+                    }
+                    if (createPw.length < 8) { setCreateError('Wachtwoord moet minimaal 8 tekens zijn'); return }
+                    setCreateLoading(true); setCreateError('')
+                    try {
+                      const res = await fetch('/api/admin/users', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: createUser.trim(), displayName: createName.trim(), password: createPw }),
+                      })
+                      const data = await res.json()
+                      if (!res.ok) { setCreateError(data.error || 'Aanmaken mislukt'); return }
+                      setCreateDone(data.user.username)
+                    } finally { setCreateLoading(false) }
+                  }}
+                  style={{ width: '100%', padding: 13, background: createLoading ? '#94A3B8' : '#7C3AED', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: createLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", marginTop: 4 }}>
+                  {createLoading ? '⏳ Aanmaken…' : '👤 Account aanmaken'}
                 </button>
               </>
             )}

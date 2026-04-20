@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSessionFromRequest } from '@/lib/auth'
+import { getSessionFromRequest, hashPassword } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
 /** GET /api/admin/users — superadmin only: list all users with stats */
@@ -83,4 +83,51 @@ export async function PATCH(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
+}
+
+/** POST /api/admin/users — superadmin only: create a new partner account */
+export async function POST(req: NextRequest) {
+  const session = getSessionFromRequest(req)
+  if (!session?.isSuperAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { username, displayName, password } = await req.json()
+
+  if (!username || !displayName || !password) {
+    return NextResponse.json({ error: 'username, displayName en password zijn verplicht' }, { status: 400 })
+  }
+
+  const cleanUsername = username.toLowerCase().trim().replace(/\s+/g, '')
+  if (!/^[a-z0-9_.-]+$/.test(cleanUsername)) {
+    return NextResponse.json({ error: 'Gebruikersnaam mag alleen letters, cijfers, _ . - bevatten' }, { status: 400 })
+  }
+  if (password.length < 8) {
+    return NextResponse.json({ error: 'Wachtwoord moet minimaal 8 tekens zijn' }, { status: 400 })
+  }
+
+  // Check username not taken
+  const { data: existing } = await supabaseAdmin
+    .from('users')
+    .select('id')
+    .eq('username', cleanUsername)
+    .maybeSingle()
+
+  if (existing) {
+    return NextResponse.json({ error: `Gebruikersnaam "${cleanUsername}" is al in gebruik` }, { status: 409 })
+  }
+
+  const password_hash = await hashPassword(password)
+
+  const { data: newUser, error } = await supabaseAdmin
+    .from('users')
+    .insert({ username: cleanUsername, display_name: displayName.trim(), password_hash, is_admin: true })
+    .select('id, username, display_name')
+    .single()
+
+  if (error || !newUser) {
+    return NextResponse.json({ error: error?.message ?? 'Aanmaken mislukt' }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, user: newUser })
 }
