@@ -160,8 +160,26 @@ export default function AdminDashboard() {
   const [inviteWebsite, setInviteWebsite]   = useState('')
   const [inviteLang, setInviteLang]         = useState<'nl' | 'en' | 'es'>('nl')
   // Invite modal labels follow the selected demo language, not the global admin UI language.
-  // EN falls back to NL (no separate English admin translations needed).
-  const tModal = useTranslations(inviteLang === 'es' ? 'es' : 'nl')
+  const tNl = useTranslations('nl')
+  const tEs = useTranslations('es')
+  const INVITE_EN: Partial<Record<import('@/lib/admin-i18n').TranslationKey, string>> = {
+    inviteTitle: '✉️ Invite prospect',
+    inviteSubtitle: 'Prospect receives a personalised voice demo link immediately.',
+    inviteNameLabel: 'Contact name *',
+    inviteCompanyLabel: 'Company name',
+    inviteEmailLabel: 'Email address *',
+    inviteWebsiteLabel: 'Website *',
+    inviteSend: '✉️ Send demo invitation',
+    inviteSending: '⏳ Creating demo and sending email…',
+    inviteSuccess: 'Invitation sent!',
+    inviteSuccessDesc: 'has received an email with the personalised demo link. The AI is being trained on their website.',
+    inviteClose: 'Close',
+  }
+  const tModal = (key: import('@/lib/admin-i18n').TranslationKey): string => {
+    if (inviteLang === 'es') return tEs(key)
+    if (inviteLang === 'en') return INVITE_EN[key] ?? tNl(key)
+    return tNl(key)
+  }
   const [inviteLoading, setInviteLoading]   = useState(false)
   const [inviteResult, setInviteResult]     = useState<{ demo_url: string; naam: string } | null>(null)
   const [inviteError, setInviteError]       = useState('')
@@ -2889,10 +2907,10 @@ Agentmakers.io`)
 
                 {/* Fields */}
                 {[
-                  { label: tModal('inviteNameLabel'), value: inviteNaam, set: setInviteNaam, placeholder: inviteLang === 'es' ? 'Carlos García' : 'Jan de Vries', type: 'text' },
-                  { label: tModal('inviteCompanyLabel'), value: inviteBedrijf, set: setInviteBedrijf, placeholder: inviteLang === 'es' ? 'Fontanero García SL' : 'Loodgieter Jansen BV', type: 'text' },
-                  { label: tModal('inviteEmailLabel'), value: inviteEmail, set: setInviteEmail, placeholder: inviteLang === 'es' ? 'carlos@empresa.es' : 'jan@bedrijf.nl', type: 'email' },
-                  { label: tModal('inviteWebsiteLabel'), value: inviteWebsite, set: setInviteWebsite, placeholder: inviteLang === 'es' ? 'https://empresa.es' : 'https://bedrijf.nl', type: 'url' },
+                  { label: tModal('inviteNameLabel'), value: inviteNaam, set: setInviteNaam, placeholder: inviteLang === 'es' ? 'Carlos García' : inviteLang === 'en' ? 'John Smith' : 'Jan de Vries', type: 'text' },
+                  { label: tModal('inviteCompanyLabel'), value: inviteBedrijf, set: setInviteBedrijf, placeholder: inviteLang === 'es' ? 'Fontanero García SL' : inviteLang === 'en' ? 'Smith Plumbing Ltd' : 'Loodgieter Jansen BV', type: 'text' },
+                  { label: tModal('inviteEmailLabel'), value: inviteEmail, set: setInviteEmail, placeholder: inviteLang === 'es' ? 'carlos@empresa.es' : inviteLang === 'en' ? 'john@company.co.uk' : 'jan@bedrijf.nl', type: 'email' },
+                  { label: tModal('inviteWebsiteLabel'), value: inviteWebsite, set: setInviteWebsite, placeholder: inviteLang === 'es' ? 'https://empresa.es' : inviteLang === 'en' ? 'https://company.co.uk' : 'https://bedrijf.nl', type: 'url' },
                 ].map(({ label, value, set, placeholder, type }) => (
                   <div key={label} style={{ marginBottom: 16 }}>
                     <label style={{ display: 'block', fontSize: '.78rem', fontWeight: 700, color: '#475569', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</label>
@@ -2926,7 +2944,7 @@ Agentmakers.io`)
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={() => { resetInvite() }} style={{ flex: 1, padding: '11px', background: '#F1F5F9', color: '#334155', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                    {inviteLang === 'es' ? 'Otra invitación' : 'Nog een uitnodiging'}
+                    {inviteLang === 'es' ? 'Otra invitación' : inviteLang === 'en' ? 'Send another' : 'Nog een uitnodiging'}
                   </button>
                   <button onClick={() => { setInviteOpen(false); resetInvite() }} style={{ flex: 1, padding: '11px', background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
                     {tModal('inviteClose')}
