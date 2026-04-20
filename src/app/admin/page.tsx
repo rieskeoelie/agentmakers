@@ -1264,12 +1264,12 @@ Agentmakers.io`)
               if (t2 === 'accounts' && accounts.length === 0) fetchAccounts()
             }}
               title={
-                t2 === 'pages' ? "Zet je AI-demo pagina's live of offline" :
-                t2 === 'leads' ? 'Wie heeft de demo bezocht? Stuur een mail en houd de opvolging bij.' :
-                t2 === 'analytics' ? 'Hoeveel bezoekers, conversies en welke pagina presteert het best?' :
-                t2 === 'conversations' ? 'Beluister wat prospects tegen de AI hebben gezegd' :
-                t2 === 'outreach' ? 'Zoek nieuwe bedrijven, maak een demo-link en stuur direct een mail' :
-                'Overzicht van alle accounts en hun performance'
+                t2 === 'pages' ? t('tabTipPages') :
+                t2 === 'leads' ? t('tabTipLeads') :
+                t2 === 'analytics' ? t('tabTipAnalytics') :
+                t2 === 'conversations' ? t('tabTipConversations') :
+                t2 === 'outreach' ? t('tabTipProspects') :
+                t('tabTipTeam')
               }
               style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: tab === t2 ? (t2 === 'accounts' ? '#7C3AED' : '#0D9488') : '#fff', color: tab === t2 ? '#fff' : '#64748B', position: 'relative' }}>
               {t2 === 'pages' ? t('tabPages') : t2 === 'leads' ? t('tabLeads') : t2 === 'analytics' ? t('tabAnalytics') : t2 === 'conversations' ? t('tabConversations') : t2 === 'outreach' ? t('tabProspects') : t2 === 'accounts' ? t('tabTeam') : t2}
@@ -1322,17 +1322,17 @@ Agentmakers.io`)
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button onClick={() => toggleStatus(page)} title={page.status === 'live' ? 'Pagina offline halen (onzichtbaar voor bezoekers)' : 'Pagina live zetten (zichtbaar voor bezoekers)'} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${page.status === 'live' ? '#EF4444' : '#22C55E'}`, background: '#fff', color: page.status === 'live' ? '#EF4444' : '#22C55E' }}>
-                      {page.status === 'live' ? 'Offline' : 'Live zetten'}
+                    <button onClick={() => toggleStatus(page)} title={page.status === 'live' ? t('pagesTipOffline') : t('pagesTipLive')} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${page.status === 'live' ? '#EF4444' : '#22C55E'}`, background: '#fff', color: page.status === 'live' ? '#EF4444' : '#22C55E' }}>
+                      {page.status === 'live' ? t('pagesSetOffline') : t('pagesSetLive')}
                     </button>
-                    <button onClick={() => window.open(`/nl/${page.slug}`, '_blank')} title="Open deze landingspagina in een nieuw tabblad" style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #CBD5E1', background: '#fff', color: '#334155' }}>
-                      Bekijken
+                    <button onClick={() => window.open(`/nl/${page.slug}`, '_blank')} title={t('pagesTipView')} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #CBD5E1', background: '#fff', color: '#334155' }}>
+                      {t('pagesView')}
                     </button>
-                    <button onClick={() => openEditModal(page)} title="Bewerk de headlines en teksten op deze pagina (automatisch vertaald naar EN en ES)" style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #0D9488', background: '#F0FDFA', color: '#0D9488' }}>
-                      ✏ Bewerken
+                    <button onClick={() => openEditModal(page)} title={t('pagesTipEdit')} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #0D9488', background: '#F0FDFA', color: '#0D9488' }}>
+                      {t('pagesEdit')}
                     </button>
-                    <button onClick={() => setDeleteModal(page)} title="Pagina permanent verwijderen (kan niet ongedaan worden gemaakt)" style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #EF4444', background: '#fff', color: '#EF4444' }}>
-                      Verwijder
+                    <button onClick={() => setDeleteModal(page)} title={t('pagesTipDelete')} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: '1px solid #EF4444', background: '#fff', color: '#EF4444' }}>
+                      {t('leadsDelete')}
                     </button>
                   </div>
                 </div>
@@ -1472,10 +1472,10 @@ Agentmakers.io`)
 
                         {/* Handled + expand */}
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                          <button onClick={() => toggleHandled(lead.id)} title={isHandled ? 'Markeer als niet-afgehandeld en heropenen' : 'Markeer deze lead als afgehandeld'} style={{ padding: '5px 10px', borderRadius: 6, fontSize: '.72rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${isHandled ? '#CBD5E1' : '#22C55E'}`, background: isHandled ? '#F1F5F9' : '#F0FDF4', color: isHandled ? '#94A3B8' : '#166534', whiteSpace: 'nowrap' }}>
-                            {isHandled ? 'Heropenen' : '✓ Klaar'}
+                          <button onClick={() => toggleHandled(lead.id)} title={isHandled ? t('leadTipHandled') : t('leadTipUnhandled')} style={{ padding: '5px 10px', borderRadius: 6, fontSize: '.72rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${isHandled ? '#CBD5E1' : '#22C55E'}`, background: isHandled ? '#F1F5F9' : '#F0FDF4', color: isHandled ? '#94A3B8' : '#166534', whiteSpace: 'nowrap' }}>
+                            {isHandled ? t('leadReopen') : t('leadMarkDone')}
                           </button>
-                          <button onClick={() => setExpandedLeadId(isExpanded ? null : lead.id)} title={isExpanded ? 'Verberg notities' : 'Toon notities voor deze lead'} style={{ padding: '5px 8px', borderRadius: 6, fontSize: '.72rem', border: '1px solid #CBD5E1', background: isExpanded ? '#F1F5F9' : '#fff', color: '#64748B', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                          <button onClick={() => setExpandedLeadId(isExpanded ? null : lead.id)} title={isExpanded ? t('leadTipCollapse') : t('leadTipExpand')} style={{ padding: '5px 8px', borderRadius: 6, fontSize: '.72rem', border: '1px solid #CBD5E1', background: isExpanded ? '#F1F5F9' : '#fff', color: '#64748B', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
                             {isExpanded ? '▲' : '▼'}
                           </button>
                         </div>
@@ -1484,13 +1484,13 @@ Agentmakers.io`)
                       {/* Expanded notes row */}
                       {isExpanded && (
                         <div style={{ padding: '0 16px 14px 64px', borderTop: '1px dashed #E2E8F0' }}>
-                          <label style={{ fontSize: '.72rem', fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 4, marginTop: 10, textTransform: 'uppercase', letterSpacing: '.04em' }}>Notitie</label>
+                          <label style={{ fontSize: '.72rem', fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 4, marginTop: 10, textTransform: 'uppercase', letterSpacing: '.04em' }}>{t('leadNoteLabel')}</label>
                           <textarea
                             value={leadNotes[lead.id] || ''}
                             onChange={e => setLeadNotes(prev => ({ ...prev, [lead.id]: e.target.value }))}
-                            placeholder="Voeg een notitie toe... (bijv. 'Gebeld op 3 april, demo gepland voor vrijdag')"
+                            placeholder={t('leadNotePlaceholder')}
                             rows={3}
-                            title="Interne notitie voor deze lead — alleen zichtbaar in het admin dashboard"
+                            title={t('leadNoteTip')}
                             style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.83rem', fontFamily: "'Nunito',sans-serif", color: '#0F172A', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
                           />
                         </div>
@@ -2015,12 +2015,12 @@ Agentmakers.io`)
             <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>👋</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#C2410C', marginBottom: 8 }}>Zo vind en benader je nieuwe klanten — 3 stappen</div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#C2410C', marginBottom: 8 }}>{t('prospectsInstructionTitle')}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px', fontSize: '.82rem', color: '#334155', lineHeight: 1.6 }}>
-                  <div>① <strong>Zoek bedrijven</strong> — typ een branche + stad (bijv. "tandartsen amsterdam"). Vink de bedrijven aan die je wilt benaderen.</div>
-                  <div>② <strong>Genereer demo-links</strong> — klik op <em>Genereer demo-links</em>. Voor elk bedrijf wordt een gepersonaliseerde AI-demopagina aangemaakt.</div>
-                  <div>③ <strong>Stuur de mail</strong> — klik op <em>✉ Verstuur mail</em>. AI schrijft een persoonlijke e-mail met de demo-link. Jij verstuurt met één klik.</div>
-                  <div style={{ color: '#64748B', fontStyle: 'italic' }}>💡 Heb je al een lijst? Plak die als CSV in het veld onderaan in plaats van stap ①.</div>
+                  <div>① <strong>{t('prospectsStep1Bold')}</strong> — {uiLang === 'es' ? 'escribe un sector + ciudad (p.ej. "dentistas madrid"). Marca las empresas que quieres contactar.' : 'typ een branche + stad (bijv. "tandartsen amsterdam"). Vink de bedrijven aan die je wilt benaderen.'}</div>
+                  <div>② <strong>{t('prospectsStep2Bold')}</strong> — {uiLang === 'es' ? <>haz clic en <em>Generar enlaces demo</em>. Para cada empresa se crea una página demo de IA personalizada.</> : <>klik op <em>Genereer demo-links</em>. Voor elk bedrijf wordt een gepersonaliseerde AI-demopagina aangemaakt.</>}</div>
+                  <div>③ <strong>{t('prospectsStep3Bold')}</strong> — {uiLang === 'es' ? <>haz clic en <em>✉ Enviar correo</em>. La IA escribe un correo personal con el enlace demo. Tú lo envías con un clic.</> : <>klik op <em>✉ Verstuur mail</em>. AI schrijft een persoonlijke e-mail met de demo-link. Jij verstuurt met één klik.</>}</div>
+                  <div style={{ color: '#64748B', fontStyle: 'italic' }}>{t('prospectsHaveList')}</div>
                 </div>
               </div>
             </div>
@@ -2029,9 +2029,9 @@ Agentmakers.io`)
           {/* Auto-scraper — subtiele statusregel */}
           <div style={{ fontSize: '.78rem', color: '#94A3B8', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
             <span>🤖</span>
-            <span>De AI-agent wordt automatisch gepersonaliseerd op de website van elk bedrijf zodra je demo-links genereert.</span>
+            <span>{t('prospectsAIHint')}</span>
             {scrapeQueueResult && (
-              <span style={{ color: '#0D9488', fontWeight: 600 }}>✓ {scrapeQueueResult.processed} bedrijven verwerkt</span>
+              <span style={{ color: '#0D9488', fontWeight: 600 }}>✓ {scrapeQueueResult.processed} {t('prospectsProcessed')}</span>
             )}
           </div>
 
@@ -2059,7 +2059,7 @@ Agentmakers.io`)
                     style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.88rem', color: '#1E293B', outline: 'none' }}
                   />
                   <button onClick={searchProspects} disabled={prospectLoading}
-                    title="Zoek bedrijven op Google Maps op basis van uw zoekopdracht"
+                    title={t('prospectsSearchTitle')}
                     style={{ background: '#0D9488', color: '#fff', padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '.88rem', cursor: prospectLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", whiteSpace: 'nowrap', opacity: prospectLoading ? 0.7 : 1 }}>
                     {prospectLoading ? '⏳ Zoeken…' : '🔍 Zoek'}
                   </button>
@@ -2249,7 +2249,7 @@ Agentmakers.io`)
                           </div>
                         </div>
                         <button onClick={handleBulkGenerate} disabled={bulkLoading || !bulkLanguage || complete.length === 0}
-                          title={!bulkLanguage ? 'Kies eerst een taal' : complete.length === 0 ? 'Geen complete prospects' : `Genereer demo-links voor ${complete.length} prospects met e-mailadres`}
+                          title={!bulkLanguage ? t('prospectsNoLang') : complete.length === 0 ? t('prospectsNoComplete') : `${t('prospectsGenerateFor')} ${complete.length} ${t('prospectsGenerateForSuffix')}`}
                           style={{ background: bulkLoading || !bulkLanguage || complete.length === 0 ? '#94A3B8' : '#7C3AED', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: bulkLoading || !bulkLanguage || complete.length === 0 ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif" }}>
                           {bulkLoading ? t('bulkGenerating') : `${t('bulkGenerate')} ${complete.length} ${t('bulkGenerateLinks')}`}
                         </button>
@@ -2350,7 +2350,7 @@ Agentmakers.io`)
               )}
               {scrapeDone && !scrapeTimedOut && scrapeQueueResult && (
                 <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 10, padding: '12px 18px', marginBottom: 16, fontSize: '.85rem', color: '#166534' }}>
-                  ✅ AI-agent gepersonaliseerd voor <strong>{scrapeQueueResult.processed}</strong> van de {scrapeQueueResult.total} bedrijven — links zijn klaar om te versturen!
+                  ✅ {t('prospectsAIDone')} <strong>{scrapeQueueResult.processed}</strong> {t('bulkSendAIOf')} {scrapeQueueResult.total} {uiLang === 'es' ? 'empresas' : 'bedrijven'} — {t('bulkSendAIReady')}
                 </div>
               )}
 
