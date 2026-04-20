@@ -159,6 +159,9 @@ export default function AdminDashboard() {
   const [inviteEmail, setInviteEmail]       = useState('')
   const [inviteWebsite, setInviteWebsite]   = useState('')
   const [inviteLang, setInviteLang]         = useState<'nl' | 'en' | 'es'>('nl')
+  // Invite modal labels follow the selected demo language, not the global admin UI language.
+  // EN falls back to NL (no separate English admin translations needed).
+  const tModal = useTranslations(inviteLang === 'es' ? 'es' : 'nl')
   const [inviteLoading, setInviteLoading]   = useState(false)
   const [inviteResult, setInviteResult]     = useState<{ demo_url: string; naam: string } | null>(null)
   const [inviteError, setInviteError]       = useState('')
@@ -2872,8 +2875,8 @@ Agentmakers.io`)
               <>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                   <div>
-                    <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', margin: 0, marginBottom: 4 }}>{t('inviteTitle')}</h2>
-                    <p style={{ fontSize: '.82rem', color: '#64748B', margin: 0 }}>{t('inviteSubtitle')}</p>
+                    <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', margin: 0, marginBottom: 4 }}>{tModal('inviteTitle')}</h2>
+                    <p style={{ fontSize: '.82rem', color: '#64748B', margin: 0 }}>{tModal('inviteSubtitle')}</p>
                   </div>
                   <button onClick={() => setInviteOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94A3B8', lineHeight: 1 }}>✕</button>
                 </div>
@@ -2890,10 +2893,10 @@ Agentmakers.io`)
 
                 {/* Fields */}
                 {[
-                  { label: t('inviteNameLabel'), value: inviteNaam, set: setInviteNaam, placeholder: uiLang === 'es' ? 'Carlos García' : 'Jan de Vries', type: 'text' },
-                  { label: t('inviteCompanyLabel'), value: inviteBedrijf, set: setInviteBedrijf, placeholder: uiLang === 'es' ? 'Fontanero García SL' : 'Loodgieter Jansen BV', type: 'text' },
-                  { label: t('inviteEmailLabel'), value: inviteEmail, set: setInviteEmail, placeholder: uiLang === 'es' ? 'carlos@empresa.es' : 'jan@bedrijf.nl', type: 'email' },
-                  { label: t('inviteWebsiteLabel'), value: inviteWebsite, set: setInviteWebsite, placeholder: uiLang === 'es' ? 'https://empresa.es' : 'https://bedrijf.nl', type: 'url' },
+                  { label: tModal('inviteNameLabel'), value: inviteNaam, set: setInviteNaam, placeholder: inviteLang === 'es' ? 'Carlos García' : 'Jan de Vries', type: 'text' },
+                  { label: tModal('inviteCompanyLabel'), value: inviteBedrijf, set: setInviteBedrijf, placeholder: inviteLang === 'es' ? 'Fontanero García SL' : 'Loodgieter Jansen BV', type: 'text' },
+                  { label: tModal('inviteEmailLabel'), value: inviteEmail, set: setInviteEmail, placeholder: inviteLang === 'es' ? 'carlos@empresa.es' : 'jan@bedrijf.nl', type: 'email' },
+                  { label: tModal('inviteWebsiteLabel'), value: inviteWebsite, set: setInviteWebsite, placeholder: inviteLang === 'es' ? 'https://empresa.es' : 'https://bedrijf.nl', type: 'url' },
                 ].map(({ label, value, set, placeholder, type }) => (
                   <div key={label} style={{ marginBottom: 16 }}>
                     <label style={{ display: 'block', fontSize: '.78rem', fontWeight: 700, color: '#475569', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</label>
@@ -2910,16 +2913,16 @@ Agentmakers.io`)
 
                 <button onClick={sendInvite} disabled={inviteLoading}
                   style={{ width: '100%', padding: '13px', background: inviteLoading ? '#94A3B8' : '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: inviteLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", marginTop: 4 }}>
-                  {inviteLoading ? t('inviteSending') : t('inviteSend')}
+                  {inviteLoading ? tModal('inviteSending') : tModal('inviteSend')}
                 </button>
               </>
             ) : (
               /* Success state */
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
-                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', marginBottom: 8 }}>{t('inviteSuccess')}</h2>
+                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', marginBottom: 8 }}>{tModal('inviteSuccess')}</h2>
                 <p style={{ color: '#64748B', fontSize: '.88rem', marginBottom: 24 }}>
-                  <strong>{inviteResult.naam}</strong> {t('inviteSuccessDesc')}
+                  <strong>{inviteResult.naam}</strong> {tModal('inviteSuccessDesc')}
                 </p>
                 <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '12px 16px', marginBottom: 24, wordBreak: 'break-all' }}>
                   <div style={{ fontSize: '.72rem', color: '#16A34A', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.06em' }}>Demo link</div>
@@ -2927,10 +2930,10 @@ Agentmakers.io`)
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={() => { resetInvite() }} style={{ flex: 1, padding: '11px', background: '#F1F5F9', color: '#334155', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                    Nog een uitnodiging
+                    {inviteLang === 'es' ? 'Otra invitación' : 'Nog een uitnodiging'}
                   </button>
                   <button onClick={() => { setInviteOpen(false); resetInvite() }} style={{ flex: 1, padding: '11px', background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                    Sluiten
+                    {tModal('inviteClose')}
                   </button>
                 </div>
               </div>
