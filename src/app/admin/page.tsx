@@ -1256,9 +1256,8 @@ Agentmakers.io`)
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
           {([
             'leads', 'outreach', 'conversations', 'analytics',
-            ...(currentUser?.isAdmin ? ['pages'] : []),
-            // Team-tab alleen zichtbaar als superadmin én niet in view-as modus
-            ...(currentUser?.isSuperAdmin && !viewAsUser ? ['accounts'] : []),
+            // Pages en Team alleen zichtbaar als superadmin én niet in view-as modus
+            ...(currentUser?.isSuperAdmin && !viewAsUser ? ['pages', 'accounts'] : []),
           ] as ('leads'|'analytics'|'conversations'|'outreach'|'pages'|'accounts')[]).map(t2 => (
             <button key={t2} onClick={() => {
               setTab(t2 as typeof tab)
