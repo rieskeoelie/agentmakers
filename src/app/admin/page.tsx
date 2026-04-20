@@ -1292,22 +1292,20 @@ Agentmakers.io`)
             <div style={{ background: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>📄</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#0D9488', marginBottom: 4 }}>Landingspagina&apos;s beheren</div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#0D9488', marginBottom: 4 }}>{t('pagesBannerTitle')}</div>
                 <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.6 }}>
-                  Hier staan alle gepersonaliseerde landingspagina&apos;s. Elke pagina is gericht op een specifieke branche en bevat een AI-receptionist die bezoekers helpt.
-                  Maak een nieuwe pagina aan met <strong>+ Nieuwe pagina</strong>, zet hem <strong>Live</strong> als hij klaar is, en pas teksten aan met <strong>✏ Bewerken</strong>.
-                  Concept-pagina&apos;s zijn niet zichtbaar voor bezoekers.
+                  {t('pagesBannerDesc')} {t('pagesBannerActions')}
                 </div>
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Landingspagina&apos;s</h2>
-              <button onClick={() => setShowCreate(true)} title="Genereer een nieuwe landingspagina met AI voor een specifieke branche" style={{ background: '#0D9488', color: '#fff', padding: '12px 24px', borderRadius: 10, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                + Nieuwe pagina
+              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>{t('pagesH2')}</h2>
+              <button onClick={() => setShowCreate(true)} title={t('pagesCreateTip')} style={{ background: '#0D9488', color: '#fff', padding: '12px 24px', borderRadius: 10, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                {t('pagesCreate')}
               </button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
-              {loading ? <p>Laden...</p> : pages.map(page => (
+              {loading ? <p>{t('loading')}</p> : pages.map(page => (
                 <div key={page.id} style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <h3 style={{ fontFamily: "'Nunito',sans-serif", fontSize: '1.05rem', fontWeight: 700 }}>{page.industry}</h3>
@@ -1513,20 +1511,18 @@ Agentmakers.io`)
             <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>📊</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#B45309', marginBottom: 4 }}>Statistieken & prestaties</div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#B45309', marginBottom: 4 }}>{t('analyticsBannerTitle')}</div>
                 <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.6 }}>
-                  Hier zie je hoeveel bezoekers elke pagina heeft ontvangen en hoeveel daarvan een demo hebben aangevraagd (<strong>conversieratio</strong>).
-                  Filter op taal (NL/EN/ES) om te zien welke markt het best presteert. De <strong>beste pagina&apos;s</strong> rangschikking laat zien welke branches het meest converteren —
-                  gebruik dit om te bepalen voor welke branche je nieuwe pagina&apos;s aanmaakt.
+                  {t('analyticsBannerDesc')}
                 </div>
               </div>
             </div>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 20 }}>📊 Resultaten</h2>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 20 }}>📊 {t('analyticsTitle')}</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
               {[
-                ['Totaal bezoekers', totalVisits, '#0D9488'],
-                ['Totaal conversies', totalConversions, '#22C55E'],
-                ['Conversieratio', totalVisits > 0 ? `${((totalConversions / totalVisits) * 100).toFixed(1)}%` : '0%', '#F59E0B'],
+                [t('analyticsTotalVisits'), totalVisits, '#0D9488'],
+                [t('analyticsTotalConversions'), totalConversions, '#22C55E'],
+                [t('analyticsConvRatioLabel'), totalVisits > 0 ? `${((totalConversions / totalVisits) * 100).toFixed(1)}%` : '0%', '#F59E0B'],
               ].map(([label, val, color]) => (
                 <div key={label as string} style={{ background: '#fff', padding: '32px 24px', borderRadius: 14, border: '1px solid #F1F5F9', textAlign: 'center' }}>
                   <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '2.4rem', fontWeight: 700, color: color as string }}>{val}</div>
@@ -1537,17 +1533,18 @@ Agentmakers.io`)
 
             <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 24 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem', fontWeight: 600 }}>Leads per taal</h3>
+                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem', fontWeight: 600 }}>{t('analyticsLeadsPerLang')}</h3>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {(['all', 'nl', 'en', 'es'] as const).map(lang => (
                     <button key={lang} onClick={() => setAnalyticsLang(lang)} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: '.82rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: analyticsLang === lang ? '#0D9488' : '#F1F5F9', color: analyticsLang === lang ? '#fff' : '#64748B' }}>
-                      {lang === 'all' ? 'Alle' : lang === 'nl' ? '🇳🇱 NL' : lang === 'en' ? '🇬🇧 EN' : '🇪🇸 ES'}
+                      {lang === 'all' ? t('analyticsFilterAll') : lang === 'nl' ? '🇳🇱 NL' : lang === 'en' ? '🇬🇧 EN' : '🇪🇸 ES'}
                     </button>
                   ))}
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 16 }}>
-                {[{ lang: 'nl', flag: '🇳🇱', label: 'Nederlands' }, { lang: 'en', flag: '🇬🇧', label: 'Engels' }, { lang: 'es', flag: '🇪🇸', label: 'Spaans' }].map(({ lang, flag, label }) => {
+                {[{ lang: 'nl', flag: '🇳🇱', labelKey: 'analyticsLangNL' as const }, { lang: 'en', flag: '🇬🇧', labelKey: 'analyticsLangEN' as const }, { lang: 'es', flag: '🇪🇸', labelKey: 'analyticsLangES' as const }].map(({ lang, flag, labelKey }) => {
+                const label = t(labelKey)
                   const count = leadsByLang[lang as 'nl' | 'en' | 'es']
                   const pct = visibleLeads.length > 0 ? Math.round((count / visibleLeads.length) * 100) : 0
                   return (
@@ -1559,12 +1556,12 @@ Agentmakers.io`)
                   )
                 })}
               </div>
-              {filteredLeads.length > 0 && <p style={{ fontSize: '.82rem', color: '#64748B', margin: 0 }}>Toont {filteredLeads.length} aanvragen{analyticsLang !== 'all' ? ` voor taal: ${analyticsLang.toUpperCase()}` : ''}</p>}
+              {filteredLeads.length > 0 && <p style={{ fontSize: '.82rem', color: '#64748B', margin: 0 }}>{t('analyticsShowingRequests')} {filteredLeads.length} {t('analyticsRequests')}{analyticsLang !== 'all' ? ` ${t('analyticsForLang')} ${analyticsLang.toUpperCase()}` : ''}</p>}
             </div>
 
             {sortedByRatio.length > 0 && (
               <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #F1F5F9', marginBottom: 24 }}>
-                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem', fontWeight: 600, marginBottom: 16 }}>🏆 Beste pagina&apos;s op conversieratio</h3>
+                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1rem', fontWeight: 600, marginBottom: 16 }}>{t('analyticsBestPagesTitle')}</h3>
                 {sortedByRatio.map((page, i) => {
                   const ratio = ((page.conversions / page.visits) * 100).toFixed(1)
                   return (
@@ -1576,7 +1573,7 @@ Agentmakers.io`)
                       <div style={{ background: '#F1F5F9', borderRadius: 4, height: 6 }}>
                         <div style={{ background: '#0D9488', borderRadius: 4, height: 6, width: `${Math.min(100, parseFloat(ratio) * 10)}%`, transition: 'width .4s' }} />
                       </div>
-                      <div style={{ fontSize: '.75rem', color: '#94A3B8', marginTop: 2 }}>{page.visits} bezoekers · {page.conversions} conversies</div>
+                      <div style={{ fontSize: '.75rem', color: '#94A3B8', marginTop: 2 }}>{page.visits} {t('analyticsVisits')} · {page.conversions} {t('analyticsConversions')}</div>
                     </div>
                   )
                 })}
@@ -1587,7 +1584,7 @@ Agentmakers.io`)
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
                 <thead>
                   <tr style={{ background: '#F1F5F9' }}>
-                    {['Pagina', 'Bezoekers', 'Conversies', 'Ratio', 'Status'].map(h => (
+                    {[t('analyticsColPage'), t('analyticsColVisits'), t('analyticsColConversions'), t('analyticsColRatio'), t('analyticsColStatus')].map(h => (
                       <th key={h} style={{ padding: '14px 20px', textAlign: 'left', fontSize: '.8rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>{h}</th>
                     ))}
                   </tr>
@@ -1621,17 +1618,17 @@ Agentmakers.io`)
             <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🎙</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#7C3AED', marginBottom: 4 }}>Wat heeft de AI tegen jouw prospects gezegd?</div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#7C3AED', marginBottom: 4 }}>{t('convBannerTitle')}</div>
                 <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.6, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 24px' }}>
-                  <div>👆 <strong>Klik op een gesprek</strong> om het transcript te lezen en de geluidsopname te beluisteren</div>
-                  <div>🟢 <strong>Groene badge</strong> — dit gesprek is gekoppeld aan een lead in je Leads-tab. Klik om direct naar die lead te gaan.</div>
-                  <div>↻ <strong>Vernieuwen</strong> — nieuwe gesprekken verschijnen niet automatisch, klik op Vernieuwen om de lijst bij te werken</div>
+                  <div>👆 <strong>{t('convBannerStep1Bold')}</strong> — {uiLang === 'es' ? 'para leer la transcripción y escuchar la grabación' : 'om het transcript te lezen en de geluidsopname te beluisteren'}</div>
+                  <div>🟢 <strong>{t('convBannerStep2Bold')}</strong> — {uiLang === 'es' ? 'esta conversación está vinculada a un lead en tu pestaña Leads. Haz clic para ir directamente a ese lead.' : 'dit gesprek is gekoppeld aan een lead in je Leads-tab. Klik om direct naar die lead te gaan.'}</div>
+                  <div>↻ <strong>{t('convBannerStep3Bold')}</strong> — {uiLang === 'es' ? 'las nuevas conversaciones no aparecen automáticamente, haz clic en Actualizar para refrescar la lista' : 'nieuwe gesprekken verschijnen niet automatisch, klik op Vernieuwen om de lijst bij te werken'}</div>
                 </div>
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>🎙 Gesprekken ({visibleConversations.length})</h2>
-              <button onClick={() => fetchConversations()} disabled={convLoading} title="Herlaad de lijst met AI-gesprekken van de ElevenLabs agent" style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: convLoading ? 0.6 : 1 }}>
+              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>{t('convH2Prefix')} ({visibleConversations.length})</h2>
+              <button onClick={() => fetchConversations()} disabled={convLoading} title={t('convRefreshTip')} style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: convLoading ? 0.6 : 1 }}>
                 {convLoading ? t('loading') : t('conversationsRefresh')}
               </button>
             </div>
@@ -1690,7 +1687,7 @@ Agentmakers.io`)
                             )}
                           </>
                         ) : (
-                          <div style={{ fontSize: '.85rem', color: '#CBD5E1' }}>{detail ? 'Onbekend' : 'Laden…'}</div>
+                          <div style={{ fontSize: '.85rem', color: '#CBD5E1' }}>{detail ? t('convUnknown') : t('loading')}</div>
                         )}
                         {/* Linked lead badge */}
                         {matchedLead && (
@@ -1698,13 +1695,13 @@ Agentmakers.io`)
                             onClick={e => { e.stopPropagation(); setTab('leads'); setExpandedLeadId(matchedLead.id) }}
                             style={{ marginTop: 4, padding: '2px 8px', borderRadius: 5, fontSize: '.68rem', fontWeight: 700, border: '1px solid #22C55E', background: '#F0FDF4', color: '#166534', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}
                           >
-                            📥 Aanvraag: {matchedLead.naam}
+                            {t('convLinkedLead')} {matchedLead.naam}
                           </button>
                         )}
                       </div>
                       <div style={{ fontSize: '.82rem', color: '#64748B', minWidth: 60, textAlign: 'right' }}>{fmtDuration(conv.call_duration_secs)}</div>
                       <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: '.7rem', fontWeight: 700, background: statusBg, color: statusColor, minWidth: 60, textAlign: 'center' }}>
-                        {conv.status === 'done' ? 'Klaar' : conv.status === 'failed' ? 'Mislukt' : conv.status}
+                        {conv.status === 'done' ? t('convStatusDone') : conv.status === 'failed' ? t('convStatusFailed') : conv.status}
                       </span>
                       {conv.has_audio && <span style={{ fontSize: '.72rem', fontWeight: 700, background: '#EFF6FF', color: '#1D4ED8', padding: '3px 9px', borderRadius: 100 }}>🔊 Audio</span>}
                     </div>
@@ -1712,33 +1709,33 @@ Agentmakers.io`)
                     {isOpen && (
                       <div style={{ borderTop: '1px solid #F1F5F9', background: '#FAFAFA' }}>
                         {!detail ? (
-                          <div style={{ padding: '32px', textAlign: 'center', color: '#94A3B8' }}>Transcript laden…</div>
+                          <div style={{ padding: '32px', textAlign: 'center', color: '#94A3B8' }}>{t('convTranscriptLoading')}</div>
                         ) : (
                           <div style={{ padding: '24px' }}>
                             {detail.has_audio && (
                               <div style={{ marginBottom: 24, background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #E2E8F0' }}>
-                                <div style={{ fontSize: '.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>🔊 Geluidsopname</div>
+                                <div style={{ fontSize: '.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>{t('convAudioTitle')}</div>
                                 <audio controls preload="none" style={{ width: '100%', height: 40 }} src={`/api/conversations/${detail.conversation_id}/audio`}>
-                                  Uw browser ondersteunt geen audio element.
+                                  {t('convAudioNotSupported')}
                                 </audio>
                                 <div style={{ fontSize: '.72rem', color: '#94A3B8', marginTop: 6 }}>
-                                  Duur: {fmtDuration(detail.call_duration_secs)}{detail.cost != null && ` · Kosten: $${detail.cost.toFixed(4)}`}
+                                  {t('convDuration')} {fmtDuration(detail.call_duration_secs)}{detail.cost != null && ` · ${t('convCost')} $${detail.cost.toFixed(4)}`}
                                 </div>
                               </div>
                             )}
-                            <div style={{ fontSize: '.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 14 }}>💬 Transcript ({detail.transcript.length} berichten)</div>
+                            <div style={{ fontSize: '.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 14 }}>{t('convTranscriptTitle')} ({detail.transcript.length} {t('convMessages')})</div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 480, overflowY: 'auto', paddingRight: 4 }}>
                               {detail.transcript.map((turn, j) => (
                                 <div key={j} style={{ display: 'flex', justifyContent: turn.role === 'user' ? 'flex-end' : 'flex-start' }}>
                                   <div style={{ maxWidth: '72%', padding: '10px 14px', borderRadius: turn.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px', background: turn.role === 'user' ? '#0D9488' : '#fff', color: turn.role === 'user' ? '#fff' : '#0F172A', fontSize: '.85rem', lineHeight: 1.5, border: turn.role === 'agent' ? '1px solid #E2E8F0' : 'none', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
                                     <div style={{ fontSize: '.68rem', fontWeight: 700, marginBottom: 4, opacity: 0.65, textTransform: 'uppercase', letterSpacing: '.04em' }}>
-                                      {turn.role === 'user' ? '👤 Prospect' : '🤖 Agent'}{turn.time_in_call_secs != null && ` · ${fmtDuration(turn.time_in_call_secs)}`}
+                                      {turn.role === 'user' ? t('convRoleProspect') : t('convRoleAgent')}{turn.time_in_call_secs != null && ` · ${fmtDuration(turn.time_in_call_secs)}`}
                                     </div>
                                     {turn.message}
                                   </div>
                                 </div>
                               ))}
-                              {detail.transcript.length === 0 && <p style={{ color: '#94A3B8', fontSize: '.85rem', textAlign: 'center', padding: '20px 0' }}>Geen transcript beschikbaar.</p>}
+                              {detail.transcript.length === 0 && <p style={{ color: '#94A3B8', fontSize: '.85rem', textAlign: 'center', padding: '20px 0' }}>{t('convNoTranscript')}</p>}
                             </div>
                           </div>
                         )}
@@ -2714,10 +2711,10 @@ Agentmakers.io`)
                         {/* Stats grid */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
                           {[
-                            { label: 'Leads totaal', val: acc.leadsTotal, color: '#0D9488' },
-                            { label: 'Deze maand', val: acc.leadsThisMonth, color: acc.leadsThisMonth > 0 ? '#16A34A' : '#94A3B8', prefix: acc.leadsThisMonth > 0 ? '+' : '' },
-                            { label: "Demo's", val: acc.demosGenerated, color: '#1D4ED8' },
-                            { label: 'Gesprekken', val: acc.conversations, color: '#DB2777' },
+                            { label: t('teamStatLeads'), val: acc.leadsTotal, color: '#0D9488' },
+                            { label: t('teamStatThisMonth'), val: acc.leadsThisMonth, color: acc.leadsThisMonth > 0 ? '#16A34A' : '#94A3B8', prefix: acc.leadsThisMonth > 0 ? '+' : '' },
+                            { label: t('teamStatDemos'), val: acc.demosGenerated, color: '#1D4ED8' },
+                            { label: t('teamStatConversations'), val: acc.conversations, color: '#DB2777' },
                           ].map(({ label, val, color, prefix = '' }) => (
                             <div key={label} style={{ background: '#F8FAFC', borderRadius: 10, padding: '10px 12px' }}>
                               <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', fontWeight: 700, color, lineHeight: 1 }}>{prefix}{val}</div>
@@ -2729,8 +2726,8 @@ Agentmakers.io`)
                         {/* Activity bar — leads this month vs best performer */}
                         <div style={{ marginBottom: 14 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.72rem', color: '#94A3B8', marginBottom: 5 }}>
-                            <span>Activiteit deze maand</span>
-                            <span style={{ color: convRate > 0 ? '#0D9488' : '#94A3B8', fontWeight: 700 }}>{convRate}% conv.</span>
+                            <span>{t('teamActivityMonth')}</span>
+                            <span style={{ color: convRate > 0 ? '#0D9488' : '#94A3B8', fontWeight: 700 }}>{convRate}% {t('teamConvSuffix')}</span>
                           </div>
                           <div style={{ background: '#F1F5F9', borderRadius: 99, height: 6, overflow: 'hidden' }}>
                             <div style={{ height: '100%', borderRadius: 99, background: `linear-gradient(90deg, ${avatarColor}, ${avatarColor}99)`, width: `${Math.round((acc.leadsThisMonth / maxMonth) * 100)}%`, minWidth: acc.leadsThisMonth > 0 ? '6px' : '0', transition: 'width .4s ease' }} />
