@@ -2056,13 +2056,13 @@ Agentmakers.io`)
           <div style={{ background: '#fff', borderRadius: 14, padding: 28, border: '1px solid #E2E8F0', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
               <span style={{ background: '#0D9488', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>1</span>
-              <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>🔍 Prospect finder — bedrijven zoeken</h3>
+              <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>{t('prospectFinderTitle')}</h3>
             </div>
-            <p style={{ color: '#64748B', fontSize: '.82rem', marginBottom: 16, marginLeft: 40 }}>Typ een branche + stad (bijv. <em>"loodgieter amsterdam"</em>). Vink de bedrijven aan die je wilt benaderen en klik op <strong>Importeer geselecteerd</strong> — je gaat direct naar de controleer-stap.</p>
+            <p style={{ color: '#64748B', fontSize: '.82rem', marginBottom: 16, marginLeft: 40 }}>{t('prospectFinderDesc')}</p>
 
             {prospectNoApiKey ? (
               <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 16, fontSize: '.85rem', color: '#92400E' }}>
-                <strong>GOOGLE_MAPS_API_KEY ontbreekt.</strong> Voeg deze toe in je Vercel project → Settings → Environment Variables. Vraag een gratis sleutel aan via <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" style={{ color: '#0D9488' }}>Google Cloud Console</a> en activeer de &quot;Places API&quot;.
+                <strong>{t('prospectNoApiKey')}</strong> {t('prospectNoApiKeyDesc')} <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" style={{ color: '#0D9488' }}>Google Cloud Console</a>
               </div>
             ) : (
               <>
@@ -2071,14 +2071,14 @@ Agentmakers.io`)
                     value={prospectQuery}
                     onChange={e => setProspectQuery(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && searchProspects()}
-                    placeholder='bijv. "loodgieter amsterdam" of "tandarts rotterdam"'
-                    title="Typ een branche en stad om bedrijven te zoeken via Google Maps (druk Enter of klik Zoek)"
+                    placeholder={t('prospectSearchInputPlaceholder')}
+                    title={t('prospectSearchInputTip')}
                     style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.88rem', color: '#1E293B', outline: 'none' }}
                   />
                   <button onClick={searchProspects} disabled={prospectLoading}
                     title={t('prospectsSearchTitle')}
                     style={{ background: '#0D9488', color: '#fff', padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '.88rem', cursor: prospectLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", whiteSpace: 'nowrap', opacity: prospectLoading ? 0.7 : 1 }}>
-                    {prospectLoading ? '⏳ Zoeken…' : '🔍 Zoek'}
+                    {prospectLoading ? t('prospectSearchingBtn') : t('prospectSearchBtn')}
                   </button>
                 </div>
 
@@ -2087,18 +2087,18 @@ Agentmakers.io`)
                 {prospectResults.length > 0 && (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                      <span style={{ fontSize: '.82rem', color: '#64748B' }}>{prospectResults.length} bedrijven gevonden met website</span>
+                      <span style={{ fontSize: '.82rem', color: '#64748B' }}>{prospectResults.length} {t('prospectFoundWith')}</span>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => setSelectedProspects(new Set(prospectResults.map((_, i) => i)))}
-                          title="Selecteer alle gevonden prospects voor import"
+                          title={t('prospectSelectAllTip')}
                           style={{ fontSize: '.75rem', padding: '5px 12px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#F8FAFC', cursor: 'pointer', color: '#334155' }}>
-                          Alles selecteren
+                          {t('prospectsSelectAll')}
                         </button>
                         {selectedProspects.size > 0 && (
                           <button onClick={importSelectedProspects}
-                            title="Voeg de geselecteerde prospects toe aan de controleer-lijst en genereer direct demo-links"
+                            title={t('prospectImportTip')}
                             style={{ fontSize: '.75rem', padding: '5px 12px', borderRadius: 6, border: '1px solid #7C3AED', background: '#7C3AED', cursor: 'pointer', color: '#fff', fontWeight: 700 }}>
-                            ↓ Importeer {selectedProspects.size} geselecteerd
+                            {t('prospectImportSelected')} {selectedProspects.size} {t('prospectImportSelectedSuffix')}
                           </button>
                         )}
                       </div>
@@ -2108,7 +2108,7 @@ Agentmakers.io`)
                         <thead>
                           <tr style={{ background: '#F8FAFC' }}>
                             <th style={{ padding: '8px 10px', width: 32 }}></th>
-                            {['Bedrijf', 'Website', 'Telefoon', 'Adres', '⭐'].map(h => (
+                            {[t('prospectColCompany'), t('prospectColWebsite'), t('prospectColPhone'), t('prospectColAddress'), '⭐'].map(h => (
                               <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #F1F5F9' }}>{h}</th>
                             ))}
                           </tr>
@@ -2157,11 +2157,11 @@ Agentmakers.io`)
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ background: '#0D9488', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>2</span>
-                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>CSV plakken of importeren</h3>
+                <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>{t('csvSectionTitle')}</h3>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <label title="Upload een .csv bestand van uw computer" style={{ fontSize: '.75rem', color: '#0D9488', background: 'none', border: '1px solid #0D9488', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  📂 CSV uploaden
+                <label title={t('csvUploadTip')} style={{ fontSize: '.75rem', color: '#0D9488', background: 'none', border: '1px solid #0D9488', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  {t('csvUploadBtn')}
                   <input type="file" accept=".csv,.tsv,.txt" style={{ display: 'none' }} onChange={e => {
                     const file = e.target.files?.[0]
                     if (!file) return
@@ -2175,29 +2175,29 @@ Agentmakers.io`)
                   }} />
                 </label>
                 <button onClick={() => setBulkCsv('Loodgieter Jansen,loodgieterJansen.nl,Kees Jansen,kees@loodgieterjansen.nl,0612345678\nTandarts Smit,tandartsmit.nl,Dr. Smit,info@tandartsmit.nl,')}
-                  title="Vul het CSV-veld met voorbeelddata om te zien hoe het formaat werkt"
+                  title={t('csvLoadExampleTip')}
                   style={{ fontSize: '.75rem', color: '#64748B', background: 'none', border: '1px solid #E2E8F0', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
-                  Voorbeeld laden
+                  {t('csvLoadExample')}
                 </button>
               </div>
             </div>
             <div style={{ fontSize: '.8rem', color: '#64748B', marginBottom: 6 }}>
-              📋 <strong>Plak hier uw eigen data</strong> — kopieer rijen uit Excel of Google Sheets en plak ze hieronder (Ctrl+V). De grijze tekst is alleen een voorbeeld.
+              📋 <strong>{t('csvPasteLabel')}</strong> — {t('csvPasteDesc')}
             </div>
             <textarea
               id="csv-textarea"
               value={bulkCsv}
               onChange={e => { setBulkCsv(e.target.value); setBulkError('') }}
-              placeholder={'bedrijfsnaam,website,naam,email,telefoon\nLoodgieter Jansen,loodgieterjansen.nl,Kees,kees@test.nl,\nTandarts Smit,tandartsmit.nl,,,'}
-              title="Plak hier uw CSV-data. Verplichte kolommen: bedrijfsnaam, website. Optioneel: naam, email, telefoon"
+              placeholder={t('bulkPlaceholder')}
+              title={t('csvTextareaTip')}
               style={{ width: '100%', minHeight: 160, padding: 12, borderRadius: 8, border: `1.5px solid ${bulkError ? '#DC2626' : '#E2E8F0'}`, fontFamily: 'monospace', fontSize: '.82rem', color: '#334155', resize: 'vertical', outline: 'none', lineHeight: 1.6 }}
             />
             {bulkError && <div style={{ marginTop: 8, color: '#DC2626', fontSize: '.83rem' }}>⚠️ {bulkError}</div>}
-            {bulkCsv.trim() === '' && <div style={{ marginTop: 6, fontSize: '.78rem', color: '#94A3B8' }}>Tip: klik op <strong>Voorbeeld laden</strong> om te zien hoe de opmaak eruit moet zien.</div>}
+            {bulkCsv.trim() === '' && <div style={{ marginTop: 6, fontSize: '.78rem', color: '#94A3B8' }}>{t('csvTipExample')} <strong>{t('csvLoadExample')}</strong> {t('csvTipExampleSuffix')}</div>}
             <button onClick={handleBulkProcess}
-              title="Verwerk de ingevoerde CSV-data en toon een voorbeeld van de prospects"
+              title={t('csvProcessTip')}
               style={{ marginTop: 12, background: '#0D9488', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-              Verwerk CSV →
+              {t('csvProcessBtn')}
             </button>
           </div>
 
