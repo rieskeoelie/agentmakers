@@ -158,7 +158,7 @@ export default function AdminDashboard() {
   const [inviteBedrijf, setInviteBedrijf]   = useState('')
   const [inviteEmail, setInviteEmail]       = useState('')
   const [inviteWebsite, setInviteWebsite]   = useState('')
-  const [inviteLang, setInviteLang]         = useState<'nl' | 'en' | 'es'>('nl')
+  const [inviteLang, setInviteLang]         = useState<'nl' | 'en' | 'es'>(() => (typeof localStorage !== 'undefined' ? (localStorage.getItem('agentmakers_ui_lang') as 'nl'|'en'|'es') : null) ?? 'nl')
   // Invite modal labels follow the selected demo language, not the global admin UI language.
   const tNl = useTranslations('nl')
   const tEs = useTranslations('es')
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
 
   const resetInvite = () => {
     setInviteNaam(''); setInviteBedrijf(''); setInviteEmail('')
-    setInviteWebsite(''); setInviteLang('nl'); setInviteResult(null); setInviteError('')
+    setInviteWebsite(''); setInviteLang(uiLang === 'es' ? 'es' : 'nl'); setInviteResult(null); setInviteError('')
   }
 
   const sendInvite = async () => {
