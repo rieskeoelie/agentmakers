@@ -247,6 +247,7 @@ const TRANSLATIONS = {
 
     // ── Invite modal ──
     inviteTitle: '✉️ Nodig prospect uit',
+    inviteSubtitle: 'Prospect ontvangt direct een gepersonaliseerde voice demo link.',
     inviteNameLabel: 'Naam contactpersoon *',
     inviteCompanyLabel: 'Bedrijfsnaam',
     inviteEmailLabel: 'E-mailadres *',
@@ -519,6 +520,7 @@ const TRANSLATIONS = {
 
     // ── Invite modal ──
     inviteTitle: '✉️ Invitar prospecto',
+    inviteSubtitle: 'El prospecto recibe inmediatamente un enlace de demo de voz personalizado.',
     inviteNameLabel: 'Nombre del contacto *',
     inviteCompanyLabel: 'Nombre de la empresa',
     inviteEmailLabel: 'Correo electrónico *',

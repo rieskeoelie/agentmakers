@@ -2873,7 +2873,7 @@ Agentmakers.io`)
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                   <div>
                     <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', margin: 0, marginBottom: 4 }}>{t('inviteTitle')}</h2>
-                    <p style={{ fontSize: '.82rem', color: '#64748B', margin: 0 }}>Prospect ontvangt direct een gepersonaliseerde voice demo link.</p>
+                    <p style={{ fontSize: '.82rem', color: '#64748B', margin: 0 }}>{t('inviteSubtitle')}</p>
                   </div>
                   <button onClick={() => setInviteOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94A3B8', lineHeight: 1 }}>✕</button>
                 </div>
