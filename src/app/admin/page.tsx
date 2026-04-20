@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useTranslations, type UiLang } from '@/lib/admin-i18n'
 
 const SEEN_LEADS_STORAGE   = 'agentmakers_seen_leads'
 const LEAD_STATUS_STORAGE  = 'agentmakers_lead_status'
@@ -9,12 +10,12 @@ const LEAD_NOTES_STORAGE   = 'agentmakers_lead_notes'
 const outreachStorageKey = (userId?: string) =>
   userId ? `agentmakers_outreach_sent_${userId}` : 'agentmakers_outreach_sent'
 
-const PIPELINE_STAGES = [
-  { value: 'nieuw',    label: 'Nieuw',        color: '#64748B', bg: '#F1F5F9' },
-  { value: 'contact',  label: 'Contact',       color: '#0369A1', bg: '#EFF6FF' },
-  { value: 'demo',     label: 'Demo gepland',  color: '#7C3AED', bg: '#F5F3FF' },
-  { value: 'gewonnen', label: '🎉 Gewonnen',   color: '#166534', bg: '#DCFCE7' },
-  { value: 'verloren', label: 'Verloren',      color: '#991B1B', bg: '#FEE2E2' },
+const PIPELINE_STAGES_BASE = [
+  { value: 'nieuw',    labelNl: 'Nieuw',        labelEs: 'Nuevo',           color: '#64748B', bg: '#F1F5F9' },
+  { value: 'contact',  labelNl: 'Contact',       labelEs: 'Contacto',        color: '#0369A1', bg: '#EFF6FF' },
+  { value: 'demo',     labelNl: 'Demo gepland',  labelEs: 'Demo programada', color: '#7C3AED', bg: '#F5F3FF' },
+  { value: 'gewonnen', labelNl: '🎉 Gewonnen', labelEs: '🎉 Ganado',  color: '#166534', bg: '#DCFCE7' },
+  { value: 'verloren', labelNl: 'Verloren',    labelEs: 'Perdido',    color: '#991B1B', bg: '#FEE2E2' },
 ]
 
 interface Page {
@@ -105,6 +106,11 @@ export default function AdminDashboard() {
   const [viewAsUser, setViewAsUser]   = useState<{ id: string; name: string } | null>(null)
   const [accounts, setAccounts]       = useState<AccountStat[]>([])
   const [accountsLoading, setAccountsLoading] = useState(false)
+  const [uiLang, setUiLang]     = useState<UiLang>(() => (typeof localStorage !== 'undefined' ? (localStorage.getItem('agentmakers_ui_lang') as UiLang) : null) ?? 'nl')
+  const t = useTranslations(uiLang)
+  const switchLang = (l: UiLang) => { setUiLang(l); localStorage.setItem('agentmakers_ui_lang', l) }
+  const PIPELINE_STAGES = PIPELINE_STAGES_BASE.map(s => ({ ...s, label: uiLang === 'es' ? s.labelEs : s.labelNl }))
+
   const [authed, setAuthed]     = useState(false)
   const [tab, setTab]           = useState<'pages' | 'leads' | 'analytics' | 'conversations' | 'outreach' | 'accounts'>('leads')
   const [pages, setPages]       = useState<Page[]>([])
@@ -1188,11 +1194,20 @@ Agentmakers.io`)
         </span>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           {currentUser && <span style={{ fontSize: '.84rem', color: '#64748B' }}>{currentUser.displayName}</span>}
+          {/* Taal-toggle */}
+          <div style={{ display: 'flex', borderRadius: 7, overflow: 'hidden', border: '1px solid #E2E8F0' }}>
+            {(['nl', 'es'] as UiLang[]).map(l => (
+              <button key={l} onClick={() => switchLang(l)}
+                style={{ padding: '6px 12px', border: 'none', fontWeight: 700, fontSize: '.78rem', cursor: 'pointer', background: uiLang === l ? '#0D9488' : '#fff', color: uiLang === l ? '#fff' : '#94A3B8', fontFamily: "'Nunito',sans-serif" }}>
+                {l === 'nl' ? '🇳🇱' : '🇪🇸'}
+              </button>
+            ))}
+          </div>
           <button onClick={() => { resetInvite(); setInviteOpen(true) }} style={{ background: '#0D9488', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: '.85rem', fontWeight: 700, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
-            ✉️ Nodig prospect uit
+            {t('inviteButton')}
           </button>
-          <button onClick={() => fetchData()} title="Herlaad alle data" style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>↻</button>
-          <button onClick={logout} style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>Uitloggen</button>
+          <button onClick={() => fetchData()} title={t('refresh')} style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>↻</button>
+          <button onClick={logout} style={{ background: 'none', border: '1px solid #CBD5E1', padding: '7px 16px', borderRadius: 8, fontSize: '.82rem', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>{t('logoutButton')}</button>
         </div>
       </div>
 
@@ -1200,7 +1215,7 @@ Agentmakers.io`)
       {viewAsUser && (
         <div style={{ background: '#F59E0B', padding: '10px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontWeight: 700, fontSize: '.9rem', color: '#fff' }}>
-            👁 Je bekijkt als: <strong>{viewAsUser.name}</strong> — leads, pagina&apos;s, analytics, gesprekken en outreach zijn gefilterd op dit account
+            👁 {t('viewingAs')}: <strong>{viewAsUser.name}</strong> — {t('viewingAsBanner')}
           </span>
           <button onClick={() => {
             setViewAsUser(null)
@@ -1218,12 +1233,12 @@ Agentmakers.io`)
         {/* ── KPI row ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, marginBottom: 28 }}>
           {[
-            { icon: '📄', val: pages.length,              label: "Pagina's",       sub: `${pages.filter(p => p.status === 'live').length} live` },
-            { icon: '👁️', val: totalVisits,               label: 'Bezoekers',      sub: 'totaal' },
-            { icon: '📋', val: visibleLeads.length,        label: 'Leads',          sub: leadsThisWeek > 0 ? `+${leadsThisWeek} deze week` : 'totaal', subColor: leadsThisWeek > 0 ? '#166534' : undefined },
-            { icon: '🎙', val: conversations.length,      label: 'Gesprekken',     sub: conversations.length > 0 ? fmtDuration(avgDuration) + ' gem.' : '—' },
-            { icon: '📊', val: totalVisits > 0 ? `${((totalConversions / totalVisits) * 100).toFixed(1)}%` : '—', label: 'Conv. ratio', sub: `${totalConversions} conversies` },
-            { icon: '🏆', val: bestPage ? `${((bestPage.conversions / bestPage.visits) * 100).toFixed(1)}%` : '—', label: 'Beste pagina', sub: bestPage ? bestPage.industry : '—' },
+            { icon: '📄', val: pages.length,              label: t('statPages'),        sub: `${pages.filter(p => p.status === 'live').length} ${t('statPagesLive')}` },
+            { icon: '👁️', val: totalVisits,               label: t('statVisitors'),     sub: t('statVisitorsTotal') },
+            { icon: '📋', val: visibleLeads.length,        label: t('statLeads'),        sub: leadsThisWeek > 0 ? `+${leadsThisWeek} ${t('statThisWeek')}` : t('total'), subColor: leadsThisWeek > 0 ? '#166534' : undefined },
+            { icon: '🎙', val: conversations.length,      label: t('statConversations'), sub: conversations.length > 0 ? fmtDuration(avgDuration) + ' ' + t('average') : '—' },
+            { icon: '📊', val: totalVisits > 0 ? `${((totalConversions / totalVisits) * 100).toFixed(1)}%` : '—', label: t('statConvRatio'), sub: `${totalConversions} ${t('statConversies')}` },
+            { icon: '🏆', val: bestPage ? `${((bestPage.conversions / bestPage.visits) * 100).toFixed(1)}%` : '—', label: t('statBestPage'), sub: bestPage ? bestPage.industry : '—' },
           ].map(({ icon, val, label, sub, subColor }) => (
             <div key={label} style={{ background: '#fff', padding: '18px 16px', borderRadius: 14, border: '1px solid #F1F5F9', textAlign: 'center' }}>
               <div style={{ fontSize: '1.2rem', marginBottom: 6 }}>{icon}</div>
@@ -1257,7 +1272,7 @@ Agentmakers.io`)
                 'Overzicht van alle accounts en hun performance'
               }
               style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", background: tab === t2 ? (t2 === 'accounts' ? '#7C3AED' : '#0D9488') : '#fff', color: tab === t2 ? '#fff' : '#64748B', position: 'relative' }}>
-              {t2 === 'pages' ? "📄 Pagina's" : t2 === 'leads' ? '📋 Leads' : t2 === 'analytics' ? '📊 Resultaten' : t2 === 'conversations' ? '🎙 Gesprekken' : t2 === 'outreach' ? '🎯 Prospects' : t2 === 'accounts' ? '👥 Team' : t2}
+              {t2 === 'pages' ? t('tabPages') : t2 === 'leads' ? t('tabLeads') : t2 === 'analytics' ? t('tabAnalytics') : t2 === 'conversations' ? t('tabConversations') : t2 === 'outreach' ? t('tabProspects') : t2 === 'accounts' ? t('tabTeam') : t2}
               {t2 === 'leads' && newLeadsCount > 0 && (
                 <span style={{ position: 'absolute', top: -6, right: -6, background: '#EF4444', color: '#fff', borderRadius: '50%', width: 20, height: 20, fontSize: '.7rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {newLeadsCount}
@@ -1333,12 +1348,12 @@ Agentmakers.io`)
             <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>📋</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#1D4ED8', marginBottom: 6 }}>Dit zijn je leads — inbound aanvragen én geïmporteerde prospects</div>
+                <div style={{ fontWeight: 700, fontSize: '.92rem', color: '#1D4ED8', marginBottom: 6 }}>{t('leadsBannerTitle')}</div>
                 <div style={{ fontSize: '.83rem', color: '#334155', lineHeight: 1.8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 24px' }}>
-                  <div>📌 <strong>Status</strong> — verander de status per lead: <em>Nieuw → Contact → Demo gepland → Gewonnen</em></div>
-                  <div>✉ <strong>Stuur AI-mail</strong> — AI schrijft een persoonlijke opvolgmail. Jij controleert en verstuurt met één klik. (Alleen als er een e-mailadres bekend is.)</div>
-                  <div>▼ <strong>Notities</strong> — klik op het pijltje rechts van een lead om een notitie toe te voegen</div>
-                  <div>✓ <strong>Klaar</strong> — lead volledig afgehandeld? Klik Klaar zodat hij uit je lijst verdwijnt</div>
+                  <div>📌 <strong>{t('leadsBannerStatus')}</strong> <em>{t('leadsBannerStatusFlow')}</em></div>
+                  <div>✉ <strong>{t('leadSendMail')}</strong> — {t('leadsBannerMail')}</div>
+                  <div>▼ <strong>{t('leadNoteLabel')}</strong> — {t('leadsBannerNotes')}</div>
+                  <div>✓ <strong>{t('leadMarkDone')}</strong> — {t('leadsBannerDone')}</div>
                 </div>
               </div>
             </div>
@@ -1370,7 +1385,7 @@ Agentmakers.io`)
 
             <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #F1F5F9' }}>
               {visibleLeads.length === 0 ? (
-                <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>Nog geen aanvragen ontvangen.</div>
+                <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>{t('leadsEmpty')}</div>
               ) : (
                 visibleLeads.map((lead, i) => {
                   const isNew      = !seenLeadIds.has(lead.id)
@@ -1429,18 +1444,18 @@ Agentmakers.io`)
                         {outreachSent[lead.demo_token || ''] ? (
                           <span title={`Mail verstuurd op ${new Date(outreachSent[lead.demo_token || '']).toLocaleDateString('nl-NL')}`}
                             style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: '1px solid #86EFAC', background: '#F0FDF4', color: '#166534', whiteSpace: 'nowrap' }}>
-                            ✓ Mail verstuurd
+                            {t('leadMailSent')}
                           </span>
                         ) : lead.email ? (
                           <button onClick={() => openLeadEmailModal(lead)}
                             title="AI schrijft een gepersonaliseerde e-mail met de demo-link — jij controleert en verstuurt met één klik"
                             style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: '1px solid #7C3AED', background: '#7C3AED', color: '#fff', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: "'Nunito',sans-serif" }}>
-                            ✉ Stuur AI-mail
+                            {t('leadSendMail')}
                           </button>
                         ) : (
                           <span title="Voeg een e-mailadres toe aan deze lead om een mail te kunnen sturen"
                             style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 600, border: '1px solid #E2E8F0', background: '#F8FAFC', color: '#94A3B8', whiteSpace: 'nowrap' }}>
-                            Geen e-mail
+                            {t('leadNoEmail')}
                           </span>
                         )}
 
@@ -1614,16 +1629,16 @@ Agentmakers.io`)
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>🎙 Gesprekken ({visibleConversations.length})</h2>
               <button onClick={() => fetchConversations()} disabled={convLoading} title="Herlaad de lijst met AI-gesprekken van de ElevenLabs agent" style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: convLoading ? 0.6 : 1 }}>
-                {convLoading ? 'Laden…' : '↻ Vernieuwen'}
+                {convLoading ? t('loading') : t('conversationsRefresh')}
               </button>
             </div>
 
             {convLoading && visibleConversations.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}>Gesprekken laden…</div>
+              <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}>{t('conversationsLoading')}</div>
             )}
             {!convLoading && visibleConversations.length === 0 && (
               <div style={{ background: '#fff', borderRadius: 14, padding: '60px 24px', textAlign: 'center', color: '#94A3B8', border: '1px solid #F1F5F9' }}>
-                Nog geen gesprekken gevonden.
+                {t('conversationsEmpty')}
               </div>
             )}
 
@@ -2201,7 +2216,7 @@ Agentmakers.io`)
                 const tableHeader = (
                   <thead>
                     <tr style={{ background: '#F8FAFC' }}>
-                      {['Bedrijf', 'Website', 'Naam (optioneel)', 'E-mailadres'].map(h => (
+                      {[t('bulkColCompany'), t('bulkColWebsite'), t('bulkColName'), t('bulkColEmail')].map(h => (
                         <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #F1F5F9' }}>{h}</th>
                       ))}
                     </tr>
@@ -2215,14 +2230,14 @@ Agentmakers.io`)
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <span style={{ background: '#7C3AED', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.85rem', flexShrink: 0 }}>2</span>
                         <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.05rem', margin: 0 }}>
-                          Controleer de lijst — {stillLooking ? `${bulkParsed.length} prospects` : `${complete.length} compleet${incomplete.length > 0 ? `, ${incomplete.length} incompleet` : ''}`}
+                          {t('bulkPreviewTitle')} — {stillLooking ? `${bulkParsed.length} prospects` : `${complete.length} ${t('bulkPreviewComplete')}${incomplete.length > 0 ? `, ${incomplete.length} ${t('bulkPreviewIncomplete')}` : ''}`}
                         </h3>
                         <button onClick={() => { setBulkParsed([]); setBulkCsv(''); setShowIncomplete(false) }} style={{ fontSize: '.75rem', color: '#64748B', background: 'none', border: '1px solid #CBD5E1', borderRadius: 6, padding: '3px 10px', cursor: 'pointer' }}>← Terug</button>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                           <span style={{ fontSize: '.7rem', fontWeight: 700, color: bulkLanguage ? '#64748B' : '#DC2626', letterSpacing: '.04em', textTransform: 'uppercase' }}>
-                            {bulkLanguage ? 'Taal demo' : '⚠ Kies eerst een taal'}
+                            {bulkLanguage ? t('bulkChooseLang') : t('bulkChooseLangWarning')}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#F8FAFC', border: `1px solid ${bulkLanguage ? '#E2E8F0' : '#FCA5A5'}`, borderRadius: 9, padding: '4px 6px' }}>
                             {(['nl', 'en', 'es'] as const).map(lang => (
@@ -2236,7 +2251,7 @@ Agentmakers.io`)
                         <button onClick={handleBulkGenerate} disabled={bulkLoading || !bulkLanguage || complete.length === 0}
                           title={!bulkLanguage ? 'Kies eerst een taal' : complete.length === 0 ? 'Geen complete prospects' : `Genereer demo-links voor ${complete.length} prospects met e-mailadres`}
                           style={{ background: bulkLoading || !bulkLanguage || complete.length === 0 ? '#94A3B8' : '#7C3AED', color: '#fff', padding: '11px 24px', borderRadius: 9, border: 'none', fontWeight: 700, fontSize: '.9rem', cursor: bulkLoading || !bulkLanguage || complete.length === 0 ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                          {bulkLoading ? '⏳ Aanmaken…' : `✨ Genereer ${complete.length} demo-links`}
+                          {bulkLoading ? t('bulkGenerating') : `${t('bulkGenerate')} ${complete.length} ${t('bulkGenerateLinks')}`}
                         </button>
                       </div>
                     </div>
@@ -2246,8 +2261,8 @@ Agentmakers.io`)
                       <span>💡</span>
                       <span>
                         {stillLooking
-                          ? <>🔍 Hunter.io zoekt contactgegevens voor <strong>{hunterLookingUp.size}</strong> bedrijf{hunterLookingUp.size !== 1 ? 'en' : ''}…</>
-                          : <>Naam en e-mail zijn automatisch opgezocht. Alleen prospects <strong>met e-mailadres</strong> worden meegenomen.</>
+                          ? <>🔍 {t('bulkHunterLooking')} <strong>{hunterLookingUp.size}</strong> {t('bulkHunterBedrijf')}{hunterLookingUp.size !== 1 ? (uiLang === 'es' ? 's' : 'en') : ''}…</>
+                          : <>{t('bulkHunterHint')}</>
                         }
                       </span>
                     </div>
@@ -2343,7 +2358,7 @@ Agentmakers.io`)
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.83rem' }}>
                   <thead>
                     <tr style={{ background: '#F8FAFC' }}>
-                      {['Bedrijf', 'Demo-link', 'Acties'].map(h => (
+                      {[t('bulkColCompany'), t('bulkResultsDemoLink'), t('bulkResultsActions')].map(h => (
                         <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #F1F5F9' }}>{h}</th>
                       ))}
                     </tr>
@@ -2373,7 +2388,7 @@ Agentmakers.io`)
                                 disabled={!scrapeDone}
                                 title={scrapeDone ? 'Kopieer de demo-link naar het klembord om te plakken in een e-mail of WhatsApp' : 'Wacht tot de AI-agent gepersonaliseerd is…'}
                                 style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #E2E8F0', background: copiedIdx === i ? '#DCFCE7' : '#F8FAFC', color: copiedIdx === i ? '#166534' : '#64748B', fontWeight: 600, fontSize: '.75rem', cursor: scrapeDone ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', opacity: scrapeDone ? 1 : 0.4 }}>
-                                {copiedIdx === i ? '✓ Gekopieerd' : '📋 Kopieer link'}
+                                {copiedIdx === i ? t('bulkResultsCopied') : t('bulkResultsCopyLink')}
                               </button>
                               {r.email && (() => {
                                 const alreadySent = sentIdx.has(i) || !!outreachSent[r.demo_token]
@@ -2382,7 +2397,7 @@ Agentmakers.io`)
                                   : null
                                 return alreadySent ? (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                    <span style={{ padding: '6px 12px', borderRadius: 7, background: '#DCFCE7', color: '#166534', fontWeight: 700, fontSize: '.75rem', whiteSpace: 'nowrap' }}>✓ Outreach verstuurd</span>
+                                    <span style={{ padding: '6px 12px', borderRadius: 7, background: '#DCFCE7', color: '#166534', fontWeight: 700, fontSize: '.75rem', whiteSpace: 'nowrap' }}>{t('bulkResultsAlreadySent')}</span>
                                     {sentDate && <span style={{ fontSize: '.68rem', color: '#94A3B8', paddingLeft: 4 }}>{sentDate}</span>}
                                   </div>
                                 ) : (
@@ -2391,7 +2406,7 @@ Agentmakers.io`)
                                     disabled={!scrapeDone}
                                     title="AI schrijft een mail — jij ziet hem eerst en past aan vóór versturen"
                                     style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #7C3AED', background: '#7C3AED', color: '#fff', fontWeight: 700, fontSize: '.75rem', cursor: !scrapeDone ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: !scrapeDone ? 0.4 : 1 }}>
-                                    ✏️ Bekijk mail eerst
+                                    {t('bulkResultsReviewMail')}
                                   </button>
                                 )
                               })()}
@@ -2413,15 +2428,15 @@ Agentmakers.io`)
                   if (!toSend.length) return null
                   return (
                     <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: '14px 18px', marginBottom: 16, fontSize: '.83rem', color: '#334155', lineHeight: 1.7 }}>
-                      <div style={{ fontWeight: 700, marginBottom: 6, color: '#0F172A' }}>Hoe wil je de mails versturen?</div>
+                      <div style={{ fontWeight: 700, marginBottom: 6, color: '#0F172A' }}>{t('bulkHowToSend')}</div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                         <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 14px' }}>
-                          <div style={{ fontWeight: 700, color: '#7C3AED', marginBottom: 4 }}>✏️ Per stuk — bekijk eerst</div>
-                          <div style={{ fontSize: '.78rem', color: '#64748B' }}>Klik "Bekijk mail eerst" naast een bedrijf. AI schrijft de mail, jij leest hem, past aan indien nodig, dan pas versturen.</div>
+                          <div style={{ fontWeight: 700, color: '#7C3AED', marginBottom: 4 }}>{t('bulkOptionReview')}</div>
+                          <div style={{ fontSize: '.78rem', color: '#64748B' }}>{t('bulkOptionReviewDesc')}</div>
                         </div>
                         <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 14px' }}>
-                          <div style={{ fontWeight: 700, color: '#0D9488', marginBottom: 4 }}>🚀 Alles in één keer — zonder preview</div>
-                          <div style={{ fontSize: '.78rem', color: '#64748B' }}>AI schrijft voor elk bedrijf automatisch een gepersonaliseerde mail en verstuurt direct. Geen handmatige controle.</div>
+                          <div style={{ fontWeight: 700, color: '#0D9488', marginBottom: 4 }}>{t('bulkOptionAuto')}</div>
+                          <div style={{ fontSize: '.78rem', color: '#64748B' }}>{t('bulkOptionAutoDesc')}</div>
                         </div>
                       </div>
                     </div>
@@ -2451,7 +2466,7 @@ Agentmakers.io`)
                         disabled={!scrapeDone}
                         title={scrapeDone ? `AI schrijft automatisch voor elk bedrijf een gepersonaliseerde mail en verstuurt direct — geen preview` : 'Wacht tot de AI-agent gepersonaliseerd is'}
                         style={{ background: scrapeDone ? '#0D9488' : '#94A3B8', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 9, fontWeight: 700, fontSize: '.85rem', cursor: scrapeDone ? 'pointer' : 'not-allowed', fontFamily: "'Nunito',sans-serif", display: 'flex', alignItems: 'center', gap: 8 }}>
-                        🚀 Stuur alle {toSend.length} mails automatisch
+                        {t('bulkSendAllAuto')} {toSend.length} {t('bulkSendAllAutoSuffix')}
                       </button>
                     )
                   })()}
@@ -2469,8 +2484,8 @@ Agentmakers.io`)
           <div style={{ background: '#fff', borderRadius: 20, maxWidth: 640, width: '100%', padding: 36, boxShadow: '0 24px 64px rgba(0,0,0,.25)', display: 'flex', flexDirection: 'column', maxHeight: '90vh', overflow: 'hidden' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
-                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', margin: 0, marginBottom: 4 }}>✨ AI-mail voor {emailModal.bedrijfsnaam}</h2>
-                <p style={{ fontSize: '.8rem', color: '#64748B', margin: 0 }}>Naar: {emailModal.email}</p>
+                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', margin: 0, marginBottom: 4 }}>✨ {t('emailModalTitle')} {emailModal.bedrijfsnaam}</h2>
+                <p style={{ fontSize: '.8rem', color: '#64748B', margin: 0 }}>{t('emailModalTo')} {emailModal.email}</p>
               </div>
               <button onClick={() => setEmailModal(null)} style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: '#94A3B8', lineHeight: 1, padding: 4 }}>×</button>
             </div>
@@ -2487,12 +2502,12 @@ Agentmakers.io`)
             ) : (
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
-                  <label style={{ fontSize: '.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em', display: 'block', marginBottom: 6 }}>Onderwerp</label>
+                  <label style={{ fontSize: '.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em', display: 'block', marginBottom: 6 }}>{t('emailModalSubject')}</label>
                   <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: '.9rem', fontFamily: "'Nunito',sans-serif", boxSizing: 'border-box' }} />
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <label style={{ fontSize: '.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em', display: 'block', marginBottom: 6 }}>E-mailtekst</label>
+                  <label style={{ fontSize: '.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em', display: 'block', marginBottom: 6 }}>{t('emailModalBody')}</label>
                   <textarea value={emailBody} onChange={e => setEmailBody(e.target.value)}
                     rows={12}
                     style={{ width: '100%', padding: '12px 14px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: '.85rem', fontFamily: "'Nunito',sans-serif", lineHeight: 1.6, resize: 'vertical', boxSizing: 'border-box' }} />
@@ -2513,7 +2528,7 @@ Agentmakers.io`)
               <button onClick={sendEmailFromModal}
                 disabled={emailSending || emailGenerating || !emailSubject || !emailBody}
                 style={{ flex: 2, padding: '11px', background: emailSending || !emailSubject ? '#94A3B8' : '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.9rem', cursor: emailSending || !emailSubject ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                {emailSending ? '⏳ Verzenden…' : `📤 Verstuur naar ${emailModal.email}`}
+                {emailSending ? t('emailModalSending') : `📤 ${t('emailModalSend')} ${emailModal.email}`}
               </button>
             </div>
           </div>
@@ -2857,7 +2872,7 @@ Agentmakers.io`)
               <>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                   <div>
-                    <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', margin: 0, marginBottom: 4 }}>✉️ Nodig prospect uit</h2>
+                    <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', margin: 0, marginBottom: 4 }}>{t('inviteTitle')}</h2>
                     <p style={{ fontSize: '.82rem', color: '#64748B', margin: 0 }}>Prospect ontvangt direct een gepersonaliseerde voice demo link.</p>
                   </div>
                   <button onClick={() => setInviteOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94A3B8', lineHeight: 1 }}>✕</button>
@@ -2875,10 +2890,10 @@ Agentmakers.io`)
 
                 {/* Fields */}
                 {[
-                  { label: 'Naam contactpersoon *', value: inviteNaam, set: setInviteNaam, placeholder: 'Jan de Vries', type: 'text' },
-                  { label: 'Bedrijfsnaam', value: inviteBedrijf, set: setInviteBedrijf, placeholder: 'Loodgieter Jansen BV', type: 'text' },
-                  { label: 'E-mailadres *', value: inviteEmail, set: setInviteEmail, placeholder: 'jan@bedrijf.nl', type: 'email' },
-                  { label: 'Website *', value: inviteWebsite, set: setInviteWebsite, placeholder: 'https://bedrijf.nl', type: 'url' },
+                  { label: t('inviteNameLabel'), value: inviteNaam, set: setInviteNaam, placeholder: uiLang === 'es' ? 'Carlos García' : 'Jan de Vries', type: 'text' },
+                  { label: t('inviteCompanyLabel'), value: inviteBedrijf, set: setInviteBedrijf, placeholder: uiLang === 'es' ? 'Fontanero García SL' : 'Loodgieter Jansen BV', type: 'text' },
+                  { label: t('inviteEmailLabel'), value: inviteEmail, set: setInviteEmail, placeholder: uiLang === 'es' ? 'carlos@empresa.es' : 'jan@bedrijf.nl', type: 'email' },
+                  { label: t('inviteWebsiteLabel'), value: inviteWebsite, set: setInviteWebsite, placeholder: uiLang === 'es' ? 'https://empresa.es' : 'https://bedrijf.nl', type: 'url' },
                 ].map(({ label, value, set, placeholder, type }) => (
                   <div key={label} style={{ marginBottom: 16 }}>
                     <label style={{ display: 'block', fontSize: '.78rem', fontWeight: 700, color: '#475569', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</label>
@@ -2895,16 +2910,16 @@ Agentmakers.io`)
 
                 <button onClick={sendInvite} disabled={inviteLoading}
                   style={{ width: '100%', padding: '13px', background: inviteLoading ? '#94A3B8' : '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '1rem', cursor: inviteLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif", marginTop: 4 }}>
-                  {inviteLoading ? '⏳ Demo aanmaken en e-mail verzenden…' : '✉️ Verstuur demo uitnodiging'}
+                  {inviteLoading ? t('inviteSending') : t('inviteSend')}
                 </button>
               </>
             ) : (
               /* Success state */
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
-                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', marginBottom: 8 }}>Uitnodiging verstuurd!</h2>
+                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', marginBottom: 8 }}>{t('inviteSuccess')}</h2>
                 <p style={{ color: '#64748B', fontSize: '.88rem', marginBottom: 24 }}>
-                  <strong>{inviteResult.naam}</strong> heeft een e-mail ontvangen met de gepersonaliseerde demo link. De AI wordt ondertussen getraind op hun website.
+                  <strong>{inviteResult.naam}</strong> {t('inviteSuccessDesc')}
                 </p>
                 <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '12px 16px', marginBottom: 24, wordBreak: 'break-all' }}>
                   <div style={{ fontSize: '.72rem', color: '#16A34A', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.06em' }}>Demo link</div>
