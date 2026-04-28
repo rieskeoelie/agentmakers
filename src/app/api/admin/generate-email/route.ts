@@ -22,33 +22,35 @@ export async function POST(req: NextRequest) {
   const afzenderVoornaam = session.displayName?.split(' ')[0] || session.username
 
   const langInstructions: Record<string, string> = {
-    nl: 'Schrijf de e-mail in het Nederlands. Gebruik "u" (formeel).',
-    en: 'Write the email in English. Use a professional but friendly tone.',
-    es: 'Escribe el correo en español. Usa un tono profesional pero cercano. Usa "usted".',
+    nl: 'Schrijf de e-mail VOLLEDIG in het Nederlands. Gebruik "u" (formeel). Geen Engelse woorden.',
+    en: 'Write the email ENTIRELY in English. Use a professional but friendly tone. No Dutch words.',
+    es: 'Escribe el correo COMPLETAMENTE en español. Usa un tono profesional pero cercano. Usa "usted". Sin palabras en holandés.',
   }
 
-  const prompt = `Je bent ${afzenderVoornaam} van Agentmakers.io. Schrijf een korte, persoonlijke cold outreach e-mail aan een prospect voor wie je een AI demo hebt gemaakt.
+  const instruction = langInstructions[lang] || langInstructions.nl
 
-Bedrijfsnaam: ${bedrijfsnaam}
-${voornaam ? `Contactpersoon voornaam: ${voornaam}` : ''}
+  const prompt = `You are ${afzenderVoornaam} from Agentmakers.io. Write a short, personal cold outreach email to a prospect for whom you built an AI demo.
+
+Company name: ${bedrijfsnaam}
+${voornaam ? `Contact first name: ${voornaam}` : ''}
 Demo URL: ${demo_url}
-${business_info ? `\nWat we weten over dit bedrijf (gebruik dit om de mail te personaliseren):\n${business_info.substring(0, 1500)}` : ''}
+${business_info ? `\nWhat we know about this company (use this to personalise the email):\n${business_info.substring(0, 1500)}` : ''}
 
-Instructies:
-- ${langInstructions[lang] || langInstructions.nl}
-- Begin met een persoonlijke opening die iets specifieks noemt uit de bedrijfsinformatie hierboven
-- Leg kort uit dat je een demo hebt gemaakt die specifiek getraind is op hun website
-- Gebruik de demo URL als centrale call-to-action
-- Houd het kort: max 5 alinea's
-- Eindig met "${afzenderVoornaam}" en "Agentmakers.io"
-- Geen marketingtaal of buzzwords
-- Klink als een echte e-mail van een mens, niet als een template
-- Gebruik zuiver Nederlands: geen anglicismen of code-switching (bijv. schrijf "spreekt voor zich" en NIET "spreekt voor itself")
+CRITICAL LANGUAGE RULE: ${instruction}
 
-Geef alleen de e-mail terug in dit JSON-formaat (geen markdown, alleen JSON):
+Additional instructions:
+- Start with a personal opening that mentions something specific from the company info above
+- Briefly explain that you built a demo specifically trained on their website
+- Use the demo URL as the central call-to-action
+- Keep it short: max 5 paragraphs
+- End with "${afzenderVoornaam}" and "Agentmakers.io"
+- No marketing language or buzzwords
+- Sound like a real human email, not a template
+
+Return ONLY the email in this JSON format (no markdown, just JSON):
 {"subject": "...", "body": "..."}
 
-De body mag regeleinden bevatten als \\n.`
+The body may contain line breaks as \\n.`
 
   try {
     const message = await anthropic.messages.create({
