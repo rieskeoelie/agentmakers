@@ -438,7 +438,7 @@ Agentmakers.io`)
   }
 
   const openEmailModal = async (r: BulkResult, idx: number) => {
-    await _openEmailModalRaw({ idx, bedrijfsnaam: r.bedrijfsnaam, naam: r.naam, email: r.email, demo_url: r.demo_url, demo_token: r.demo_token, language: bulkLanguage ?? 'nl' })
+    await _openEmailModalRaw({ idx, bedrijfsnaam: r.bedrijfsnaam, naam: r.naam, email: r.email, demo_url: r.demo_url, demo_token: r.demo_token, language: bulkLanguage ?? uiLang })
   }
 
   // Generic handler — works for both BulkResult rows and inbound Lead rows
@@ -479,7 +479,7 @@ Agentmakers.io`)
       email: lead.email,
       demo_url,
       demo_token: lead.demo_token || '',
-      language: lead.language || 'nl',
+      language: lead.language || uiLang,
     })
   }
 
@@ -2518,7 +2518,7 @@ Agentmakers.io`)
             {emailGenerating ? (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: 14 }}>
                 <div style={{ fontSize: '2rem', animation: 'spin 1.2s linear infinite', display: 'inline-block' }}>✨</div>
-                <p style={{ color: '#64748B', fontSize: '.9rem', margin: 0 }}>AI schrijft een gepersonaliseerde mail op basis van de website van {emailModal.bedrijfsnaam}…</p>
+                <p style={{ color: '#64748B', fontSize: '.9rem', margin: 0 }}>{t('emailModalGenerating')} {emailModal.bedrijfsnaam}…</p>
               </div>
             ) : emailGenError ? (
               <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '16px', marginBottom: 16, color: '#DC2626', fontSize: '.85rem' }}>
@@ -2543,12 +2543,12 @@ Agentmakers.io`)
             <div style={{ display: 'flex', gap: 10, marginTop: 20, paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
               <button onClick={() => setEmailModal(null)}
                 style={{ flex: 1, padding: '11px', background: '#F8FAFC', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: 10, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                Annuleren
+                {t('emailModalCancel')}
               </button>
               <button onClick={() => { setEmailSubject(''); setEmailBody(''); setEmailGenError(''); openEmailModal({ bedrijfsnaam: emailModal.bedrijfsnaam, naam: emailModal.naam, email: emailModal.email, demo_url: emailModal.demo_url, demo_token: emailModal.demo_token, website: '', status: 'ok' } as BulkResult, emailModal.idx) }}
                 disabled={emailGenerating}
                 style={{ padding: '11px 18px', background: '#F8FAFC', color: '#7C3AED', border: '1px solid #7C3AED', borderRadius: 10, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", whiteSpace: 'nowrap' }}>
-                ↺ Herschrijven
+                {t('emailModalRewrite')}
               </button>
               <button onClick={sendEmailFromModal}
                 disabled={emailSending || emailGenerating || !emailSubject || !emailBody}
@@ -2568,26 +2568,26 @@ Agentmakers.io`)
               <>
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
                   <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
-                  <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', marginBottom: 8 }}>Mails verstuurd!</h2>
+                  <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.2rem', marginBottom: 8 }}>{t('bulkMailDoneTitle')}</h2>
                   <p style={{ color: '#64748B', fontSize: '.9rem', marginBottom: 28 }}>
-                    {bulkMailProgress?.done} outreach-mail{(bulkMailProgress?.done ?? 0) !== 1 ? 's' : ''} zijn verstuurd naar de bedrijven met een e-mailadres.
+                    {bulkMailProgress?.done} {t('bulkMailDoneDesc')}
                   </p>
                   <button onClick={() => setBulkMailOpen(false)}
                     style={{ background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 32px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                    Sluiten ✓
+                    {t('bulkMailClose')}
                   </button>
                 </div>
               </>
             ) : bulkMailSending ? (
               <>
-                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', marginBottom: 20 }}>📧 Mails versturen…</h2>
+                <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', marginBottom: 20 }}>{t('bulkMailSending')}</h2>
                 <p style={{ color: '#64748B', fontSize: '.88rem', marginBottom: 20 }}>
-                  De AI schrijft en verstuurt voor elk bedrijf een gepersonaliseerde outreach-mail. Even geduld…
+                  {t('bulkMailSendingDesc')}
                 </p>
                 {bulkMailProgress && (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.82rem', color: '#64748B', marginBottom: 8 }}>
-                      <span>{bulkMailProgress.done} van {bulkMailProgress.total} verstuurd</span>
+                      <span>{bulkMailProgress.done} {t('bulkMailOf')} {bulkMailProgress.total} {t('bulkMailSent')}</span>
                       <span>{Math.round((bulkMailProgress.done / bulkMailProgress.total) * 100)}%</span>
                     </div>
                     <div style={{ background: '#E2E8F0', borderRadius: 99, height: 8, overflow: 'hidden' }}>
@@ -2599,7 +2599,7 @@ Agentmakers.io`)
             ) : (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-                  <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', margin: 0 }}>📧 Bulk outreach versturen</h2>
+                  <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', margin: 0 }}>{t('bulkMailTitle')}</h2>
                   <button onClick={() => setBulkMailOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: '#94A3B8', lineHeight: 1 }}>×</button>
                 </div>
                 {(() => {
@@ -2607,10 +2607,10 @@ Agentmakers.io`)
                   return (
                     <>
                       <p style={{ color: '#334155', fontSize: '.9rem', marginBottom: 16, lineHeight: 1.6 }}>
-                        De AI schrijft voor elk bedrijf een <strong>gepersonaliseerde outreach-mail</strong> op basis van hun website en verstuurt die direct. Je hoeft niets te doen.
+                        {t('bulkMailDesc')}
                       </p>
                       <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '14px 18px', marginBottom: 24 }}>
-                        <div style={{ fontSize: '.82rem', color: '#64748B', marginBottom: 8, fontWeight: 700 }}>Ontvangers ({toSend.length})</div>
+                        <div style={{ fontSize: '.82rem', color: '#64748B', marginBottom: 8, fontWeight: 700 }}>{t('bulkMailRecipients')} ({toSend.length})</div>
                         {toSend.slice(0, 5).map((r, i) => (
                           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0', borderBottom: i < Math.min(toSend.length, 5) - 1 ? '1px solid #F1F5F9' : 'none' }}>
                             <span style={{ fontWeight: 600, fontSize: '.83rem', color: '#1E293B', flex: 1 }}>{r.bedrijfsnaam}</span>
@@ -2618,17 +2618,17 @@ Agentmakers.io`)
                           </div>
                         ))}
                         {toSend.length > 5 && (
-                          <div style={{ fontSize: '.78rem', color: '#94A3B8', marginTop: 8 }}>+ {toSend.length - 5} meer…</div>
+                          <div style={{ fontSize: '.78rem', color: '#94A3B8', marginTop: 8 }}>+ {toSend.length - 5} {t('bulkMailMore')}</div>
                         )}
                       </div>
                       <div style={{ display: 'flex', gap: 10 }}>
                         <button onClick={() => setBulkMailOpen(false)}
                           style={{ flex: 1, padding: '12px', background: '#F8FAFC', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: 10, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                          Annuleren
+                          {t('emailModalCancel')}
                         </button>
                         <button onClick={sendBulkMails}
                           style={{ flex: 2, padding: '12px', background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
-                          📤 Verstuur {toSend.length} mail{toSend.length !== 1 ? 's' : ''} nu
+                          {t('bulkMailSendNow')} {toSend.length} {t('bulkMailSendNowSuffix')}
                         </button>
                       </div>
                     </>
