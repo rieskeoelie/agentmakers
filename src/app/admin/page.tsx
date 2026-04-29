@@ -1401,9 +1401,17 @@ Agentmakers.io`)
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem' }}>Leads ({visibleLeads.length})</h2>
               <div style={{ display: 'flex', gap: 10 }}>
+                {visibleLeads.length > 0 && (
+                  <button onClick={toggleSelectAll}
+                    style={{ background: selectedLeads.size === visibleLeads.length ? '#F8FAFC' : '#0D9488', border: `1.5px solid ${selectedLeads.size === visibleLeads.length ? '#E2E8F0' : '#0D9488'}`, color: selectedLeads.size === visibleLeads.length ? '#64748B' : '#fff', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                    {selectedLeads.size === visibleLeads.length
+                      ? (uiLang === 'es' ? 'Deseleccionar todo' : 'Deselecteer alles')
+                      : `✓ ${uiLang === 'es' ? 'Seleccionar todo' : 'Alles selecteren'} (${visibleLeads.length})`}
+                  </button>
+                )}
                 {selectedLeads.size > 0 && (
                   <button onClick={deleteSelectedLeads} disabled={deleteLeadsLoading} title={`Verwijder de ${selectedLeads.size} geselecteerde leads permanent`} style={{ background: '#FEF2F2', border: '1.5px solid #EF4444', color: '#DC2626', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif", opacity: deleteLeadsLoading ? 0.5 : 1 }}>
-                    🗑 Verwijder ({selectedLeads.size})
+                    🗑 {uiLang === 'es' ? 'Eliminar' : 'Verwijder'} ({selectedLeads.size})
                   </button>
                 )}
                 <button onClick={exportCSV} title="Download alle leads inclusief status, notities en contactgegevens als CSV-bestand" style={{ background: '#fff', border: '1.5px solid #0D9488', color: '#0D9488', padding: '10px 20px', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
