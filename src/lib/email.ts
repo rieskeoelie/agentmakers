@@ -231,50 +231,87 @@ export async function sendFollowUpEmail({
   email,
   bedrijfsnaam,
   demo_url,
+  senderName = 'Richard',
+  language = 'nl',
 }: {
   naam: string
   email: string
   bedrijfsnaam: string
   demo_url: string
+  senderName?: string
+  language?: string
 }) {
   const voornaam = naam.split(' ')[0]
-  const subject = `Heeft u de demo al geprobeerd? — ${bedrijfsnaam}`
+  const lang = language || 'nl'
+
+  const copy: Record<string, { subject: string; greeting: string; p1: string; p2: string; cta: string; p3: string; unsubscribe: string }> = {
+    nl: {
+      subject: `Heeft u de demo al geprobeerd? — ${bedrijfsnaam}`,
+      greeting: `Hallo${voornaam ? ` ${voornaam}` : ''},`,
+      p1: `Een paar dagen geleden stuurde ik u de persoonlijke AI demo voor <strong>${bedrijfsnaam}</strong>. Heeft u hem al kunnen beluisteren?`,
+      p2: `De demo duurt minder dan 2 minuten en geeft een goed beeld van hoe de AI assistent uw klanten te woord staat.`,
+      cta: `🎤 Open mijn persoonlijke demo`,
+      p3: `Heeft u vragen of wilt u direct een gesprek inplannen? Dat kan via de demo-pagina zelf.`,
+      unsubscribe: `Wilt u geen mails meer ontvangen? Laat het ons weten via dit e-mailadres.`,
+    },
+    en: {
+      subject: `Have you tried the demo yet? — ${bedrijfsnaam}`,
+      greeting: `Hi${voornaam ? ` ${voornaam}` : ''},`,
+      p1: `A few days ago I sent you the personalised AI demo for <strong>${bedrijfsnaam}</strong>. Have you had a chance to listen to it?`,
+      p2: `The demo takes less than 2 minutes and gives a clear idea of how the AI assistant handles your customers' questions.`,
+      cta: `🎤 Open my personalised demo`,
+      p3: `If you have any questions or would like to book a call, you can do so directly via the demo page.`,
+      unsubscribe: `If you no longer wish to receive emails, please let us know by replying to this address.`,
+    },
+    es: {
+      subject: `¿Ya has probado la demo? — ${bedrijfsnaam}`,
+      greeting: `Hola${voornaam ? ` ${voornaam}` : ''},`,
+      p1: `Hace unos días te envié la demo de IA personalizada para <strong>${bedrijfsnaam}</strong>. ¿Has tenido ocasión de escucharla?`,
+      p2: `La demo dura menos de 2 minutos y muestra cómo el asistente de IA atiende las preguntas de tus clientes.`,
+      cta: `🎤 Abrir mi demo personalizada`,
+      p3: `Si tienes alguna pregunta o quieres programar una llamada, puedes hacerlo directamente desde la página de la demo.`,
+      unsubscribe: `Si no deseas seguir recibiendo correos, háznos saber respondiendo a esta dirección.`,
+    },
+  }
+
+  const c = copy[lang] || copy.nl
+  const greeting = lang === 'nl' ? 'Met vriendelijke groet,' : lang === 'es' ? 'Un saludo,' : 'Kind regards,'
 
   const html = `
 <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1E293B;line-height:1.7">
-  <p>Hallo${voornaam ? ` ${voornaam}` : ''},</p>
-  <p>Een paar dagen geleden stuurde ik u de persoonlijke AI demo voor <strong>${bedrijfsnaam}</strong>. Heeft u hem al kunnen beluisteren?</p>
-  <p>De demo duurt minder dan 2 minuten en geeft een goed beeld van hoe de AI receptioniste uw klanten te woord staat.</p>
+  <p>${c.greeting}</p>
+  <p>${c.p1}</p>
+  <p>${c.p2}</p>
   <p style="margin:28px 0;">
     <a href="${demo_url}"
        style="background:#0D9488;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:1rem;display:inline-block;">
-      🎤 Open mijn persoonlijke demo
+      ${c.cta}
     </a>
   </p>
-  <p>Heeft u vragen of wilt u direct een gesprek inplannen? Dat kan via de demo-pagina zelf.</p>
-  <p>Met vriendelijke groet,<br><strong>Richard</strong><br>Agentmakers.io</p>
+  <p>${c.p3}</p>
+  <p>${greeting}<br><strong>${senderName}</strong><br>Agentmakers.io</p>
   <hr style="border:none;border-top:1px solid #E2E8F0;margin:24px 0">
-  <p style="font-size:.78rem;color:#94A3B8;">Wilt u geen mails meer ontvangen? Laat het ons weten via dit e-mailadres.</p>
+  <p style="font-size:.78rem;color:#94A3B8;">${c.unsubscribe}</p>
 </div>`.trim()
 
-  const text = `Hallo${voornaam ? ` ${voornaam}` : ''},
+  const text = `${c.greeting}
 
-Een paar dagen geleden stuurde ik u de persoonlijke AI demo voor ${bedrijfsnaam}. Heeft u hem al kunnen beluisteren?
+${c.p1.replace(/<[^>]+>/g, '')}
 
-De demo duurt minder dan 2 minuten en geeft een goed beeld van hoe de AI receptioniste uw klanten te woord staat.
+${c.p2}
 
-👉 Open mijn persoonlijke demo: ${demo_url}
+👉 ${c.cta}: ${demo_url}
 
-Heeft u vragen of wilt u direct een gesprek inplannen? Dat kan via de demo-pagina zelf.
+${c.p3}
 
-Met vriendelijke groet,
-Richard
+${greeting}
+${senderName}
 Agentmakers.io`
 
   await resend.emails.send({
     from: FROM,
     to: email,
-    subject,
+    subject: c.subject,
     html,
     text,
   })

@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   // We mark follow-up sent by appending "|fu" to the referrer field
   const { data: leads, error } = await supabaseAdmin
     .from('leads')
-    .select('id, naam, email, bedrijfsnaam, demo_token, referrer')
+    .select('id, naam, email, bedrijfsnaam, demo_token, referrer, user_id, language')
     .gte('created_at', from.toISOString())
     .lte('created_at', to.toISOString())
     .not('email', 'is', null)
@@ -54,14 +54,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ message: 'Alle leads al opgevolgd', sent: 0 })
   }
 
+  // Fetch partner display names for all relevant user_ids
+  const userIds = [...new Set(eligible.map(l => l.user_id).filter(Boolean))]
+  const { data: users } = userIds.length
+    ? await supabaseAdmin.from('users').select('id, display_name').in('id', userIds)
+    : { data: [] }
+  const userMap = Object.fromEntries((users ?? []).map(u => [u.id, u.display_name]))
+
   const results = await Promise.allSettled(
     eligible.map(async (lead) => {
       const demo_url = `${SITE_URL}/demo/${lead.demo_token}`
+      const senderName = (lead.user_id && userMap[lead.user_id])
+        ? userMap[lead.user_id].split(' ')[0]
+        : 'Richard'
       await sendFollowUpEmail({
         naam: lead.naam || lead.bedrijfsnaam || '',
         email: lead.email,
         bedrijfsnaam: lead.bedrijfsnaam || '',
         demo_url,
+        senderName,
+        language: lead.language || 'nl',
       })
       // Mark as followed up
       await supabaseAdmin
