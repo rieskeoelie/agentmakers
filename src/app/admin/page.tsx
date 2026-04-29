@@ -2099,16 +2099,23 @@ Agentmakers.io`)
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                       <span style={{ fontSize: '.82rem', color: '#64748B' }}>{prospectResults.length} {t('prospectFoundWith')}</span>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button onClick={() => setSelectedProspects(new Set(prospectResults.map((_, i) => i)))}
-                          title={t('prospectSelectAllTip')}
-                          style={{ fontSize: '.75rem', padding: '5px 12px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#F8FAFC', cursor: 'pointer', color: '#334155' }}>
-                          {t('prospectsSelectAll')}
-                        </button>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        {selectedProspects.size === prospectResults.length ? (
+                          <button onClick={() => setSelectedProspects(new Set())}
+                            style={{ fontSize: '.75rem', padding: '5px 12px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#F8FAFC', cursor: 'pointer', color: '#64748B', fontFamily: "'Nunito',sans-serif" }}>
+                            {uiLang === 'es' ? 'Deseleccionar todo' : 'Deselecteer alles'}
+                          </button>
+                        ) : (
+                          <button onClick={() => setSelectedProspects(new Set(prospectResults.map((_, i) => i)))}
+                            title={t('prospectSelectAllTip')}
+                            style={{ fontSize: '.8rem', padding: '7px 16px', borderRadius: 6, border: '2px solid #0D9488', background: '#0D9488', cursor: 'pointer', color: '#fff', fontWeight: 700, fontFamily: "'Nunito',sans-serif" }}>
+                            ✓ {t('prospectsSelectAll')} ({prospectResults.length})
+                          </button>
+                        )}
                         {selectedProspects.size > 0 && (
                           <button onClick={importSelectedProspects}
                             title={t('prospectImportTip')}
-                            style={{ fontSize: '.75rem', padding: '5px 12px', borderRadius: 6, border: '1px solid #7C3AED', background: '#7C3AED', cursor: 'pointer', color: '#fff', fontWeight: 700 }}>
+                            style={{ fontSize: '.8rem', padding: '7px 16px', borderRadius: 6, border: '2px solid #7C3AED', background: '#7C3AED', cursor: 'pointer', color: '#fff', fontWeight: 700, fontFamily: "'Nunito',sans-serif" }}>
                             {t('prospectImportSelected')} {selectedProspects.size} {t('prospectImportSelectedSuffix')}
                           </button>
                         )}
