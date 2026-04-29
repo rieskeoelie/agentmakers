@@ -223,6 +223,7 @@ export default function AdminDashboard() {
   const [bulkLoading, setBulkLoading]   = useState(false)
   const [bulkError, setBulkError]       = useState('')
   const [bulkLanguage, setBulkLanguage] = useState<'nl' | 'en' | 'es' | null>(null)
+  const [filterNoName, setFilterNoName] = useState(false)
   const [copiedIdx, setCopiedIdx]       = useState<number | null>(null)
   const [scrapeQueueLoading, setScrapeQueueLoading] = useState(false)
   const [scrapeQueueResult, setScrapeQueueResult]   = useState<{ processed: number; total: number } | null>(null)
@@ -573,6 +574,8 @@ Agentmakers.io`)
     setBulkParsed(parsed)
     setBulkResults([])
     setBulkError('')
+    // Pre-select UI language so the generate button is immediately active
+    setBulkLanguage(prev => prev ?? uiLang)
 
     // Hunter.io lookup: zoek naam + email van eigenaar per bedrijfswebsite
     const lookupIndices = new Set(parsed.map((_, i) => i))
@@ -2215,6 +2218,7 @@ Agentmakers.io`)
               {(() => {
                 const complete   = bulkParsed.map((r, i) => ({ r, i })).filter(({ r }) => !!r.email)
                 const incomplete = bulkParsed.map((r, i) => ({ r, i })).filter(({ r }) => !r.email)
+                const visibleComplete = filterNoName ? complete.filter(({ r }) => !!r.naam?.trim()) : complete
                 const stillLooking = hunterLookingUp.size > 0
 
                 const renderRow = ({ r, i }: { r: typeof bulkParsed[0]; i: number }) => {
@@ -2294,12 +2298,29 @@ Agentmakers.io`)
 
                     {/* Complete rijen */}
                     {complete.length > 0 && (
-                      <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.83rem' }}>
-                          {tableHeader}
-                          <tbody>{complete.map(renderRow)}</tbody>
-                        </table>
-                      </div>
+                      <>
+                        {/* Filter: verberg zonder naam */}
+                        {complete.some(({ r }) => !r.naam?.trim()) && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                            <button
+                              onClick={() => setFilterNoName(v => !v)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 6, border: `1px solid ${filterNoName ? '#7C3AED' : '#E2E8F0'}`, background: filterNoName ? '#F5F3FF' : '#F8FAFC', color: filterNoName ? '#7C3AED' : '#64748B', fontSize: '.75rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                              {filterNoName ? '✓' : ''} {uiLang === 'es' ? 'Ocultar sin nombre' : 'Verberg zonder naam'}
+                            </button>
+                            {filterNoName && (
+                              <span style={{ fontSize: '.75rem', color: '#94A3B8' }}>
+                                {visibleComplete.length} {uiLang === 'es' ? 'de' : 'van'} {complete.length} {uiLang === 'es' ? 'mostrados' : 'getoond'}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        <div style={{ overflowX: 'auto' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.83rem' }}>
+                            {tableHeader}
+                            <tbody>{visibleComplete.map(renderRow)}</tbody>
+                          </table>
+                        </div>
+                      </>
                     )}
 
                     {/* Incomplete rijen — inklapbaar */}
