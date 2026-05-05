@@ -91,12 +91,15 @@ async function scrapeUrl(app: FirecrawlApp, url: string): Promise<string> {
   }
 }
 
-/** Fetches raw markdown from Jina AI Reader — no cleaning applied. */
+/** Fetches raw markdown from Jina AI Reader — no cleaning applied.
+ *  We intentionally keep header/nav/footer so extractInternalLinks
+ *  can find navigation links. cleanScrapedContent handles noise later.
+ */
 async function fetchJinaRaw(url: string): Promise<string> {
   const headers: Record<string, string> = {
     'Accept': 'text/plain',
     'X-Return-Format': 'markdown',
-    'X-Remove-Selector': 'header,nav,footer,script,style',
+    'X-Remove-Selector': 'script,style,iframe',
     'User-Agent': 'Mozilla/5.0 (compatible; AgentBot/1.0)',
   }
   if (process.env.JINA_API_KEY) {
