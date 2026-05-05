@@ -824,6 +824,18 @@ Agentmakers.io`)
     }
   }, [authed, fetchData])
 
+  // Auto-refresh leads every 15 minutes so scraped_at updates automatically
+  // (cron runs every 10 min — after 15 min the button unlocks without manual refresh)
+  useEffect(() => {
+    if (!authed) return
+    const interval = setInterval(() => {
+      fetch('/api/leads').then(r => r.ok ? r.json() : null).then(data => {
+        if (data) setLeads(data)
+      }).catch(() => {})
+    }, 15 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [authed])
+
   useEffect(() => {
     if (authed) localStorage.setItem(LEAD_STATUS_STORAGE, JSON.stringify(leadStatus))
   }, [leadStatus, authed])
