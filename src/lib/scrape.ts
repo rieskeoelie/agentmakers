@@ -91,30 +91,31 @@ async function scrapeUrl(app: FirecrawlApp, url: string): Promise<string> {
   }
 }
 
+/** Fetches raw markdown from Jina AI Reader — no cleaning applied. */
+async function fetchJinaRaw(url: string): Promise<string> {
+  const headers: Record<string, string> = {
+    'Accept': 'text/plain',
+    'X-Return-Format': 'markdown',
+    'X-Remove-Selector': 'header,nav,footer,script,style',
+    'User-Agent': 'Mozilla/5.0 (compatible; AgentBot/1.0)',
+  }
+  if (process.env.JINA_API_KEY) {
+    headers['Authorization'] = `Bearer ${process.env.JINA_API_KEY}`
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (fetch as any)(`https://r.jina.ai/${url}`, { headers, cache: 'no-store' })
+  if (!res.ok) return ''
+  return res.text()
+}
+
 /**
  * Fallback scraper using Jina AI Reader (r.jina.ai).
  * Works on most sites that block Firecrawl — no API key required.
- * Uses cache:'no-store' to bypass Next.js fetch caching.
  */
 async function scrapeWithJina(url: string): Promise<string> {
   try {
-    const headers: Record<string, string> = {
-      'Accept': 'text/plain',
-      'X-Return-Format': 'markdown',
-      'X-Remove-Selector': 'header,nav,footer,script,style',
-      'User-Agent': 'Mozilla/5.0 (compatible; AgentBot/1.0)',
-    }
-    if (process.env.JINA_API_KEY) {
-      headers['Authorization'] = `Bearer ${process.env.JINA_API_KEY}`
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res = await (fetch as any)(`https://r.jina.ai/${url}`, {
-      headers,
-      cache: 'no-store',
-    })
-    if (!res.ok) return ''
-    const text = await res.text()
-    return cleanScrapedContent(text)
+    const raw = await fetchJinaRaw(url)
+    return cleanScrapedContent(raw)
   } catch {
     return ''
   }
@@ -126,17 +127,23 @@ async function scrapeWithJina(url: string): Promise<string> {
  */
 function cleanScrapedContent(raw: string): string {
   let text = raw
-    // Strip Jina metadata
+    // Strip Jina metadata headers
     .replace(/^Title:.*\n?/gm, '')
     .replace(/^URL Source:.*\n?/gm, '')
     .replace(/^Published Time:.*\n?/gm, '')
     .replace(/^Markdown Content:\s*/m, '')
-    // Strip image tags (waste chars)
-    .replace(/!\[.*?\]\(.*?\)/g, '')
-    // Strip markdown links but keep link text
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^Warning:.*\n?/gm, '')
+    // Strip image tags
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    // Strip markdown links but keep link text; also strip empty links []()
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, (_, t) => t.trim() || '')
     // Strip bare URLs
     .replace(/https?:\/\/\S+/g, '')
+    // Strip common WordPress/CMS footer noise
+    .replace(/Toggle Sliding Bar Area/gi, '')
+    .replace(/Go to Top/gi, '')
+    .replace(/Skip to content/gi, '')
+    .replace(/\[?\]\(?\)?/g, '')  // empty link artifacts
     // Collapse 3+ blank lines to 2
     .replace(/\n{3,}/g, '\n\n')
     .trim()
@@ -167,33 +174,30 @@ function cleanScrapedContent(raw: string): string {
  * Returns null if nothing was found or target returned 404.
  */
 async function scrapeUrlRaw(app: FirecrawlApp | null, url: string): Promise<{ raw: string; clean: string } | null> {
-  const timeout = (ms: number) =>
+  const deadline = (ms: number) =>
     new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
 
-  // Race Firecrawl and Jina in parallel
-  const [jinaResult, fcResult] = await Promise.allSettled([
-    Promise.race([scrapeWithJina(url), timeout(22000)]).catch(() => null),
-    app ? Promise.race([scrapeUrl(app, url), timeout(20000)]).catch(() => null) : Promise.resolve(null),
+  // Run Jina (raw fetch) and Firecrawl in parallel
+  const [jinaRawResult, fcResult] = await Promise.allSettled([
+    Promise.race([fetchJinaRaw(url), deadline(22000)]).catch(() => ''),
+    app ? Promise.race([scrapeUrl(app, url), deadline(20000)]).catch(() => '') : Promise.resolve(''),
   ])
 
-  const candidates: { raw: string; clean: string }[] = []
+  const jinaRaw = jinaRawResult.status === 'fulfilled' ? (jinaRawResult.value as string) : ''
+  const fcClean = fcResult.status === 'fulfilled' ? (fcResult.value as string) : ''
 
-  // Jina returns cleaned text (no raw) — use as both since we need raw for homepage only
-  if (jinaResult.status === 'fulfilled' && jinaResult.value) {
-    const clean = jinaResult.value as string
-    // Reject Jina 404 responses (Jina returns 200 but prefixes with "Warning: Target URL returned error 404")
-    if (!clean.includes('returned error 404') && !clean.includes('Page Could Not Be Found') && clean.length > 150) {
-      candidates.push({ raw: clean, clean })
-    }
-  }
-  if (fcResult.status === 'fulfilled' && fcResult.value) {
-    const clean = fcResult.value as string
-    if (clean.length > 150) candidates.push({ raw: clean, clean })
-  }
+  // Reject Jina 404 responses
+  const is404 = jinaRaw.includes('returned error 404') || jinaRaw.includes('Page Could Not Be Found') || jinaRaw.includes('Oops, This Page Could Not Be Found')
+  const jinaClean = (!is404 && jinaRaw) ? cleanScrapedContent(jinaRaw) : ''
 
-  if (candidates.length === 0) return null
-  // Pick longest clean content
-  return candidates.sort((a, b) => b.clean.length - a.clean.length)[0]
+  const clean = jinaClean.length >= fcClean.length ? jinaClean : fcClean
+  if (clean.length < 100) return null
+
+  // raw = original Jina markdown (with links intact) for link extraction
+  // fall back to clean if Jina raw not available
+  const raw = (!is404 && jinaRaw.length > 100) ? jinaRaw : clean
+
+  return { raw, clean }
 }
 
 /**
