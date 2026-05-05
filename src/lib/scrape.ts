@@ -149,32 +149,54 @@ async function scrapeUrlWithFallback(app: FirecrawlApp | null, url: string): Pro
   return contents[0] ?? ''
 }
 
-/**
- * Extracts internal links from scraped markdown content.
- * Returns up to `max` unique subpage URLs that are likely to have useful content.
- */
-function extractInternalLinks(markdown: string, baseUrl: string, max = 4): string[] {
-  const base = new URL(baseUrl)
-  const skip = new Set(['/', '/contact', '/contact/', '/privacy', '/sitemap', '/login', '/logout', '/zoeken', '/search', '/nieuws', '/blog', '/faq'])
-  const seen = new Set<string>()
-  const links: string[] = []
+// Keywords that signal high-value pages for agent training
+const HIGH_VALUE = ['dienst', 'service', 'aanbod', 'tarief', 'prijs', 'price', 'kosten', 'cost',
+  'over', 'about', 'wie', 'who', 'werkwijz', 'aanpak', 'approach', 'method',
+  'behandel', 'treatment', 'product', 'package', 'pakket', 'offert', 'quote',
+  'specialisme', 'expertise', 'wat', 'how', 'informati', 'aanmeld', 'register',
+  'beschikbaar', 'availab', 'openingstijd', 'hours', 'opening']
+const LOW_VALUE  = ['contact', 'privacy', 'cookie', 'sitemap', 'login', 'logout',
+  'zoek', 'search', 'nieuws', 'news', 'blog', 'post', 'artikel', 'article',
+  'vacatur', 'job', 'career', 'download', 'foto', 'photo', 'gallery', 'video',
+  'winkelwagen', 'cart', 'checkout', 'account', 'register', 'faq', 'terms']
 
-  const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+|\/[^)]*)\)/g
+function scorePath(href: string, linkText: string): number {
+  const combined = (href + ' ' + linkText).toLowerCase()
+  if (LOW_VALUE.some(k => combined.includes(k))) return -1
+  const score = HIGH_VALUE.reduce((s, k) => s + (combined.includes(k) ? 1 : 0), 0)
+  return score
+}
+
+/**
+ * Extracts and prioritises internal links from scraped markdown.
+ * High-value pages (services, pricing, about) are ranked first.
+ * Returns up to `max` URLs.
+ */
+function extractInternalLinks(markdown: string, baseUrl: string, max = 5): string[] {
+  const base = new URL(baseUrl)
+  const seen = new Set<string>()
+  const candidates: { url: string; score: number }[] = []
+
+  const linkRegex = /\[([^\]]*)\]\((https?:\/\/[^)\s]+|\/[^)\s]*)\)/g
   let match
   while ((match = linkRegex.exec(markdown)) !== null) {
-    const href = match[2]
+    const [, text, href] = match
     try {
       const u = new URL(href, base.origin)
-      if (u.hostname !== base.hostname) continue        // external
+      if (u.hostname !== base.hostname) continue
       const path = u.pathname.replace(/\/$/, '') || '/'
-      if (skip.has(path) || skip.has(path + '/')) continue
-      if (seen.has(path)) continue
+      if (path === '/' || seen.has(path)) continue
       seen.add(path)
-      links.push(u.href)
-      if (links.length >= max) break
-    } catch { /* ignore malformed */ }
+      const score = scorePath(path, text)
+      if (score >= 0) candidates.push({ url: u.href, score })
+    } catch { /* ignore */ }
   }
-  return links
+
+  // Sort highest score first, then take top `max`
+  return candidates
+    .sort((a, b) => b.score - a.score)
+    .slice(0, max)
+    .map(c => c.url)
 }
 
 /**
