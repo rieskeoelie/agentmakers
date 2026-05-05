@@ -91,6 +91,9 @@ export default function AdminDashboard() {
   const [resetLoading, setResetLoading] = useState(false)
   // ── Superadmin set-password state ─────────────────────────────────
   const [setPwTarget, setSetPwTarget] = useState<{ id: string; name: string } | null>(null)
+  const [deleteUserTarget, setDeleteUserTarget] = useState<{ id: string; name: string } | null>(null)
+  const [deleteUserLoading, setDeleteUserLoading] = useState(false)
+  const [deleteUserError, setDeleteUserError] = useState('')
   // ── Superadmin create-account state ───────────────────────────────
   const [createOpen, setCreateOpen]   = useState(false)
   const [createUser, setCreateUser]   = useState('')
@@ -2805,6 +2808,11 @@ Agentmakers.io`)
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
                           <span style={{ fontSize: '.72rem', color: '#94A3B8' }}>⏱ {lastActive}</span>
                           <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => { setDeleteUserTarget({ id: acc.id, name: acc.displayName }); setDeleteUserError('') }}
+                              title={`Verwijder account van ${acc.displayName}`}
+                              style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 8, padding: '6px 12px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                              🗑
+                            </button>
                             <button onClick={() => { setSetPwTarget({ id: acc.id, name: acc.displayName }); setSetPwValue(''); setSetPwError(''); setSetPwDone(false) }}
                               style={{ background: '#F8FAFC', color: '#475569', border: '1px solid #E2E8F0', borderRadius: 8, padding: '6px 12px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}>
                               🔑
@@ -2858,6 +2866,52 @@ Agentmakers.io`)
               </div>
             )
           })()}
+        </div>
+      )}
+
+      {/* ══════════════════════ DELETE USER MODAL (superadmin) ══════════════════════ */}
+      {deleteUserTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 1000 }}
+          onClick={e => { if (e.target === e.currentTarget && !deleteUserLoading) setDeleteUserTarget(null) }}>
+          <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 420, padding: 36, boxShadow: '0 24px 64px rgba(0,0,0,.2)' }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🗑</div>
+              <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.1rem', marginBottom: 8 }}>Account verwijderen?</h2>
+              <p style={{ color: '#64748B', fontSize: '.9rem', lineHeight: 1.5 }}>
+                Je staat op het punt het account van <strong>{deleteUserTarget.name}</strong> permanent te verwijderen. De leads en history van deze partner blijven bewaard.
+              </p>
+            </div>
+            {deleteUserError && (
+              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#DC2626', fontSize: '.85rem' }}>
+                ⚠ {deleteUserError}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setDeleteUserTarget(null)} disabled={deleteUserLoading}
+                style={{ flex: 1, padding: 12, background: '#F8FAFC', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: 10, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                Annuleren
+              </button>
+              <button disabled={deleteUserLoading} onClick={async () => {
+                setDeleteUserLoading(true)
+                setDeleteUserError('')
+                try {
+                  const res = await fetch('/api/admin/users', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: deleteUserTarget.id }),
+                  })
+                  const data = await res.json()
+                  if (!res.ok) { setDeleteUserError(data.error || 'Verwijderen mislukt'); return }
+                  setDeleteUserTarget(null)
+                  fetchAccounts()
+                } catch { setDeleteUserError('Netwerkfout') }
+                finally { setDeleteUserLoading(false) }
+              }}
+                style={{ flex: 1, padding: 12, background: deleteUserLoading ? '#94A3B8' : '#EF4444', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.9rem', cursor: deleteUserLoading ? 'not-allowed' : 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                {deleteUserLoading ? '⏳ Verwijderen…' : '🗑 Ja, verwijder'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

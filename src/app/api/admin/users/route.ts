@@ -85,6 +85,30 @@ export async function PATCH(req: NextRequest) {
   return NextResponse.json({ ok: true })
 }
 
+/** DELETE /api/admin/users — superadmin only: delete a partner account */
+export async function DELETE(req: NextRequest) {
+  const session = getSessionFromRequest(req)
+  if (!session?.isSuperAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { userId } = await req.json()
+  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
+
+  // Prevent deleting yourself
+  if (userId === session.userId) {
+    return NextResponse.json({ error: 'Je kunt je eigen account niet verwijderen' }, { status: 400 })
+  }
+
+  const { error } = await supabaseAdmin
+    .from('users')
+    .delete()
+    .eq('id', userId)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
 /** POST /api/admin/users — superadmin only: create a new partner account */
 export async function POST(req: NextRequest) {
   const session = getSessionFromRequest(req)
