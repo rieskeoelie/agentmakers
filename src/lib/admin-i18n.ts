@@ -347,9 +347,9 @@ const TRANSLATIONS = {
     inviteEmailLabel: 'E-mailadres *',
     inviteWebsiteLabel: 'Website *',
     inviteSend: '✉️ Verstuur demo uitnodiging',
-    inviteSending: '⏳ Demo aanmaken en e-mail verzenden…',
+    inviteSending: '⏳ Website inlezen en demo klaarzetten…',
     inviteSuccess: 'Uitnodiging verstuurd!',
-    inviteSuccessDesc: 'heeft een e-mail ontvangen met de gepersonaliseerde demo link. De AI wordt ondertussen getraind op hun website.',
+    inviteSuccessDesc: 'heeft een e-mail ontvangen met de demo link. De agent is getraind op hun website en staat klaar.',
     inviteClose: 'Sluiten',
     inviteError: 'Vul uw gebruikersnaam in',
 
@@ -714,9 +714,9 @@ const TRANSLATIONS = {
     inviteEmailLabel: 'Correo electrónico *',
     inviteWebsiteLabel: 'Sitio web *',
     inviteSend: '✉️ Enviar invitación demo',
-    inviteSending: '⏳ Creando demo y enviando correo…',
+    inviteSending: '⏳ Analizando sitio web y preparando demo…',
     inviteSuccess: '¡Invitación enviada!',
-    inviteSuccessDesc: 'ha recibido un correo con el enlace de demo personalizado. La IA se está entrenando en su sitio web.',
+    inviteSuccessDesc: 'ha recibido un correo con el enlace de demo. El agente ya está entrenado en su sitio web y listo para usar.',
     inviteClose: 'Cerrar',
     inviteError: 'Introduce tu nombre de usuario',
 

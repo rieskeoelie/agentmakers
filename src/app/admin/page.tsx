@@ -181,9 +181,9 @@ export default function AdminDashboard() {
     inviteEmailLabel: 'Email address *',
     inviteWebsiteLabel: 'Website *',
     inviteSend: '✉️ Send demo invitation',
-    inviteSending: '⏳ Creating demo and sending email…',
+    inviteSending: '⏳ Reading website and preparing demo…',
     inviteSuccess: 'Invitation sent!',
-    inviteSuccessDesc: 'has received an email with the personalised demo link. The AI is being trained on their website.',
+    inviteSuccessDesc: 'has received an email with the demo link. The agent is trained on their website and ready to go.',
     inviteClose: 'Close',
   }
   const tModal = (key: import('@/lib/admin-i18n').TranslationKey): string => {

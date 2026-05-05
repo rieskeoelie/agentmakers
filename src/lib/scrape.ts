@@ -168,62 +168,57 @@ function cleanScrapedContent(raw: string): string {
 }
 
 /**
- * Scrapes a single URL: races Firecrawl vs Jina, returns { raw, clean }.
- * raw  = uncleaned markdown (used for link extraction from homepage)
- * clean = cleaned text (used as agent context)
- * Returns null if nothing was found or target returned 404.
+ * Scrapes the homepage: runs Jina and Firecrawl in parallel, returns
+ * { raw: uncleaned Jina markdown (for link extraction), clean: best cleaned text }.
+ * Returns null if no usable content was found.
  */
-async function scrapeUrlRaw(app: FirecrawlApp | null, url: string): Promise<{ raw: string; clean: string } | null> {
-  const deadline = (ms: number) =>
-    new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+async function scrapeHomepage(app: FirecrawlApp | null, url: string): Promise<{ raw: string; clean: string } | null> {
+  // Try Jina first — it's free and bypasses most bot protection
+  const jinaRaw = await fetchJinaRaw(url).catch(() => '')
 
-  // Run Jina (raw fetch) and Firecrawl in parallel
-  const [jinaRawResult, fcResult] = await Promise.allSettled([
-    Promise.race([fetchJinaRaw(url), deadline(22000)]).catch(() => ''),
-    app ? Promise.race([scrapeUrl(app, url), deadline(20000)]).catch(() => '') : Promise.resolve(''),
-  ])
+  const is404 = jinaRaw.includes('returned error 404')
+    || jinaRaw.includes('Page Could Not Be Found')
+    || jinaRaw.includes('Oops, This Page Could Not Be Found')
 
-  const jinaRaw = jinaRawResult.status === 'fulfilled' ? (jinaRawResult.value as string) : ''
-  const fcClean = fcResult.status === 'fulfilled' ? (fcResult.value as string) : ''
+  const jinaClean = (!is404 && jinaRaw.length > 100) ? cleanScrapedContent(jinaRaw) : ''
 
-  // Reject Jina 404 responses
-  const is404 = jinaRaw.includes('returned error 404') || jinaRaw.includes('Page Could Not Be Found') || jinaRaw.includes('Oops, This Page Could Not Be Found')
-  const jinaClean = (!is404 && jinaRaw) ? cleanScrapedContent(jinaRaw) : ''
+  // Only call Firecrawl (paid) if Jina returned too little content
+  let fcClean = ''
+  if (jinaClean.length < 300 && app) {
+    fcClean = await scrapeUrl(app, url).catch(() => '')
+  }
 
   const clean = jinaClean.length >= fcClean.length ? jinaClean : fcClean
   if (clean.length < 100) return null
 
-  // raw = original Jina markdown (with links intact) for link extraction
-  // fall back to clean if Jina raw not available
   const raw = (!is404 && jinaRaw.length > 100) ? jinaRaw : clean
-
   return { raw, clean }
 }
 
-/**
- * Scrapes a single URL (for subpages — we only need cleaned content).
- */
-async function scrapeUrlWithFallback(app: FirecrawlApp | null, url: string): Promise<string> {
-  const result = await scrapeUrlRaw(app, url)
-  return result?.clean ?? ''
-}
-
-// Keywords that signal high-value pages for agent training
-const HIGH_VALUE = ['dienst', 'service', 'aanbod', 'tarief', 'prijs', 'price', 'kosten', 'cost',
-  'over', 'about', 'wie', 'who', 'werkwijz', 'aanpak', 'approach', 'method',
-  'behandel', 'treatment', 'product', 'package', 'pakket', 'offert', 'quote',
-  'specialisme', 'expertise', 'wat', 'how', 'informati', 'aanmeld', 'register',
-  'beschikbaar', 'availab', 'openingstijd', 'hours', 'opening']
-const LOW_VALUE  = ['contact', 'privacy', 'cookie', 'sitemap', 'login', 'logout',
+// Pages to always skip — these are generic/useless for agent context
+const LOW_VALUE = ['contact', 'privacy', 'cookie', 'sitemap', 'login', 'logout',
   'zoek', 'search', 'nieuws', 'news', 'blog', 'post', 'artikel', 'article',
   'vacatur', 'job', 'career', 'download', 'foto', 'photo', 'gallery', 'video',
-  'winkelwagen', 'cart', 'checkout', 'account', 'register', 'faq', 'terms']
+  'winkelwagen', 'cart', 'checkout', 'account', 'register', 'faq', 'terms',
+  'disclaimer', 'algemene-voor', 'klachten', 'sitemap', 'tag', 'categor']
 
-function scorePath(href: string, linkText: string): number {
-  const combined = (href + ' ' + linkText).toLowerCase()
-  if (LOW_VALUE.some(k => combined.includes(k))) return -1
-  const score = HIGH_VALUE.reduce((s, k) => s + (combined.includes(k) ? 1 : 0), 0)
-  return score
+/**
+ * Scores a page link for scraping priority.
+ * Strategy: exclude known-useless pages, then prefer shallower URLs.
+ * Shallow = main nav (sector-agnostic) — works for any business type.
+ * depth 1 (/diensten)          → score 3
+ * depth 2 (/diensten/airco)    → score 2
+ * depth 3+ (/diensten/a/b)     → score 1
+ */
+function scorePath(href: string, _linkText: string): number {
+  const lower = href.toLowerCase()
+  if (LOW_VALUE.some(k => lower.includes(k))) return -1
+  try {
+    const depth = new URL(href).pathname.split('/').filter(Boolean).length
+    return Math.max(1, 4 - depth)
+  } catch {
+    return 1
+  }
 }
 
 /**
@@ -261,9 +256,9 @@ function extractInternalLinks(markdown: string, baseUrl: string, max = 5): strin
 /**
  * Scrapes a website and returns markdown content for the AI agent.
  * Strategy:
- *   1. Scrape homepage with Firecrawl + Jina in parallel (fastest wins)
- *   2. Extract real subpage links from the homepage navigation
- *   3. Scrape those real subpages (not guessed paths)
+ *   1. Scrape homepage — Jina (raw, links intact) + Firecrawl in parallel
+ *   2. Extract real subpage links from raw Jina content
+ *   3. Scrape those subpages with Jina (proven, no bot-blocking issues)
  * Works even on sites that block Firecrawl.
  */
 export async function scrapeWebsite(url: string): Promise<string> {
@@ -275,25 +270,25 @@ export async function scrapeWebsite(url: string): Promise<string> {
     : null
 
   try {
-    // Step 1: scrape homepage — get both raw (for link extraction) and clean (for storage)
-    const homepageResult = await scrapeUrlRaw(app, normalised)
-    if (!homepageResult) return ''
+    // Step 1: scrape homepage — returns { raw (links intact), clean }
+    const homepage = await scrapeHomepage(app, normalised)
+    if (!homepage) return ''
 
-    // Step 2: extract real internal links from RAW homepage (links not yet stripped)
-    const subpageUrls = extractInternalLinks(homepageResult.raw, normalised, 4)
+    // Step 2: extract real internal links from raw Jina content (links not yet stripped)
+    const subpageUrls = extractInternalLinks(homepage.raw, normalised, 6)
 
-    // Step 3: scrape real subpages in parallel (cleaned content only, 404s filtered)
+    // Step 3: scrape real subpages with Jina (simple, proven pattern)
     const subResults = subpageUrls.length > 0
-      ? await Promise.allSettled(subpageUrls.map(u => scrapeUrlWithFallback(app, u)))
+      ? await Promise.allSettled(subpageUrls.map(u => scrapeWithJina(u)))
       : []
 
     const subContent = subResults
-      .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && (r.value as string).length > 100)
-      .map(r => r.value as string)
+      .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && r.value.length > 100)
+      .map(r => r.value)
       .join('\n\n---\n\n')
 
-    const combined = [homepageResult.clean, subContent].filter(Boolean).join('\n\n---\n\n')
-    return combined.substring(0, 8000).trim()
+    const combined = [homepage.clean, subContent].filter(Boolean).join('\n\n---\n\n')
+    return combined.substring(0, 12000).trim()
   } catch {
     return ''
   }

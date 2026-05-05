@@ -85,10 +85,11 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
         },
         dynamicVariables: {
           business_info: business_info || 'Geen informatie beschikbaar.',
-          // Only pass naam if we actually have one — empty string confuses the agent
           prospect_naam: prospect_naam || '',
+          prospect_voornaam: voornaam || '',
           prospect_email: prospect_email || '',
           prospect_telefoon: prospect_telefoon || '',
+          bedrijfsnaam: bedrijfsnaam || '',
         },
         clientTools: {
           collect_lead_info: async (params: { naam?: string; email?: string; telefoon?: string }) => {

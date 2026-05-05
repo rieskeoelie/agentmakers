@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse, after } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { scrapeWebsite, fetchPlacesInfo, buildBusinessInfo } from '@/lib/scrape'
 import { getSessionFromRequest } from '@/lib/auth'
 import { nanoid } from 'nanoid'
 
@@ -56,12 +55,9 @@ async function processLead(lead: BulkLead, userId: string): Promise<BulkResult> 
       return { bedrijfsnaam: lead.bedrijfsnaam, website: lead.website, naam, email, demo_token, demo_url, status: 'error', error: dbError.message }
     }
 
-    // Schedule scraping to run after the response is sent (uses Next.js after())
-    // This is the correct way to do post-response work on Vercel — unlike .catch(()=>{})
-    // which gets killed when the function returns, after() properly keeps the task alive
-    if (lead.website) {
-      after(() => scrapeAndUpdate(lead, naam, demo_token).catch(() => {/* ignore */}))
-    }
+    // Do NOT scrape immediately on bulk import — that would fire 30+ concurrent scrapes at once.
+    // The cron job (/api/cron/scrape-queue) handles this gradually (5 leads per run, every 10 min).
+    // Scraping happens in the background; the admin dashboard shows per-lead scrape status.
 
     return { bedrijfsnaam: lead.bedrijfsnaam, website: lead.website, naam, email, demo_token, demo_url, status: 'ok' }
   } catch (err: unknown) {
@@ -70,36 +66,6 @@ async function processLead(lead: BulkLead, userId: string): Promise<BulkResult> 
   }
 }
 
-async function scrapeAndUpdate(lead: BulkLead, naam: string, demo_token: string) {
-  // Run website scrape and Google Places lookup in parallel to save time
-  const [scrapedContent, placesInfo] = await Promise.all([
-    scrapeWebsite(lead.website),
-    fetchPlacesInfo(lead.bedrijfsnaam, lead.website),
-  ])
-
-  const business_info = buildBusinessInfo({
-    naam,
-    bedrijfsnaam: lead.bedrijfsnaam,
-    website: lead.website,
-    scrapedContent,
-    placesInfo,
-  })
-
-  // Only mark as scraped when we actually retrieved website content or Places data
-  // If both are empty, leave scraped_at null so the cron job retries later
-  const hasContent = !!scrapedContent || !!(placesInfo?.description || placesInfo?.categories?.length)
-  if (hasContent) {
-    await supabaseAdmin
-      .from('leads')
-      .update({ business_info, scraped_at: new Date().toISOString() })
-      .eq('demo_token', demo_token)
-  } else {
-    await supabaseAdmin
-      .from('leads')
-      .update({ business_info })
-      .eq('demo_token', demo_token)
-  }
-}
 
 export async function POST(req: NextRequest) {
   const session = getSessionFromRequest(req)

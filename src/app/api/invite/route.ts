@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse, after } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { sendConfirmationEmail } from '@/lib/email'
 import { scrapeWebsite, fetchPlacesInfo, buildBusinessInfo } from '@/lib/scrape'
@@ -52,8 +52,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: dbError.message }, { status: 500 })
   }
 
-  // Send demo email to prospect immediately — surface errors to client
-  let emailError: string | null = null
+  // Scrape first, then send email — so the agent is fully trained when the prospect opens the link.
+  // This is intentional: when demoing in real-time at a prospect's table, you need the agent
+  // ready immediately. The ~20-30s wait here is worth it.
+  const [scrapedContent, placesInfo] = await Promise.all([
+    scrapeWebsite(website),
+    fetchPlacesInfo(bedrijfsnaam || '', website),
+  ])
+
+  const business_info = buildBusinessInfo({ naam, bedrijfsnaam, website, scrapedContent, placesInfo })
+  const hasContent = !!scrapedContent || !!(placesInfo?.description || placesInfo?.categories?.length)
+
+  await supabaseAdmin
+    .from('leads')
+    .update({ business_info, ...(hasContent ? { scraped_at: new Date().toISOString() } : {}) })
+    .eq('demo_token', demo_token)
+
+  // Now send the email — agent is ready
   try {
     await sendConfirmationEmail({
       naam,
@@ -66,28 +81,10 @@ export async function POST(req: NextRequest) {
       demo_token,
     })
   } catch (err) {
-    emailError = err instanceof Error ? err.message : String(err)
+    const emailError = err instanceof Error ? err.message : String(err)
     console.error('[invite] sendConfirmationEmail failed:', emailError)
-  }
-
-  if (emailError) {
     return NextResponse.json({ error: `Lead aangemaakt maar e-mail mislukt: ${emailError}` }, { status: 500 })
   }
-
-  // Scrape website in background after response is returned
-  after(() =>
-    Promise.all([
-      scrapeWebsite(website),
-      fetchPlacesInfo(bedrijfsnaam || '', website),
-    ]).then(([scrapedContent, placesInfo]) => {
-      const business_info = buildBusinessInfo({ naam, bedrijfsnaam, website, scrapedContent, placesInfo })
-      const hasContent = !!scrapedContent || !!(placesInfo?.description || placesInfo?.categories?.length)
-      return supabaseAdmin
-        .from('leads')
-        .update({ business_info, ...(hasContent ? { scraped_at: new Date().toISOString() } : {}) })
-        .eq('demo_token', demo_token)
-    }).catch(() => {})
-  )
 
   return NextResponse.json({ ok: true, demo_url, demo_token })
 }
