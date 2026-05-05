@@ -161,33 +161,47 @@ function cleanScrapedContent(raw: string): string {
 }
 
 /**
- * Scrapes a single URL by racing Firecrawl and Jina AI Reader in parallel.
- * Returns whichever gives the most content within the timeout.
+ * Scrapes a single URL: races Firecrawl vs Jina, returns { raw, clean }.
+ * raw  = uncleaned markdown (used for link extraction from homepage)
+ * clean = cleaned text (used as agent context)
+ * Returns null if nothing was found or target returned 404.
  */
-async function scrapeUrlWithFallback(app: FirecrawlApp | null, url: string): Promise<string> {
+async function scrapeUrlRaw(app: FirecrawlApp | null, url: string): Promise<{ raw: string; clean: string } | null> {
   const timeout = (ms: number) =>
-    new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+    new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
 
-  const scrapers: Promise<string>[] = [
-    // Jina always runs — fastest and most reliable for blocked sites
-    Promise.race([scrapeWithJina(url), timeout(22000)]).catch(() => ''),
-  ]
+  // Race Firecrawl and Jina in parallel
+  const [jinaResult, fcResult] = await Promise.allSettled([
+    Promise.race([scrapeWithJina(url), timeout(22000)]).catch(() => null),
+    app ? Promise.race([scrapeUrl(app, url), timeout(20000)]).catch(() => null) : Promise.resolve(null),
+  ])
 
-  if (app) {
-    scrapers.push(
-      Promise.race([scrapeUrl(app, url), timeout(20000)]).catch(() => '')
-    )
+  const candidates: { raw: string; clean: string }[] = []
+
+  // Jina returns cleaned text (no raw) — use as both since we need raw for homepage only
+  if (jinaResult.status === 'fulfilled' && jinaResult.value) {
+    const clean = jinaResult.value as string
+    // Reject Jina 404 responses (Jina returns 200 but prefixes with "Warning: Target URL returned error 404")
+    if (!clean.includes('returned error 404') && !clean.includes('Page Could Not Be Found') && clean.length > 150) {
+      candidates.push({ raw: clean, clean })
+    }
+  }
+  if (fcResult.status === 'fulfilled' && fcResult.value) {
+    const clean = fcResult.value as string
+    if (clean.length > 150) candidates.push({ raw: clean, clean })
   }
 
-  // Run both in parallel, pick the longest result (most content = most useful)
-  const results = await Promise.allSettled(scrapers)
-  const contents = results
-    .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
-    .map(r => r.value as string)
-    .filter(s => s.length > 100)
-    .sort((a, b) => b.length - a.length)
+  if (candidates.length === 0) return null
+  // Pick longest clean content
+  return candidates.sort((a, b) => b.clean.length - a.clean.length)[0]
+}
 
-  return contents[0] ?? ''
+/**
+ * Scrapes a single URL (for subpages — we only need cleaned content).
+ */
+async function scrapeUrlWithFallback(app: FirecrawlApp | null, url: string): Promise<string> {
+  const result = await scrapeUrlRaw(app, url)
+  return result?.clean ?? ''
 }
 
 // Keywords that signal high-value pages for agent training
@@ -257,15 +271,14 @@ export async function scrapeWebsite(url: string): Promise<string> {
     : null
 
   try {
-    // Step 1: scrape homepage
-    const homepage = await scrapeUrlWithFallback(app, normalised)
+    // Step 1: scrape homepage — get both raw (for link extraction) and clean (for storage)
+    const homepageResult = await scrapeUrlRaw(app, normalised)
+    if (!homepageResult) return ''
 
-    if (!homepage) return ''
+    // Step 2: extract real internal links from RAW homepage (links not yet stripped)
+    const subpageUrls = extractInternalLinks(homepageResult.raw, normalised, 4)
 
-    // Step 2: extract real internal links from the homepage
-    const subpageUrls = extractInternalLinks(homepage, normalised, 4)
-
-    // Step 3: scrape those subpages in parallel
+    // Step 3: scrape real subpages in parallel (cleaned content only, 404s filtered)
     const subResults = subpageUrls.length > 0
       ? await Promise.allSettled(subpageUrls.map(u => scrapeUrlWithFallback(app, u)))
       : []
@@ -275,7 +288,7 @@ export async function scrapeWebsite(url: string): Promise<string> {
       .map(r => r.value as string)
       .join('\n\n---\n\n')
 
-    const combined = [homepage, subContent].filter(Boolean).join('\n\n---\n\n')
+    const combined = [homepageResult.clean, subContent].filter(Boolean).join('\n\n---\n\n')
     return combined.substring(0, 8000).trim()
   } catch {
     return ''
