@@ -69,9 +69,11 @@ export async function POST(req: NextRequest) {
           website,
           scrapedContent,
         })
+        // Only mark scraped_at when we actually got content — otherwise cron will retry
+        const hasContent = !!scrapedContent
         await supabaseAdmin
           .from('leads')
-          .update({ business_info, scraped_at: new Date().toISOString() })
+          .update({ business_info, ...(hasContent ? { scraped_at: new Date().toISOString() } : {}) })
           .eq('id', insertedLead.id)
       } catch {
         // Scraping failed — email still goes out, demo page shows fallback info

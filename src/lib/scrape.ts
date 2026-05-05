@@ -105,35 +105,32 @@ export async function scrapeWebsite(url: string): Promise<string> {
     const base = normalised.replace(/\/+$/, '')
     const app = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY })
 
-    // Always scrape homepage first
-    const homepage = await Promise.race([
-      scrapeUrl(app, normalised),
-      new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 25000)),
-    ]).catch(() => '')
-
-    // If homepage gave plenty of content, use it directly (trimmed to 5 000 chars)
-    if ((homepage as string).length >= 1200) {
-      return (homepage as string).substring(0, 5000).trim()
-    }
-
-    // Homepage was thin — try common subpages for services/about in parallel
+    // Scrape homepage + the most likely service/about subpages in parallel
+    // We always try subpages — homepage often only contains hero/nav text
     const subpaths = ['/diensten', '/services', '/aanbod', '/over-ons', '/about', '/over', '/prijzen', '/pricing']
-    const subResults = await Promise.allSettled(
-      subpaths.map(path =>
+
+    const [homepageResult, ...subResults] = await Promise.allSettled([
+      Promise.race([
+        scrapeUrl(app, normalised),
+        new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 25000)),
+      ]).catch(() => ''),
+      ...subpaths.map(path =>
         Promise.race([
           scrapeUrl(app, `${base}${path}`),
           new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000)),
         ]).catch(() => '')
-      )
-    )
+      ),
+    ])
+
+    const homepage = homepageResult.status === 'fulfilled' ? homepageResult.value as string : ''
 
     const subContent = subResults
-      .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && (r.value as string).length > 200)
+      .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && (r.value as string).length > 150)
       .map(r => (r.value as string))
       .join('\n\n---\n\n')
 
-    const combined = [(homepage as string), subContent].filter(Boolean).join('\n\n---\n\n')
-    return combined.substring(0, 5000).trim()
+    const combined = [homepage, subContent].filter(Boolean).join('\n\n---\n\n')
+    return combined.substring(0, 6000).trim()
   } catch {
     return ''
   }

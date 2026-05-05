@@ -253,7 +253,7 @@ export default function AdminDashboard() {
 
   // Re-scrape per lead
   const [rescrapeLoading, setRescrapeLoading] = useState<Record<string, boolean>>({})
-  const [rescrapeResult, setRescrapeResult]   = useState<Record<string, { ok: boolean; msg: string }>>({})
+  const [rescrapeResult, setRescrapeResult]   = useState<Record<string, { ok: boolean; msg: string; fullInfo?: string }>>({})
 
   async function rescrapeWebsite(lead: Lead) {
     if (!lead.demo_token) return
@@ -269,7 +269,11 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error(data.error || 'Scrape mislukt')
       setRescrapeResult(prev => ({
         ...prev,
-        [lead.id]: { ok: true, msg: data.scraped ? `✅ Gescraped (${data.contentLength} tekens)` : '⚠️ Geen inhoud gevonden' }
+        [lead.id]: {
+          ok: true,
+          msg: data.scraped ? `✅ Gescraped (${data.contentLength} tekens)` : '⚠️ Geen inhoud gevonden — agent heeft alleen basisinfo',
+          fullInfo: data.business_info || '',
+        }
       }))
     } catch (err) {
       setRescrapeResult(prev => ({ ...prev, [lead.id]: { ok: false, msg: `❌ ${err instanceof Error ? err.message : 'Fout'}` } }))
@@ -1561,19 +1565,32 @@ Agentmakers.io`)
                             style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.83rem', fontFamily: "'Nunito',sans-serif", color: '#0F172A', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
                           />
                           {lead.website && lead.demo_token && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-                              <button
-                                onClick={() => rescrapeWebsite(lead)}
-                                disabled={rescrapeLoading[lead.id]}
-                                title="Haal nieuwe website-inhoud op zodat de AI-agent actuele informatie heeft"
-                                style={{ padding: '6px 14px', borderRadius: 8, fontSize: '.75rem', fontWeight: 700, border: '1.5px solid #0D9488', background: rescrapeLoading[lead.id] ? '#F0FDFA' : '#fff', color: '#0D9488', cursor: rescrapeLoading[lead.id] ? 'wait' : 'pointer', fontFamily: "'Nunito',sans-serif" }}
-                              >
-                                {rescrapeLoading[lead.id] ? '⏳ Website ophalen…' : '🔄 Website herschrapen'}
-                              </button>
-                              {rescrapeResult[lead.id]?.msg && (
-                                <span style={{ fontSize: '.75rem', color: rescrapeResult[lead.id].ok ? '#166534' : '#DC2626' }}>
-                                  {rescrapeResult[lead.id].msg}
-                                </span>
+                            <div style={{ marginTop: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <button
+                                  onClick={() => rescrapeWebsite(lead)}
+                                  disabled={rescrapeLoading[lead.id]}
+                                  title="Haal nieuwe website-inhoud op zodat de AI-agent actuele informatie heeft"
+                                  style={{ padding: '6px 14px', borderRadius: 8, fontSize: '.75rem', fontWeight: 700, border: '1.5px solid #0D9488', background: rescrapeLoading[lead.id] ? '#F0FDFA' : '#fff', color: '#0D9488', cursor: rescrapeLoading[lead.id] ? 'wait' : 'pointer', fontFamily: "'Nunito',sans-serif" }}
+                                >
+                                  {rescrapeLoading[lead.id] ? '⏳ Website ophalen…' : '🔄 Website herschrapen'}
+                                </button>
+                                {rescrapeResult[lead.id]?.msg && (
+                                  <span style={{ fontSize: '.75rem', color: rescrapeResult[lead.id].ok ? '#166534' : '#DC2626' }}>
+                                    {rescrapeResult[lead.id].msg}
+                                  </span>
+                                )}
+                              </div>
+                              {/* Show scraped business_info so partner can verify agent knowledge */}
+                              {rescrapeResult[lead.id]?.ok && rescrapeResult[lead.id]?.fullInfo && (
+                                <details style={{ marginTop: 8 }}>
+                                  <summary style={{ fontSize: '.72rem', color: '#64748B', cursor: 'pointer', fontWeight: 600 }}>
+                                    🔍 Wat weet de agent? (klik om te bekijken)
+                                  </summary>
+                                  <pre style={{ marginTop: 6, padding: '10px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: '.72rem', color: '#334155', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: 240, overflowY: 'auto' }}>
+                                    {rescrapeResult[lead.id].fullInfo}
+                                  </pre>
+                                </details>
                               )}
                             </div>
                           )}
