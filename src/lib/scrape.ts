@@ -93,27 +93,33 @@ async function scrapeUrl(app: FirecrawlApp, url: string): Promise<string> {
 
 /**
  * Fallback scraper using Jina AI Reader (r.jina.ai).
- * Works on most sites that block Firecrawl — no API key required,
- * optional JINA_API_KEY env var for higher rate limits.
+ * Works on most sites that block Firecrawl — no API key required.
+ * Uses cache:'no-store' to bypass Next.js fetch caching.
  */
 async function scrapeWithJina(url: string): Promise<string> {
   try {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 22000)
     const headers: Record<string, string> = {
       'Accept': 'text/plain',
       'X-Return-Format': 'markdown',
-      'X-Remove-Selector': 'header,nav,footer,.nav,.header,.footer,#nav,#header,#footer,script,style',
+      'X-Remove-Selector': 'header,nav,footer,script,style',
+      'User-Agent': 'Mozilla/5.0 (compatible; AgentBot/1.0)',
     }
     if (process.env.JINA_API_KEY) {
       headers['Authorization'] = `Bearer ${process.env.JINA_API_KEY}`
     }
-    const res = await fetch(`https://r.jina.ai/${url}`, { headers, signal: controller.signal })
-    clearTimeout(timer)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await (fetch as any)(`https://r.jina.ai/${url}`, {
+      headers,
+      cache: 'no-store',
+    })
     if (!res.ok) return ''
     const text = await res.text()
-    // Jina returns some metadata lines at the top — strip them
-    return text.replace(/^Title:.*\n?/m, '').replace(/^URL Source:.*\n?/m, '').replace(/^Published Time:.*\n?/m, '').trim()
+    return text
+      .replace(/^Title:.*\n?/gm, '')
+      .replace(/^URL Source:.*\n?/gm, '')
+      .replace(/^Published Time:.*\n?/gm, '')
+      .replace(/^Markdown Content:\s*/m, '')
+      .trim()
   } catch {
     return ''
   }

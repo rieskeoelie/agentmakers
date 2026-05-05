@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
     ok: true,
     scraped: hasContent,
     contentLength: scrapedContent?.length ?? 0,
+    scrapedPreview: scrapedContent?.substring(0, 200) ?? '',
     business_info,
   })
 }
