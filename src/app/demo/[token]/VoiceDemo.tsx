@@ -84,6 +84,8 @@ export function VoiceDemo({ token, strings, logoUrl, lang }: Props) {
           },
         },
         dynamicVariables: {
+          // business_info is already embedded in the override system_prompt — don't duplicate it
+          // Keep it here only as fallback for the ElevenLabs dashboard prompt
           business_info: business_info || 'Geen informatie beschikbaar.',
           prospect_naam: prospect_naam || '',
           prospect_voornaam: voornaam || '',

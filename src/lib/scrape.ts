@@ -291,7 +291,7 @@ export async function scrapeWebsite(url: string): Promise<string> {
       .join('\n\n---\n\n')
 
     const combined = [homepage.clean, subContent].filter(Boolean).join('\n\n---\n\n')
-    return combined.substring(0, 12000).trim()
+    return combined.substring(0, 4000).trim()
   } catch {
     return ''
   }
