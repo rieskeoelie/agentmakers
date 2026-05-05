@@ -490,7 +490,7 @@ Agentmakers.io`)
       const res = await fetch('/api/admin/generate-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bedrijfsnaam: modal.bedrijfsnaam, naam: modal.naam, demo_url: modal.demo_url, business_info, language: modal.language ?? 'nl' }),
+        body: JSON.stringify({ bedrijfsnaam: modal.bedrijfsnaam, naam: modal.naam, demo_url: modal.demo_url, business_info, language: modal.language ?? 'nl', senderName: viewAsUser?.name ?? currentUser?.displayName ?? '' }),
       })
       const data = await res.json()
       if (!res.ok) { setEmailGenError(data.error || 'Genereren mislukt'); return }
@@ -654,7 +654,7 @@ Agentmakers.io`)
         } catch { /* ignore */ }
         const gen = await fetch('/api/admin/generate-email', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bedrijfsnaam: r.bedrijfsnaam, naam: r.naam, demo_url: r.demo_url, business_info, language: bulkLanguage ?? 'nl' }),
+          body: JSON.stringify({ bedrijfsnaam: r.bedrijfsnaam, naam: r.naam, demo_url: r.demo_url, business_info, language: bulkLanguage ?? 'nl', senderName: viewAsUser?.name ?? currentUser?.displayName ?? '' }),
         })
         if (!gen.ok) { done++; setBulkMailProgress({ done, total: withEmail.length }); continue }
         const { subject, body } = await gen.json()

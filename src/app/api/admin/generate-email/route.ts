@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { bedrijfsnaam, naam, demo_url, business_info, language } = await req.json()
+  const { bedrijfsnaam, naam, demo_url, business_info, language, senderName } = await req.json()
 
   if (!bedrijfsnaam || !demo_url) {
     return NextResponse.json({ error: 'bedrijfsnaam en demo_url zijn verplicht' }, { status: 400 })
@@ -18,8 +18,9 @@ export async function POST(req: NextRequest) {
 
   const lang = language || 'nl'
   const voornaam = naam ? naam.split(' ')[0] : null
-  // Gebruik de voornaam van de ingelogde gebruiker als afzender
-  const afzenderVoornaam = session.displayName?.split(' ')[0] || session.username
+  // senderName from client takes priority (correct when superadmin views-as a partner),
+  // fall back to session displayName, then username
+  const afzenderVoornaam = (senderName?.trim() || session.displayName || session.username).split(' ')[0]
 
   const langInstructions: Record<string, string> = {
     nl: 'Schrijf de e-mail VOLLEDIG in het Nederlands. Gebruik "u" (formeel). Geen Engelse woorden.',
