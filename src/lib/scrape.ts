@@ -85,7 +85,7 @@ async function scrapeUrl(app: FirecrawlApp, url: string): Promise<string> {
       timeout: 20000,
     }) as Promise<{ success: boolean; markdown?: string }>)
     if (!result?.success || !result.markdown) return ''
-    return result.markdown.trim()
+    return cleanScrapedContent(result.markdown)
   } catch {
     return ''
   }
@@ -114,15 +114,50 @@ async function scrapeWithJina(url: string): Promise<string> {
     })
     if (!res.ok) return ''
     const text = await res.text()
-    return text
-      .replace(/^Title:.*\n?/gm, '')
-      .replace(/^URL Source:.*\n?/gm, '')
-      .replace(/^Published Time:.*\n?/gm, '')
-      .replace(/^Markdown Content:\s*/m, '')
-      .trim()
+    return cleanScrapedContent(text)
   } catch {
     return ''
   }
+}
+
+/**
+ * Cleans scraped markdown: removes Jina metadata headers, strips
+ * repeated navigation blocks, and collapses excessive whitespace.
+ */
+function cleanScrapedContent(raw: string): string {
+  let text = raw
+    // Strip Jina metadata
+    .replace(/^Title:.*\n?/gm, '')
+    .replace(/^URL Source:.*\n?/gm, '')
+    .replace(/^Published Time:.*\n?/gm, '')
+    .replace(/^Markdown Content:\s*/m, '')
+    // Strip image tags (waste chars)
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    // Strip markdown links but keep link text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    // Strip bare URLs
+    .replace(/https?:\/\/\S+/g, '')
+    // Collapse 3+ blank lines to 2
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  // Deduplicate: remove lines that appear 3+ times (repeated nav items)
+  const lineCounts = new Map<string, number>()
+  for (const line of text.split('\n')) {
+    const key = line.trim().toLowerCase()
+    if (key.length > 3) lineCounts.set(key, (lineCounts.get(key) ?? 0) + 1)
+  }
+  text = text
+    .split('\n')
+    .filter(line => {
+      const key = line.trim().toLowerCase()
+      return key.length <= 3 || (lineCounts.get(key) ?? 0) < 3
+    })
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  return text
 }
 
 /**
@@ -241,7 +276,7 @@ export async function scrapeWebsite(url: string): Promise<string> {
       .join('\n\n---\n\n')
 
     const combined = [homepage, subContent].filter(Boolean).join('\n\n---\n\n')
-    return combined.substring(0, 6000).trim()
+    return combined.substring(0, 8000).trim()
   } catch {
     return ''
   }
