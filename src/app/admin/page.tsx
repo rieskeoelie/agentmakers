@@ -255,6 +255,28 @@ export default function AdminDashboard() {
   const [rescrapeLoading, setRescrapeLoading] = useState<Record<string, boolean>>({})
   const [rescrapeResult, setRescrapeResult]   = useState<Record<string, { ok: boolean; msg: string; fullInfo?: string }>>({})
 
+  // Manual business_info editor per lead
+  const [bizInfoEdit, setBizInfoEdit]   = useState<Record<string, string>>({})
+  const [bizInfoSaving, setBizInfoSaving] = useState<Record<string, boolean>>({})
+  const [bizInfoSaved, setBizInfoSaved]   = useState<Record<string, boolean>>({})
+
+  async function saveBizInfo(lead: Lead) {
+    if (!lead.demo_token) return
+    setBizInfoSaving(prev => ({ ...prev, [lead.id]: true }))
+    setBizInfoSaved(prev => ({ ...prev, [lead.id]: false }))
+    try {
+      await fetch('/api/admin/update-business-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ demo_token: lead.demo_token, business_info: bizInfoEdit[lead.id] || '' }),
+      })
+      setBizInfoSaved(prev => ({ ...prev, [lead.id]: true }))
+      setTimeout(() => setBizInfoSaved(prev => ({ ...prev, [lead.id]: false })), 3000)
+    } finally {
+      setBizInfoSaving(prev => ({ ...prev, [lead.id]: false }))
+    }
+  }
+
   async function rescrapeWebsite(lead: Lead) {
     if (!lead.demo_token) return
     setRescrapeLoading(prev => ({ ...prev, [lead.id]: true }))
@@ -1546,7 +1568,20 @@ Agentmakers.io`)
                           <button onClick={() => toggleHandled(lead.id)} title={isHandled ? t('leadTipHandled') : t('leadTipUnhandled')} style={{ padding: '5px 10px', borderRadius: 6, fontSize: '.72rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'Nunito',sans-serif", border: `1px solid ${isHandled ? '#CBD5E1' : '#22C55E'}`, background: isHandled ? '#F1F5F9' : '#F0FDF4', color: isHandled ? '#94A3B8' : '#166534', whiteSpace: 'nowrap' }}>
                             {isHandled ? t('leadReopen') : t('leadMarkDone')}
                           </button>
-                          <button onClick={() => setExpandedLeadId(isExpanded ? null : lead.id)} title={isExpanded ? t('leadTipCollapse') : t('leadTipExpand')} style={{ padding: '5px 8px', borderRadius: 6, fontSize: '.72rem', border: '1px solid #CBD5E1', background: isExpanded ? '#F1F5F9' : '#fff', color: '#64748B', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
+                          <button onClick={async () => {
+                            const opening = expandedLeadId !== lead.id
+                            setExpandedLeadId(opening ? lead.id : null)
+                            // Pre-fill manual editor with current business_info from DB
+                            if (opening && lead.demo_token && bizInfoEdit[lead.id] === undefined) {
+                              try {
+                                const r = await fetch(`/api/admin/lead-info?token=${lead.demo_token}`)
+                                if (r.ok) {
+                                  const d = await r.json()
+                                  setBizInfoEdit(prev => ({ ...prev, [lead.id]: d.business_info || '' }))
+                                }
+                              } catch { /* ignore */ }
+                            }
+                          }} title={isExpanded ? t('leadTipCollapse') : t('leadTipExpand')} style={{ padding: '5px 8px', borderRadius: 6, fontSize: '.72rem', border: '1px solid #CBD5E1', background: isExpanded ? '#F1F5F9' : '#fff', color: '#64748B', cursor: 'pointer', fontFamily: "'Nunito',sans-serif" }}>
                             {isExpanded ? '▲' : '▼'}
                           </button>
                         </div>
@@ -1592,6 +1627,30 @@ Agentmakers.io`)
                                   </pre>
                                 </details>
                               )}
+
+                              {/* Manual business_info editor — fallback when Firecrawl can't scrape */}
+                              <div style={{ marginTop: 14, borderTop: '1px dashed #E2E8F0', paddingTop: 12 }}>
+                                <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                                  ✏️ Handmatige bedrijfsinfo (voor de AI-agent)
+                                </label>
+                                <p style={{ fontSize: '.72rem', color: '#94A3B8', marginBottom: 8, lineHeight: 1.5 }}>
+                                  Website kon niet automatisch worden gescraped? Plak hier de relevante info van de website (diensten, prijzen, over ons). De agent gebruikt dit zodra je opslaat.
+                                </p>
+                                <textarea
+                                  value={bizInfoEdit[lead.id] ?? ''}
+                                  onChange={e => setBizInfoEdit(prev => ({ ...prev, [lead.id]: e.target.value }))}
+                                  placeholder={'Bedrijfsnaam: Kapsalon De Knip\nDiensten: knippen (€25), kleuren (€55), highlights (€75)\nOpeningstijden: ma-vr 9-18u, za 9-17u\nBeschrijving: familiair kapsalon in hartje Amsterdam...'}
+                                  rows={6}
+                                  style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1.5px solid #CBD5E1', fontSize: '.78rem', fontFamily: "'Nunito',sans-serif", color: '#0F172A', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                                />
+                                <button
+                                  onClick={() => saveBizInfo(lead)}
+                                  disabled={bizInfoSaving[lead.id] || !bizInfoEdit[lead.id]?.trim()}
+                                  style={{ marginTop: 8, padding: '7px 18px', borderRadius: 8, fontSize: '.78rem', fontWeight: 700, border: 'none', background: bizInfoSaved[lead.id] ? '#22C55E' : '#0D9488', color: '#fff', cursor: bizInfoSaving[lead.id] || !bizInfoEdit[lead.id]?.trim() ? 'not-allowed' : 'pointer', opacity: !bizInfoEdit[lead.id]?.trim() ? 0.5 : 1, fontFamily: "'Nunito',sans-serif" }}
+                                >
+                                  {bizInfoSaving[lead.id] ? '⏳ Opslaan…' : bizInfoSaved[lead.id] ? '✅ Opgeslagen!' : '💾 Opslaan voor agent'}
+                                </button>
+                              </div>
                             </div>
                           )}
                         </div>
