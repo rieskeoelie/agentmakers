@@ -29,7 +29,7 @@ interface Lead {
   id: string; naam: string; email: string; telefoon: string
   landing_page_slug: string; language: string; created_at: string
   website?: string; bedrijfsnaam?: string; handled?: boolean
-  demo_token?: string
+  demo_token?: string; scraped_at?: string | null
 }
 interface Conversation {
   conversation_id: string; status: string
@@ -1540,10 +1540,12 @@ Agentmakers.io`)
                             {t('leadMailSent')}
                           </span>
                         ) : lead.email ? (
-                          <button onClick={() => openLeadEmailModal(lead)}
-                            title="AI schrijft een gepersonaliseerde e-mail met de demo-link — jij controleert en verstuurt met één klik"
-                            style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: '1px solid #7C3AED', background: '#7C3AED', color: '#fff', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: "'Nunito',sans-serif" }}>
-                            {t('leadSendMail')}
+                          <button
+                            onClick={() => lead.scraped_at ? openLeadEmailModal(lead) : undefined}
+                            disabled={!lead.scraped_at}
+                            title={lead.scraped_at ? "AI schrijft een gepersonaliseerde e-mail met de demo-link — jij controleert en verstuurt met één klik" : "Wacht tot de website gescraped is — de agent is nog niet klaar"}
+                            style={{ padding: '6px 12px', borderRadius: 7, fontSize: '.75rem', fontWeight: 700, border: `1px solid ${lead.scraped_at ? '#7C3AED' : '#CBD5E1'}`, background: lead.scraped_at ? '#7C3AED' : '#F1F5F9', color: lead.scraped_at ? '#fff' : '#94A3B8', cursor: lead.scraped_at ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', fontFamily: "'Nunito',sans-serif", opacity: lead.scraped_at ? 1 : 0.6 }}>
+                            {lead.scraped_at ? t('leadSendMail') : '⏳ Bezig…'}
                           </button>
                         ) : (
                           <span title="Voeg een e-mailadres toe aan deze lead om een mail te kunnen sturen"
