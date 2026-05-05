@@ -92,44 +92,88 @@ async function scrapeUrl(app: FirecrawlApp, url: string): Promise<string> {
 }
 
 /**
- * Scrapes a website using Firecrawl and returns markdown content.
- * Tries the homepage first; if that yields little content, also tries
- * common service/about subpages and concatenates what it finds.
- * Returns empty string if Firecrawl is not configured or scraping fails.
+ * Fallback scraper using Jina AI Reader (r.jina.ai).
+ * Works on most sites that block Firecrawl — no API key required,
+ * optional JINA_API_KEY env var for higher rate limits.
+ */
+async function scrapeWithJina(url: string): Promise<string> {
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 22000)
+    const headers: Record<string, string> = {
+      'Accept': 'text/plain',
+      'X-Return-Format': 'markdown',
+      'X-Remove-Selector': 'header,nav,footer,.nav,.header,.footer,#nav,#header,#footer,script,style',
+    }
+    if (process.env.JINA_API_KEY) {
+      headers['Authorization'] = `Bearer ${process.env.JINA_API_KEY}`
+    }
+    const res = await fetch(`https://r.jina.ai/${url}`, { headers, signal: controller.signal })
+    clearTimeout(timer)
+    if (!res.ok) return ''
+    const text = await res.text()
+    // Jina returns some metadata lines at the top — strip them
+    return text.replace(/^Title:.*\n?/m, '').replace(/^URL Source:.*\n?/m, '').replace(/^Published Time:.*\n?/m, '').trim()
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * Scrapes a single URL: tries Firecrawl first, falls back to Jina AI Reader
+ * if Firecrawl returns nothing useful (blocked, JS-heavy, etc.).
+ */
+async function scrapeUrlWithFallback(
+  app: FirecrawlApp | null,
+  url: string,
+  jinaTimeout = 22000,
+): Promise<string> {
+  // 1. Try Firecrawl
+  if (app) {
+    const fc = await Promise.race([
+      scrapeUrl(app, url),
+      new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 25000)),
+    ]).catch(() => '')
+    if ((fc as string).length > 150) return fc as string
+  }
+
+  // 2. Firecrawl returned nothing — fall back to Jina AI Reader
+  const jina = await Promise.race([
+    scrapeWithJina(url),
+    new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), jinaTimeout)),
+  ]).catch(() => '')
+  return jina as string
+}
+
+/**
+ * Scrapes a website and returns markdown content for the AI agent.
+ * Strategy:
+ *   1. Firecrawl homepage + common subpages in parallel
+ *   2. For any URL where Firecrawl returns nothing, retries with Jina AI Reader
+ * This means blocked / JS-heavy sites still get scraped.
  */
 export async function scrapeWebsite(url: string): Promise<string> {
-  if (!process.env.FIRECRAWL_API_KEY || !url) return ''
+  if (!url) return ''
+
+  const normalised = url.startsWith('http') ? url : `https://${url}`
+  const base = normalised.replace(/\/+$/, '')
+  const app = process.env.FIRECRAWL_API_KEY
+    ? new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY })
+    : null
+
+  const subpaths = ['/diensten', '/services', '/aanbod', '/over-ons', '/about', '/over', '/prijzen', '/pricing']
+  const urls = [normalised, ...subpaths.map(p => `${base}${p}`)]
 
   try {
-    const normalised = url.startsWith('http') ? url : `https://${url}`
-    const base = normalised.replace(/\/+$/, '')
-    const app = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY })
+    const results = await Promise.allSettled(
+      urls.map(u => scrapeUrlWithFallback(app, u))
+    )
 
-    // Scrape homepage + the most likely service/about subpages in parallel
-    // We always try subpages — homepage often only contains hero/nav text
-    const subpaths = ['/diensten', '/services', '/aanbod', '/over-ons', '/about', '/over', '/prijzen', '/pricing']
-
-    const [homepageResult, ...subResults] = await Promise.allSettled([
-      Promise.race([
-        scrapeUrl(app, normalised),
-        new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 25000)),
-      ]).catch(() => ''),
-      ...subpaths.map(path =>
-        Promise.race([
-          scrapeUrl(app, `${base}${path}`),
-          new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000)),
-        ]).catch(() => '')
-      ),
-    ])
-
-    const homepage = homepageResult.status === 'fulfilled' ? homepageResult.value as string : ''
-
-    const subContent = subResults
-      .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && (r.value as string).length > 150)
+    const combined = results
+      .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && (r.value as string).length > 100)
       .map(r => (r.value as string))
       .join('\n\n---\n\n')
 
-    const combined = [homepage, subContent].filter(Boolean).join('\n\n---\n\n')
     return combined.substring(0, 6000).trim()
   } catch {
     return ''
