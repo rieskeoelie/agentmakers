@@ -120,60 +120,99 @@ async function scrapeWithJina(url: string): Promise<string> {
 }
 
 /**
- * Scrapes a single URL: tries Firecrawl first, falls back to Jina AI Reader
- * if Firecrawl returns nothing useful (blocked, JS-heavy, etc.).
+ * Scrapes a single URL by racing Firecrawl and Jina AI Reader in parallel.
+ * Returns whichever gives the most content within the timeout.
  */
-async function scrapeUrlWithFallback(
-  app: FirecrawlApp | null,
-  url: string,
-  jinaTimeout = 22000,
-): Promise<string> {
-  // 1. Try Firecrawl
+async function scrapeUrlWithFallback(app: FirecrawlApp | null, url: string): Promise<string> {
+  const timeout = (ms: number) =>
+    new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+
+  const scrapers: Promise<string>[] = [
+    // Jina always runs — fastest and most reliable for blocked sites
+    Promise.race([scrapeWithJina(url), timeout(22000)]).catch(() => ''),
+  ]
+
   if (app) {
-    const fc = await Promise.race([
-      scrapeUrl(app, url),
-      new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 25000)),
-    ]).catch(() => '')
-    if ((fc as string).length > 150) return fc as string
+    scrapers.push(
+      Promise.race([scrapeUrl(app, url), timeout(20000)]).catch(() => '')
+    )
   }
 
-  // 2. Firecrawl returned nothing — fall back to Jina AI Reader
-  const jina = await Promise.race([
-    scrapeWithJina(url),
-    new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), jinaTimeout)),
-  ]).catch(() => '')
-  return jina as string
+  // Run both in parallel, pick the longest result (most content = most useful)
+  const results = await Promise.allSettled(scrapers)
+  const contents = results
+    .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
+    .map(r => r.value as string)
+    .filter(s => s.length > 100)
+    .sort((a, b) => b.length - a.length)
+
+  return contents[0] ?? ''
+}
+
+/**
+ * Extracts internal links from scraped markdown content.
+ * Returns up to `max` unique subpage URLs that are likely to have useful content.
+ */
+function extractInternalLinks(markdown: string, baseUrl: string, max = 4): string[] {
+  const base = new URL(baseUrl)
+  const skip = new Set(['/', '/contact', '/contact/', '/privacy', '/sitemap', '/login', '/logout', '/zoeken', '/search', '/nieuws', '/blog', '/faq'])
+  const seen = new Set<string>()
+  const links: string[] = []
+
+  const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+|\/[^)]*)\)/g
+  let match
+  while ((match = linkRegex.exec(markdown)) !== null) {
+    const href = match[2]
+    try {
+      const u = new URL(href, base.origin)
+      if (u.hostname !== base.hostname) continue        // external
+      const path = u.pathname.replace(/\/$/, '') || '/'
+      if (skip.has(path) || skip.has(path + '/')) continue
+      if (seen.has(path)) continue
+      seen.add(path)
+      links.push(u.href)
+      if (links.length >= max) break
+    } catch { /* ignore malformed */ }
+  }
+  return links
 }
 
 /**
  * Scrapes a website and returns markdown content for the AI agent.
  * Strategy:
- *   1. Firecrawl homepage + common subpages in parallel
- *   2. For any URL where Firecrawl returns nothing, retries with Jina AI Reader
- * This means blocked / JS-heavy sites still get scraped.
+ *   1. Scrape homepage with Firecrawl + Jina in parallel (fastest wins)
+ *   2. Extract real subpage links from the homepage navigation
+ *   3. Scrape those real subpages (not guessed paths)
+ * Works even on sites that block Firecrawl.
  */
 export async function scrapeWebsite(url: string): Promise<string> {
   if (!url) return ''
 
   const normalised = url.startsWith('http') ? url : `https://${url}`
-  const base = normalised.replace(/\/+$/, '')
   const app = process.env.FIRECRAWL_API_KEY
     ? new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY })
     : null
 
-  const subpaths = ['/diensten', '/services', '/aanbod', '/over-ons', '/about', '/over', '/prijzen', '/pricing']
-  const urls = [normalised, ...subpaths.map(p => `${base}${p}`)]
-
   try {
-    const results = await Promise.allSettled(
-      urls.map(u => scrapeUrlWithFallback(app, u))
-    )
+    // Step 1: scrape homepage
+    const homepage = await scrapeUrlWithFallback(app, normalised)
 
-    const combined = results
+    if (!homepage) return ''
+
+    // Step 2: extract real internal links from the homepage
+    const subpageUrls = extractInternalLinks(homepage, normalised, 4)
+
+    // Step 3: scrape those subpages in parallel
+    const subResults = subpageUrls.length > 0
+      ? await Promise.allSettled(subpageUrls.map(u => scrapeUrlWithFallback(app, u)))
+      : []
+
+    const subContent = subResults
       .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && (r.value as string).length > 100)
-      .map(r => (r.value as string))
+      .map(r => r.value as string)
       .join('\n\n---\n\n')
 
+    const combined = [homepage, subContent].filter(Boolean).join('\n\n---\n\n')
     return combined.substring(0, 6000).trim()
   } catch {
     return ''
