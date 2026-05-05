@@ -75,7 +75,26 @@ export async function fetchPlacesInfo(
 // ─── Firecrawl website scraping ───────────────────────────────────────────────
 
 /**
+ * Scrapes a single URL with Firecrawl. Returns markdown or empty string.
+ */
+async function scrapeUrl(app: FirecrawlApp, url: string): Promise<string> {
+  try {
+    const result = await (app.scrape(url, {
+      formats: ['markdown'],
+      onlyMainContent: true,
+      timeout: 20000,
+    }) as Promise<{ success: boolean; markdown?: string }>)
+    if (!result?.success || !result.markdown) return ''
+    return result.markdown.trim()
+  } catch {
+    return ''
+  }
+}
+
+/**
  * Scrapes a website using Firecrawl and returns markdown content.
+ * Tries the homepage first; if that yields little content, also tries
+ * common service/about subpages and concatenates what it finds.
  * Returns empty string if Firecrawl is not configured or scraping fails.
  */
 export async function scrapeWebsite(url: string): Promise<string> {
@@ -83,23 +102,38 @@ export async function scrapeWebsite(url: string): Promise<string> {
 
   try {
     const normalised = url.startsWith('http') ? url : `https://${url}`
+    const base = normalised.replace(/\/+$/, '')
     const app = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY })
 
-    // Race the Firecrawl call against a 30s timeout so we never hang indefinitely
-    const scrapePromise = app.scrape(normalised, {
-      formats: ['markdown'],
-      timeout: 25000, // 25s request timeout to Firecrawl
-    }) as Promise<{ success: boolean; markdown?: string }>
+    // Always scrape homepage first
+    const homepage = await Promise.race([
+      scrapeUrl(app, normalised),
+      new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 25000)),
+    ]).catch(() => '')
 
-    const timeoutPromise = new Promise<null>((_, reject) =>
-      setTimeout(() => reject(new Error('Firecrawl timeout')), 30000)
+    // If homepage gave plenty of content, use it directly (trimmed to 5 000 chars)
+    if ((homepage as string).length >= 1200) {
+      return (homepage as string).substring(0, 5000).trim()
+    }
+
+    // Homepage was thin — try common subpages for services/about in parallel
+    const subpaths = ['/diensten', '/services', '/aanbod', '/over-ons', '/about', '/over', '/prijzen', '/pricing']
+    const subResults = await Promise.allSettled(
+      subpaths.map(path =>
+        Promise.race([
+          scrapeUrl(app, `${base}${path}`),
+          new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000)),
+        ]).catch(() => '')
+      )
     )
 
-    const result = await Promise.race([scrapePromise, timeoutPromise]) as { success: boolean; markdown?: string } | null
-    if (!result || !result.success || !result.markdown) return ''
+    const subContent = subResults
+      .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && (r.value as string).length > 200)
+      .map(r => (r.value as string))
+      .join('\n\n---\n\n')
 
-    // Trim to ~2 000 chars so the system prompt stays concise
-    return result.markdown.substring(0, 2000).trim()
+    const combined = [(homepage as string), subContent].filter(Boolean).join('\n\n---\n\n')
+    return combined.substring(0, 5000).trim()
   } catch {
     return ''
   }

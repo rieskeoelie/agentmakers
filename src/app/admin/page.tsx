@@ -251,6 +251,33 @@ export default function AdminDashboard() {
   // Persistent outreach history: demo_token → ISO date sent
   const [outreachSent, setOutreachSent] = useState<Record<string, string>>({})
 
+  // Re-scrape per lead
+  const [rescrapeLoading, setRescrapeLoading] = useState<Record<string, boolean>>({})
+  const [rescrapeResult, setRescrapeResult]   = useState<Record<string, { ok: boolean; msg: string }>>({})
+
+  async function rescrapeWebsite(lead: Lead) {
+    if (!lead.demo_token) return
+    setRescrapeLoading(prev => ({ ...prev, [lead.id]: true }))
+    setRescrapeResult(prev => ({ ...prev, [lead.id]: { ok: false, msg: '' } }))
+    try {
+      const res = await fetch('/api/admin/rescrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ demo_token: lead.demo_token }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Scrape mislukt')
+      setRescrapeResult(prev => ({
+        ...prev,
+        [lead.id]: { ok: true, msg: data.scraped ? `✅ Gescraped (${data.contentLength} tekens)` : '⚠️ Geen inhoud gevonden' }
+      }))
+    } catch (err) {
+      setRescrapeResult(prev => ({ ...prev, [lead.id]: { ok: false, msg: `❌ ${err instanceof Error ? err.message : 'Fout'}` } }))
+    } finally {
+      setRescrapeLoading(prev => ({ ...prev, [lead.id]: false }))
+    }
+  }
+
   // AI email modal
   interface EmailModal { idx: number; bedrijfsnaam: string; naam: string; email: string; demo_url: string; demo_token: string; language?: string }
   const [emailModal, setEmailModal]         = useState<EmailModal | null>(null)
@@ -1533,6 +1560,23 @@ Agentmakers.io`)
                             title={t('leadNoteTip')}
                             style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '.83rem', fontFamily: "'Nunito',sans-serif", color: '#0F172A', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
                           />
+                          {lead.website && lead.demo_token && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                              <button
+                                onClick={() => rescrapeWebsite(lead)}
+                                disabled={rescrapeLoading[lead.id]}
+                                title="Haal nieuwe website-inhoud op zodat de AI-agent actuele informatie heeft"
+                                style={{ padding: '6px 14px', borderRadius: 8, fontSize: '.75rem', fontWeight: 700, border: '1.5px solid #0D9488', background: rescrapeLoading[lead.id] ? '#F0FDFA' : '#fff', color: '#0D9488', cursor: rescrapeLoading[lead.id] ? 'wait' : 'pointer', fontFamily: "'Nunito',sans-serif" }}
+                              >
+                                {rescrapeLoading[lead.id] ? '⏳ Website ophalen…' : '🔄 Website herschrapen'}
+                              </button>
+                              {rescrapeResult[lead.id]?.msg && (
+                                <span style={{ fontSize: '.75rem', color: rescrapeResult[lead.id].ok ? '#166534' : '#DC2626' }}>
+                                  {rescrapeResult[lead.id].msg}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
