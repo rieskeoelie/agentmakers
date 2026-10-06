@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { isCronOrAdminKeyAuthorized } from '@/lib/cronAuth'
 import { sendWeeklyReport } from '@/lib/email'
 
 // Runs every Monday at 08:00 via Vercel Cron
 // Compiles weekly stats and sends email to admin
 
 function isAuthorized(req: NextRequest) {
-  const bearer = req.headers.get('authorization')?.replace('Bearer ', '')
-  const adminKey = req.headers.get('x-admin-key')
-  return (
-    bearer === process.env.CRON_SECRET ||
-    adminKey === process.env.ADMIN_SECRET_KEY
-  )
+  return isCronOrAdminKeyAuthorized(req)
 }
 
 export async function GET(req: NextRequest) {

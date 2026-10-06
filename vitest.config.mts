@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 // Node environment; network is blocked and credentials are stripped in test/outreach/setup.ts.
 export default defineConfig({
   test: {
-    include: ["test/outreach/**/*.test.ts"],
+    include: ["test/outreach/**/*.test.ts", "test/security/**/*.test.ts"],
     setupFiles: ["test/outreach/setup.ts"],
     testTimeout: 15000,
   },

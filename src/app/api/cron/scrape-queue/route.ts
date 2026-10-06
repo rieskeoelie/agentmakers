@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { scrapeWebsite, fetchPlacesInfo, buildBusinessInfo } from '@/lib/scrape'
-import { getSessionFromRequest } from '@/lib/auth'
+import { isScrapeQueueAuthorized } from '@/lib/cronAuth'
 
 // Allow up to 60s — Firecrawl can be slow; we process 5 leads per call (~10s each = 50s max)
 export const maxDuration = 60
@@ -9,10 +9,7 @@ export const maxDuration = 60
 // Called by Vercel Cron every 10 minutes — also callable manually from admin
 // Auth: Authorization: Bearer {CRON_SECRET}  OR  session cookie (any logged-in user)
 function isAuthorized(req: NextRequest) {
-  const bearer = req.headers.get('authorization')?.replace('Bearer ', '')
-  if (bearer === process.env.CRON_SECRET) return true
-  const session = getSessionFromRequest(req)
-  return !!session
+  return isScrapeQueueAuthorized(req)
 }
 
 export async function GET(req: NextRequest) {

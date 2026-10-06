@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { isCronOrAdminKeyAuthorized } from '@/lib/cronAuth'
 import { sendFollowUpEmail } from '@/lib/email'
 
 // Runs daily at 09:00 via Vercel Cron
@@ -9,12 +10,7 @@ import { sendFollowUpEmail } from '@/lib/email'
 // schema changes.
 
 function isAuthorized(req: NextRequest) {
-  const bearer = req.headers.get('authorization')?.replace('Bearer ', '')
-  const adminKey = req.headers.get('x-admin-key')
-  return (
-    bearer === process.env.CRON_SECRET ||
-    adminKey === process.env.ADMIN_SECRET_KEY
-  )
+  return isCronOrAdminKeyAuthorized(req)
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://agentmakers.io'
