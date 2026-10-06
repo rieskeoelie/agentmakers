@@ -39,3 +39,8 @@ export function isScrapeQueueAuthorized(req: NextRequest): boolean {
 export function isCronOrAdminKeyAuthorized(req: NextRequest): boolean {
   return hasValidCronSecret(req) || hasValidAdminKey(req)
 }
+
+/** /api/scrape: `x-internal-secret` header = ADMIN_SECRET_KEY (the route's only auth path). */
+export function hasValidInternalSecret(req: NextRequest, key = process.env.ADMIN_SECRET_KEY): boolean {
+  return secretMatches(req.headers.get('x-internal-secret'), key)
+}

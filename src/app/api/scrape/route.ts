@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { scrapeWebsite, buildBusinessInfo } from '@/lib/scrape'
+import { hasValidInternalSecret } from '@/lib/cronAuth'
 
 /**
  * POST /api/scrape
@@ -13,8 +14,7 @@ import { scrapeWebsite, buildBusinessInfo } from '@/lib/scrape'
 export async function POST(req: NextRequest) {
   try {
     // Basic internal auth
-    const secret = req.headers.get('x-internal-secret')
-    if (secret !== process.env.ADMIN_SECRET_KEY) {
+    if (!hasValidInternalSecret(req)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
