@@ -1,0 +1,40 @@
+{
+ "data": {
+  "domain": "tandartsen-centrum.example",
+  "disposable": false,
+  "webmail": false,
+  "accept_all": true,
+  "pattern": "{first}",
+  "organization": "tandartsen-centrum.example",
+  "description": null,
+  "emails": [
+   {
+    "value": "mark@tandartsen-centrum.example",
+    "type": "personal",
+    "confidence": 91,
+    "first_name": "Mark",
+    "last_name": "Jansen",
+    "position": "Eigenaar",
+    "seniority": "executive",
+    "department": "executive",
+    "linkedin": null,
+    "twitter": null,
+    "phone_number": null,
+    "verification": {
+     "date": "2026-09-20",
+     "status": "valid"
+    },
+    "sources": []
+   }
+  ],
+  "linked_domains": []
+ },
+ "meta": {
+  "results": 1,
+  "limit": 10,
+  "offset": 0,
+  "params": {
+   "domain": "tandartsen-centrum.example"
+  }
+ }
+}

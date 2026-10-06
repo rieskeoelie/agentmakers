@@ -1,0 +1,74 @@
+{
+  "niche": "tandartspraktijken",
+  "ideal_company_profile": "Tandartspraktijken in Nederland met een balie die telefoontjes van patiënten afhandelt (afspraken, spoed, vragen over behandelingen en vergoedingen).",
+  "likely_decision_makers": ["praktijkhouder", "eigenaar", "praktijkmanager"],
+  "problems_addressed": [
+    "patiënten bellen wanneer de praktijk gesloten is (lunchpauze, na werktijd, weekend)",
+    "gemiste oproepen wanneer de balie niet bezet is",
+    "patiënten met spoedklachten die niemand bereiken"
+  ],
+  "voice_ai_use_cases": [
+    "inkomende telefoontjes van patiënten beantwoorden",
+    "controles, gebitsreinigingen, intake-afspraken en behandelingen inplannen",
+    "spoedafspraken bij tandpijn inplannen",
+    "vragen over behandelingen, kosten en vergoedingen beantwoorden",
+    "intake van nieuwe patiënten",
+    "afspraakherinneringen en recall (outbound)"
+  ],
+  "supported_capabilities": [
+    "beantwoordt inkomende telefoontjes van patiënten",
+    "plant afspraken rechtstreeks in de praktijkagenda",
+    "beantwoordt vragen over openingstijden, tarieven en verzekeringen",
+    "verwijst bij spoed door naar de dienstdoende tandarts",
+    "meertalige patiëntcommunicatie",
+    "afspraakherinneringen per telefoon, WhatsApp of sms"
+  ],
+  "supported_benefits": [
+    "bereikbaar buiten openingstijden",
+    "minder gemiste oproepen",
+    "minder no-shows door herinneringen"
+  ],
+  "prohibited_or_unsupported_claims": [
+    "€350 behandelwaarde per gemiste patiënt",
+    "€91.000 gemiste omzet per jaar",
+    "73% van de tijd gesloten",
+    "98% van alle patiëntoproepen beantwoord",
+    "+34% meer ingeplande afspraken",
+    "-40% minder no-shows",
+    "noemen van specifieke praktijksoftware in cold e-mail"
+  ],
+  "key_terminology": ["AI-receptioniste", "balie", "praktijkagenda", "spoedafspraak", "controle", "recall", "intake"],
+  "objections": [],
+  "preferred_cta": "Zie direct een live demo",
+  "disqualifiers": ["praktijk gebruikt al een AI-telefoonassistent"],
+  "high_signal_website_triggers": [
+    "patiënten worden gevraagd te bellen voor een afspraak",
+    "afspraken verzetten of afzeggen gaat telefonisch",
+    "beperkte telefonische bereikbaarheid",
+    "spoedregeling buiten openingstijden",
+    "vacature voor baliemedewerker of tandartsassistent"
+  ],
+  "category_keywords": ["tandarts", "dentist", "dental", "mondzorg", "tandheelkund", "orthodont", "mondhygi", "implantolog"],
+  "capability_by_signal": {
+    "APPOINTMENT_BY_PHONE": "telefoontjes van patiënten beantwoorden en afspraken rechtstreeks in uw praktijkagenda inplannen",
+    "RESCHEDULE_BY_PHONE": "patiënten telefonisch helpen met het inplannen, bevestigen of verzetten van afspraken",
+    "PHONE_HOURS": "telefoontjes van patiënten ook buiten openingstijden beantwoorden en afspraken inplannen",
+    "EMERGENCY_ROUTING": "bij spoedklachten de urgentie uitvragen, een spoedafspraak inplannen of doorverwijzen naar de dienstdoende tandarts",
+    "PHONE_CTA": "inkomende telefoontjes van patiënten beantwoorden en veelgestelde vragen afhandelen",
+    "RECEPTION_HIRING": "routinematige telefoontjes aan de balie opvangen, zoals afspraken en vragen over behandelingen",
+    "MULTI_LOCATION": null,
+    "WEEKEND_CLOSED": "telefoontjes van patiënten ook in het weekend beantwoorden en afspraken inplannen",
+    "FAQ_PRESENT": "vragen van patiënten over behandelingen, kosten en vergoedingen direct beantwoorden"
+  },
+  "default_capability": "telefoontjes van patiënten beantwoorden en afspraken inplannen",
+  "email_framework": [
+    "1. Eén feitelijke observatie over het telefoonproces van de praktijk (of niche-context zonder 'ik zag')",
+    "2. Eén zin over de relevante AgentMakers-capability",
+    "3. Eén laagdrempelige vraag"
+  ],
+  "followup_framework": [
+    "Herhaal de vraag kort",
+    "Noem één ander voordeel uit de landingspagina (bijv. herinneringen tegen no-shows)",
+    "Sluit de loop beleefd af"
+  ]
+}

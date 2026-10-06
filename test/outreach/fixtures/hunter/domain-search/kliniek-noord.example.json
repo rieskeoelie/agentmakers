@@ -1,0 +1,40 @@
+{
+ "data": {
+  "domain": "kliniek-noord.example",
+  "disposable": false,
+  "webmail": false,
+  "accept_all": false,
+  "pattern": "{first}",
+  "organization": "kliniek-noord.example",
+  "description": null,
+  "emails": [
+   {
+    "value": "eva.visser@kliniek-noord.example",
+    "type": "personal",
+    "confidence": 93,
+    "first_name": "Eva",
+    "last_name": "Visser",
+    "position": "Office Manager",
+    "seniority": "senior",
+    "department": "management",
+    "linkedin": null,
+    "twitter": null,
+    "phone_number": null,
+    "verification": {
+     "date": "2026-09-20",
+     "status": "valid"
+    },
+    "sources": []
+   }
+  ],
+  "linked_domains": []
+ },
+ "meta": {
+  "results": 1,
+  "limit": 10,
+  "offset": 0,
+  "params": {
+   "domain": "kliniek-noord.example"
+  }
+ }
+}

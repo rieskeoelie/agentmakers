@@ -1,0 +1,478 @@
+{
+ "version": "0.1.20260901",
+ "status_code": 20000,
+ "status_message": "Ok.",
+ "time": "3.1 sec.",
+ "cost": 0.002,
+ "tasks_count": 1,
+ "tasks_error": 0,
+ "tasks": [
+  {
+   "id": "fixture-task",
+   "status_code": 20000,
+   "status_message": "Ok.",
+   "time": "3.0 sec.",
+   "cost": 0.002,
+   "result_count": 1,
+   "path": [
+    "v3",
+    "serp",
+    "google",
+    "maps",
+    "live",
+    "advanced"
+   ],
+   "data": {
+    "api": "serp",
+    "function": "live",
+    "se": "google",
+    "se_type": "maps",
+    "keyword": "tandarts Hoorn",
+    "location_name": "Netherlands",
+    "language_code": "nl",
+    "depth": 100
+   },
+   "result": [
+    {
+     "keyword": "tandarts Hoorn",
+     "type": "maps",
+     "se_domain": "google.nl",
+     "location_code": 2528,
+     "language_code": "nl",
+     "check_url": "https://www.google.nl/maps/search/tandarts+Hoorn",
+     "datetime": "2026-10-06 08:00:00 +00:00",
+     "item_types": [
+      "maps_search"
+     ],
+     "se_results_count": 0,
+     "items_count": 15,
+     "items": [
+      {
+       "type": "maps_search",
+       "rank_group": 1,
+       "rank_absolute": 1,
+       "title": "Tandartspraktijk De Wit",
+       "domain": "tandartspraktijk-dewit.example",
+       "url": "https://www.tandartspraktijk-dewit.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 1, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-1",
+       "cid": "1001",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 41,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 2,
+       "rank_absolute": 2,
+       "title": "Mondzorg Hoorn",
+       "domain": "mondzorg-hoorn.example",
+       "url": "https://mondzorg-hoorn.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 2, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-2",
+       "cid": "1002",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 42,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 3,
+       "rank_absolute": 3,
+       "title": "Mondzorg Hoorn - locatie Zwaag",
+       "domain": "www.mondzorg-hoorn.example",
+       "url": "https://www.mondzorg-hoorn.example/locatie-zwaag",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 3, 1621 AA Zwaag",
+       "address_info": {
+        "city": "Zwaag",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-3",
+       "cid": "1003",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 43,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 4,
+       "rank_absolute": 4,
+       "title": "Tandartsen Centrum",
+       "domain": "tandartsen-centrum.example",
+       "url": "https://tandartsen-centrum.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 4, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandartspraktijk",
+       "additional_categories": null,
+       "place_id": "fixture-place-4",
+       "cid": "1004",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 44,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 5,
+       "rank_absolute": 5,
+       "title": "Smile Studio",
+       "domain": "smile-studio.example",
+       "url": "https://smile-studio.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 5, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Cosmetisch tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-5",
+       "cid": "1005",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 45,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 6,
+       "rank_absolute": 6,
+       "title": "Tandarts op Facebook",
+       "domain": "facebook.com",
+       "url": "https://www.facebook.com/tandartsfb",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 6, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-6",
+       "cid": "1006",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 46,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 7,
+       "rank_absolute": 7,
+       "title": "Tandarts Zonder Site",
+       "domain": null,
+       "url": null,
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 7, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-7",
+       "cid": "1007",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 47,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 8,
+       "rank_absolute": 8,
+       "title": "Bakkerij Smit",
+       "domain": "bakkerij-smit.example",
+       "url": "https://bakkerij-smit.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 8, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Bakkerij",
+       "additional_categories": null,
+       "place_id": "fixture-place-8",
+       "cid": "1008",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 48,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 9,
+       "rank_absolute": 9,
+       "title": "Kliniek Noord Mondzorg",
+       "domain": "kliniek-noord.example",
+       "url": "https://kliniek-noord.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 9, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandheelkundige kliniek",
+       "additional_categories": null,
+       "place_id": "fixture-place-9",
+       "cid": "1009",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 49,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 10,
+       "rank_absolute": 10,
+       "title": "Tandarts Smit & Partners",
+       "domain": "injectie-tandarts.example",
+       "url": "https://injectie-tandarts.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 10, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-10",
+       "cid": "1010",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 50,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 11,
+       "rank_absolute": 11,
+       "title": "Tandarts Onbereikbaar",
+       "domain": "unreachable.example",
+       "url": "https://unreachable.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 11, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-11",
+       "cid": "1011",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 51,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 12,
+       "rank_absolute": 12,
+       "title": "Tandartspraktijk Algemeen",
+       "domain": "tandarts-generic.example",
+       "url": "https://tandarts-generic.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 12, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-12",
+       "cid": "1012",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 52,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 13,
+       "rank_absolute": 13,
+       "title": "Tandarts De Wit Zwaag",
+       "domain": "tandarts-dewit-zwaag.example",
+       "url": "https://tandarts-dewit-zwaag.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 13, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-13",
+       "cid": "1013",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 53,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 14,
+       "rank_absolute": 14,
+       "title": "Tandarts Vos",
+       "domain": "tandarts-vos.example",
+       "url": "https://tandarts-vos.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 14, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-14",
+       "cid": "1014",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 54,
+        "rating_max": 5
+       },
+       "work_hours": null,
+       "book_online_url": null
+      },
+      {
+       "type": "maps_search",
+       "rank_group": 15,
+       "rank_absolute": 15,
+       "title": "Tandarts Gesloten",
+       "domain": "tandarts-gesloten.example",
+       "url": "https://tandarts-gesloten.example/",
+       "phone": "0229 000000",
+       "address": "Voorbeeldstraat 15, 1621 AA Hoorn",
+       "address_info": {
+        "city": "Hoorn",
+        "zip": "1621 AA",
+        "region": "Noord-Holland",
+        "country_code": "NL"
+       },
+       "category": "Tandarts",
+       "additional_categories": null,
+       "place_id": "fixture-place-15",
+       "cid": "1015",
+       "rating": {
+        "rating_type": "Max5",
+        "value": 4.5,
+        "votes_count": 55,
+        "rating_max": 5
+       },
+       "work_hours": {
+        "timetable": null,
+        "current_status": "closed_forever"
+       },
+       "book_online_url": null
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

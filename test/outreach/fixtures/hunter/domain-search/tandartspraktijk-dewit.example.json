@@ -1,0 +1,76 @@
+{
+ "data": {
+  "domain": "tandartspraktijk-dewit.example",
+  "disposable": false,
+  "webmail": false,
+  "accept_all": false,
+  "pattern": "{first}",
+  "organization": "tandartspraktijk-dewit.example",
+  "description": null,
+  "emails": [
+   {
+    "value": "info@tandartspraktijk-dewit.example",
+    "type": "generic",
+    "confidence": 92,
+    "first_name": null,
+    "last_name": null,
+    "position": null,
+    "seniority": null,
+    "department": null,
+    "linkedin": null,
+    "twitter": null,
+    "phone_number": null,
+    "verification": {
+     "date": "2026-09-20",
+     "status": "valid"
+    },
+    "sources": []
+   },
+   {
+    "value": "lisa@tandartspraktijk-dewit.example",
+    "type": "personal",
+    "confidence": 88,
+    "first_name": "Lisa",
+    "last_name": "Kok",
+    "position": "Tandartsassistente",
+    "seniority": "junior",
+    "department": "health",
+    "linkedin": null,
+    "twitter": null,
+    "phone_number": null,
+    "verification": {
+     "date": "2026-09-20",
+     "status": "valid"
+    },
+    "sources": []
+   },
+   {
+    "value": "pieter@tandartspraktijk-dewit.example",
+    "type": "personal",
+    "confidence": 94,
+    "first_name": "Pieter",
+    "last_name": "de Wit",
+    "position": "Tandarts / Praktijkhouder",
+    "seniority": "executive",
+    "department": "executive",
+    "linkedin": null,
+    "twitter": null,
+    "phone_number": null,
+    "verification": {
+     "date": "2026-09-20",
+     "status": "valid"
+    },
+    "sources": []
+   }
+  ],
+  "linked_domains": []
+ },
+ "meta": {
+  "results": 3,
+  "limit": 10,
+  "offset": 0,
+  "params": {
+   "domain": "tandartspraktijk-dewit.example"
+  }
+ }
+}

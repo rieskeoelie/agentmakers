@@ -1,0 +1,58 @@
+{
+ "data": {
+  "domain": "mondzorg-hoorn.example",
+  "disposable": false,
+  "webmail": false,
+  "accept_all": false,
+  "pattern": "{first}",
+  "organization": "mondzorg-hoorn.example",
+  "description": null,
+  "emails": [
+   {
+    "value": "info@mondzorg-hoorn.example",
+    "type": "generic",
+    "confidence": 90,
+    "first_name": null,
+    "last_name": null,
+    "position": null,
+    "seniority": null,
+    "department": null,
+    "linkedin": null,
+    "twitter": null,
+    "phone_number": null,
+    "verification": {
+     "date": "2026-09-20",
+     "status": "valid"
+    },
+    "sources": []
+   },
+   {
+    "value": "anna@mondzorg-hoorn.example",
+    "type": "personal",
+    "confidence": 70,
+    "first_name": "Anna",
+    "last_name": "Mulder",
+    "position": "Assistent praktijkmanager",
+    "seniority": "junior",
+    "department": "management",
+    "linkedin": null,
+    "twitter": null,
+    "phone_number": null,
+    "verification": {
+     "date": "2026-09-20",
+     "status": "valid"
+    },
+    "sources": []
+   }
+  ],
+  "linked_domains": []
+ },
+ "meta": {
+  "results": 2,
+  "limit": 10,
+  "offset": 0,
+  "params": {
+   "domain": "mondzorg-hoorn.example"
+  }
+ }
+}

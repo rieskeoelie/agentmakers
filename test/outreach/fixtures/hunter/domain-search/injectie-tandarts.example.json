@@ -1,0 +1,40 @@
+{
+ "data": {
+  "domain": "injectie-tandarts.example",
+  "disposable": false,
+  "webmail": false,
+  "accept_all": false,
+  "pattern": "{first}",
+  "organization": "injectie-tandarts.example",
+  "description": null,
+  "emails": [
+   {
+    "value": "ruben@injectie-tandarts.example",
+    "type": "personal",
+    "confidence": 85,
+    "first_name": "Ruben",
+    "last_name": "Smit",
+    "position": "Directeur",
+    "seniority": "executive",
+    "department": "executive",
+    "linkedin": null,
+    "twitter": null,
+    "phone_number": null,
+    "verification": {
+     "date": null,
+     "status": null
+    },
+    "sources": []
+   }
+  ],
+  "linked_domains": []
+ },
+ "meta": {
+  "results": 1,
+  "limit": 10,
+  "offset": 0,
+  "params": {
+   "domain": "injectie-tandarts.example"
+  }
+ }
+}

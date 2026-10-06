@@ -1,0 +1,30 @@
+{
+ "data": {
+  "first_name": "Sanne",
+  "last_name": "Bakker",
+  "email": "sanne@mondzorg-hoorn.example",
+  "score": 91,
+  "domain": "mondzorg-hoorn.example",
+  "accept_all": false,
+  "position": null,
+  "twitter": null,
+  "linkedin_url": null,
+  "phone_number": null,
+  "company": "Mondzorg Hoorn",
+  "sources": [],
+  "verification": {
+   "date": "2026-10-01",
+   "status": "valid"
+  }
+ },
+ "meta": {
+  "params": {
+   "first_name": "Sanne",
+   "last_name": "Bakker",
+   "full_name": null,
+   "domain": "mondzorg-hoorn.example",
+   "company": null,
+   "max_duration": null
+  }
+ }
+}
