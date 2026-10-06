@@ -4,6 +4,6 @@
     "incremental": false,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src/lib/outreach/**/*.ts", "test/outreach/**/*.ts", "test/security/**/*.ts", "vitest.config.mts"],
+  "include": ["src/lib/outreach/**/*.ts", "src/components/admin/outreach/**/*.tsx", "test/outreach/**/*.ts", "test/outreach/**/*.tsx", "test/security/**/*.ts", "vitest.config.mts"],
   "exclude": ["node_modules"]
 }

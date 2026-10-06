@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations, type UiLang } from '@/lib/admin-i18n'
+import OutreachWorkspace from '@/components/admin/outreach/OutreachWorkspace'
 
 const SEEN_LEADS_STORAGE   = 'agentmakers_seen_leads'
 const LEAD_STATUS_STORAGE  = 'agentmakers_lead_status'
@@ -124,6 +125,8 @@ export default function AdminDashboard() {
 
   const [authed, setAuthed]     = useState(false)
   const [tab, setTab]           = useState<'pages' | 'leads' | 'analytics' | 'conversations' | 'outreach' | 'accounts'>('leads')
+  // Outreach tab: new run-based workspace (default) or the legacy demo-link tool
+  const [outreachLegacy, setOutreachLegacy] = useState(false)
   const [pages, setPages]       = useState<Page[]>([])
   const [leads, setLeads]       = useState<Lead[]>([])
   const [loading, setLoading]   = useState(false)
@@ -2179,8 +2182,22 @@ Agentmakers.io`)
       })()}
 
       {/* ══════════════════════ OUTREACH TAB ══════════════════════ */}
-      {tab === 'outreach' && (
+      {tab === 'outreach' && !outreachLegacy && currentUser && (
+        <OutreachWorkspace
+          currentUser={currentUser}
+          viewAsUser={viewAsUser}
+          landingOptions={pages.filter(p => p.status === 'live').map(p => ({ label: `${p.industry} — /nl/${p.slug}`, url: `https://agentmakers.io/nl/${p.slug}` }))}
+          onOpenLegacy={() => setOutreachLegacy(true)}
+        />
+      )}
+
+      {/* Legacy demo-link tool (Google Places → demo links → Resend). Kept unchanged until it is retired. */}
+      {tab === 'outreach' && outreachLegacy && (
         <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <button onClick={() => setOutreachLegacy(false)} style={{ background: '#fff', border: '1px solid #CBD5E1', padding: '7px 14px', borderRadius: 8, fontSize: '.82rem', fontWeight: 700, cursor: 'pointer', color: '#334155', fontFamily: "'Nunito',sans-serif" }}>← Terug naar Outreach</button>
+            <span style={{ fontSize: '.78rem', color: '#B45309' }}>Oude demo-link tool — wordt later uitgefaseerd.</span>
+          </div>
           <div style={{ marginBottom: 28 }}>
             <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: '1.3rem', marginBottom: 16 }}>🎯 Nieuwe prospects zoeken</h2>
 
