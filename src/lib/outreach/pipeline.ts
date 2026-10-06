@@ -137,7 +137,7 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T, i: number
   return out;
 }
 
-async function processProspect(company: DiscoveredCompany, index: number, campaign: CampaignInput, brain: CampaignBrain, deps: PipelineDeps): Promise<ProspectRecord> {
+export async function processProspect(company: DiscoveredCompany, index: number, campaign: CampaignInput, brain: CampaignBrain, deps: PipelineDeps): Promise<ProspectRecord> {
   const domain = rootDomain(company.domain)!;
   const rec: ProspectRecord = {
     index, company, domain, status: "FAILED", status_reasons: [], warnings: [], stages: newStages(), pages: [], fetch_errors: [],
