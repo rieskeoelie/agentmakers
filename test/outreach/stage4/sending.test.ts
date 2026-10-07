@@ -230,6 +230,19 @@ describe("push (fake Smartlead — nothing leaves the process)", () => {
     expect(sl.count("createCampaign")).toBe(1); // the existing campaign is re-configured, not duplicated
   });
 
+  it("a webhook that failed during setup is registered again by the next sync", async () => {
+    await queueProspectForActor(t.db, OWNER, ready[0]!.id);
+    await enableSending(t);
+    const sl = new FakeSmartlead();
+    const { SmartleadError } = await import("../../../src/lib/outreach/sending/smartlead.js");
+    sl.failNext.createCampaignWebhook = new SmartleadError(400, "create_webhook", "categories required", false);
+    await runSendTick(sendCtx(t, sl), { sync: false });
+    expect((await t.sql<{ e: string }>("select provider_campaign_error e from outreach_runs where id = $1", [runId]))[0]!.e).toContain("WEBHOOK:");
+    await runSendTick(sendCtx(t, sl), { push: false });
+    expect(sl.count("createCampaignWebhook")).toBe(2);
+    expect((await t.sql("select provider_campaign_error e from outreach_runs where id = $1", [runId]))[0]).toEqual({ e: null });
+  });
+
   it("a campaign that cannot be started while empty is started after the first lead push", async () => {
     await queueProspectForActor(t.db, OWNER, ready[0]!.id);
     await enableSending(t);

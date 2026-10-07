@@ -1,5 +1,5 @@
 import type { OutreachDb } from "../orchestration/db";
-import type { Actor } from "../orchestration/repository";
+import { repo, type Actor } from "../orchestration/repository";
 import { campaignTemplate, leadCustomFields, UNSUBSCRIBE_TEXT } from "./sequence";
 import { sendRepo, type ClaimedSend, type SendingConfig } from "./repository";
 import { SmartleadError, type SmartleadPort } from "./smartlead";
@@ -69,6 +69,7 @@ export async function runSendTick(ctx: SendContext, opts: { push?: boolean; sync
     }
   }
   if (opts.sync !== false) {
+    await repairWebhooks(ctx, sl);
     const s = await syncWithProvider(ctx, sl);
     r.synced = s.synced;
     r.syncEvents = s.events;
@@ -225,6 +226,26 @@ async function pushOne(ctx: SendContext, sl: SmartleadPort, config: SendingConfi
     await sendRepo.failPush(ctx.db, send.id, lease_token, errMsg(e), retryable).catch(() => undefined);
     return false;
   }
+}
+
+/** Campaigns whose webhook could not be registered during setup get another attempt (sync keeps working meanwhile). */
+export async function repairWebhooks(ctx: SendContext, sl: SmartleadPort): Promise<number> {
+  if (!ctx.webhookUrl) return 0;
+  let n = 0;
+  for (const c of await sendRepo.providerCampaigns(ctx.db)) {
+    const run = (await repo.getRun(ctx.db, SYSTEM, c.run_id)) as unknown as { provider_campaign_error?: string | null };
+    const err = run.provider_campaign_error ?? "";
+    if (!err.includes("WEBHOOK:")) continue;
+    try {
+      await sl.createCampaignWebhook(c.campaign_id, ctx.webhookUrl);
+      const rest = err.split(" | ").filter((x) => !x.startsWith("WEBHOOK:")).join(" | ") || null;
+      await sendRepo.setRunCampaign(ctx.db, c.run_id, c.campaign_id, c.status ?? "ACTIVE", rest);
+      n++;
+    } catch (e) {
+      ctx.log?.("webhook repair failed", { run: c.run_id, error: errMsg(e) });
+    }
+  }
+  return n;
 }
 
 /** Missed-webhook safety net: replays Smartlead's message history as idempotent provider events. */

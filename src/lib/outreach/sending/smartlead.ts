@@ -249,11 +249,18 @@ export class SmartleadClient implements SmartleadPort {
 
   async createCampaignWebhook(campaignId: string, url: string) {
     const events = ["EMAIL_SENT", "EMAIL_REPLY", "EMAIL_BOUNCE", "LEAD_UNSUBSCRIBED"];
+    // Production finding: this API requires at least one lead category on campaign webhooks.
+    const ALL_CATEGORIES = ["Interested", "Meeting Request", "Not Interested", "Do Not Contact", "Information Request", "Out Of Office", "Wrong Person"];
+    const path = `/campaigns/${encodeURIComponent(campaignId)}/webhooks`;
+    const body = (categories: string[]) => ({ id: null, name: `agentmakers-${campaignId}`, webhook_url: url, event_types: events, categories });
     await this.callFirst("create_webhook", [
-      { method: "POST", path: `/campaigns/${encodeURIComponent(campaignId)}/webhooks`, body: { id: null, name: `agentmakers-${campaignId}`, webhook_url: url, event_types: events, categories: [] } },
+      { method: "POST", path, body: body(ALL_CATEGORIES) },
       { method: "POST", path: "/webhook/create", body: { name: `agentmakers-${campaignId}`, webhook_url: url, association_type: 3, email_campaign_id: Number(campaignId) || campaignId,
         event_type_map: Object.fromEntries(events.map((e) => [e, true])) } },
-    ]);
+    ]).catch(async (e) => {
+      if (!(e instanceof SmartleadError) || e.status !== 400) throw e;
+      await this.call("create_webhook", "POST", path, body(["Interested"]));
+    });
   }
 
   async addLeads(campaignId: string, leads: SmartleadLeadInput[]) {
