@@ -186,8 +186,16 @@ export async function ensureCampaign(ctx: SendContext, sl: SmartleadPort, config
 
 async function pushOne(ctx: SendContext, sl: SmartleadPort, config: SendingConfig, c: ClaimedSend): Promise<boolean> {
   const { send, lease_token } = c;
+  let campaignId: string | null;
   try {
-    const campaignId = await ensureCampaign(ctx, sl, config, c.run);
+    campaignId = await ensureCampaign(ctx, sl, config, c.run);
+  } catch (e) {
+    // Campaign setup problems (provider config, missing mailbox, API changes) never fail the send itself: it stays queued.
+    ctx.log?.("campaign setup failed", { run: c.run.id, error: errMsg(e) });
+    await sendRepo.failPush(ctx.db, send.id, lease_token, `CAMPAIGN_SETUP: ${errMsg(e)}`, true).catch(() => undefined);
+    return false;
+  }
+  try {
     if (!campaignId) {
       await sendRepo.failPush(ctx.db, send.id, lease_token, "CAMPAIGN_BUSY", true);
       return false;

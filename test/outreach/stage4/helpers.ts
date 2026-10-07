@@ -78,7 +78,7 @@ export class FakeSmartlead implements SmartleadPort {
   async pauseLead(cid: string, lid: string) { this.rec("pauseLead", cid, lid); for (const l of this.leads.values()) if (l.id === lid) l.paused = true; }
   async unsubscribeLead(cid: string, lid: string) { this.rec("unsubscribeLead", cid, lid); for (const l of this.leads.values()) if (l.id === lid) l.unsubscribed = true; }
   async messageHistory(cid: string, lid: string) { this.rec("messageHistory", cid, lid); return this.history.get(lid) ?? []; }
-  async replyToThread(cid: string, input: { reply_to: SmartleadHistoryItem; email_body: string }) { this.rec("replyToThread", cid, input); return { message_id: `<reply-${++this.seq}@sl>` }; }
+  async replyToThread(cid: string, input: { lead_id: string; reply_to: SmartleadHistoryItem; email_body: string }) { this.rec("replyToThread", cid, input); return { message_id: `<reply-${++this.seq}@sl>` }; }
 }
 
 export function sendCtx(t: TestDb, sl: FakeSmartlead | null, o: Partial<SendContext> = {}): SendContext {

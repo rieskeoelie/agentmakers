@@ -163,7 +163,7 @@ export async function manualReply(db: OutreachDb, actor: Actor, sendId: string, 
     const history = await sl.messageHistory(begin.provider.campaign_id, begin.provider.lead_id);
     const replyTo = [...history].reverse().find((h) => h.type === "REPLY") ?? [...history].reverse().find((h) => h.type === "SENT");
     if (!replyTo?.stats_id) throw new Error("No provider message to reply to (message history is empty)");
-    const sent = await sl.replyToThread(begin.provider.campaign_id, { reply_to: replyTo, email_body: textToHtml(body) });
+    const sent = await sl.replyToThread(begin.provider.campaign_id, { lead_id: begin.provider.lead_id, reply_to: replyTo, email_body: textToHtml(body) });
     const fin = await sendRepo.finishReply(db, msg.id, true, sent.message_id, null);
     return { ok: true, message: fin.message };
   } catch (e) {

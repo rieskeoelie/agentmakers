@@ -215,6 +215,20 @@ describe("push (fake Smartlead — nothing leaves the process)", () => {
     expect((await runSendTick(sendCtx(t, sl))).pushed).toBe(1);
   });
 
+  it("campaign setup errors never fail the send: it stays QUEUED and succeeds once the provider accepts", async () => {
+    await queueProspectForActor(t.db, OWNER, ready[0]!.id);
+    await enableSending(t);
+    const sl = new FakeSmartlead();
+    const { SmartleadError } = await import("../../../src/lib/outreach/sending/smartlead.js");
+    sl.failNext.setSchedule = new SmartleadError(400, "set_schedule", "bad field", false);
+    expect((await runSendTick(sendCtx(t, sl))).pushFailed).toBe(1);
+    expect(await sendOf(ready[0]!.id)).toMatchObject({ state: "QUEUED" });
+    expect((await t.sql("select provider_campaign_status from outreach_runs where id = $1", [runId]))[0]).toEqual({ provider_campaign_status: "ERROR" });
+    await t.sql("update outreach_sends set next_attempt_at = now()");
+    expect((await runSendTick(sendCtx(t, sl))).pushed).toBe(1);
+    expect(sl.count("createCampaign")).toBe(1); // the existing campaign is re-configured, not duplicated
+  });
+
   it("kill switch OFF pauses every live campaign; ON resumes them", async () => {
     await queueProspectForActor(t.db, OWNER, ready[0]!.id);
     await enableSending(t);

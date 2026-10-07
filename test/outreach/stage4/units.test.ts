@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { analyzeReply, draftIssues, ruleClassify } from "../../../src/lib/outreach/sending/classify.js";
 import { buildSequence, FOLLOWUP_COPY, leadCustomFields, textToHtml } from "../../../src/lib/outreach/sending/sequence.js";
-import { normalizeHistoryItem, SmartleadClient, SmartleadError } from "../../../src/lib/outreach/sending/smartlead.js";
+import { dropPath, normalizeHistoryItem, SmartleadClient, SmartleadError } from "../../../src/lib/outreach/sending/smartlead.js";
 import { sendingEnvFrom, webhookUrlFor } from "../../../src/lib/outreach/sending/runtime.js";
 import { htmlToText, isWebhookAuthorized, normalizeSmartleadEvent, stripQuoted } from "../../../src/lib/outreach/sending/webhook.js";
 import { leadBusinessInfo, slugFromLanding } from "../../../src/lib/outreach/sending/service.js";
@@ -97,6 +97,27 @@ describe("Smartlead client", () => {
     expect(await c.addLeads("9", [{ email: "a@b.nl", first_name: "A", last_name: "B", company_name: "C", website: null, custom_fields: {} }])).toMatchObject({ uploaded: 1, blocked: 0 });
     expect(await c.findLeadId("a@b.nl", "9")).toBe("55");
     expect(await c.findLeadId("a@b.nl", "10")).toBeNull();
+  });
+  it("drops exactly the fields the API rejects ('\"x\" is not allowed') and retries (production finding: max_leads_per_day)", async () => {
+    const bodies: Array<Record<string, unknown>> = [];
+    const { f } = fetchOf((_u, init) => {
+      const b = JSON.parse(String(init.body));
+      bodies.push(b);
+      if ("max_leads_per_day" in b) return [400, { message: '"max_leads_per_day" is not allowed' }];
+      return [200, { ok: true }];
+    });
+    await new SmartleadClient(KEY, f).setSchedule("9", { timezone: "Europe/Amsterdam", days: [1], start_hour: "09:00", end_hour: "17:00", min_time_btw_emails: 10, max_leads_per_day: 5 });
+    expect(bodies.length).toBe(2);
+    expect(bodies[1]).toMatchObject({ max_new_leads_per_day: 5 });
+    expect(bodies[1]).not.toHaveProperty("max_leads_per_day");
+    const seq = { sequences: [{ a: 1, variants: [] }, { a: 2, variants: [] }] };
+    expect(dropPath(seq, "sequences[0].variants")).toBe(true);
+    expect(seq).toEqual({ sequences: [{ a: 1 }, { a: 2 }] });
+    expect(dropPath(seq, "nope")).toBe(false);
+    // A rejection that is not about an unknown field is not retried.
+    const { f: f3, urls } = fetchOf(() => [400, { message: '"email" is required' }]);
+    await expect(new SmartleadClient(KEY, f3).pauseLead("1", "2")).rejects.toBeInstanceOf(SmartleadError);
+    expect(urls.length).toBe(1);
   });
   it("normalizes message history in both shapes", () => {
     expect(normalizeHistoryItem({ stats_id: "s", type: "REPLY", message_id: "<m>", time: "t", email_body: "b", email_seq_number: "2" })).toMatchObject({ type: "REPLY", stats_id: "s", sequence_number: 2 });

@@ -78,7 +78,7 @@ export interface SmartleadPort {
   pauseLead(campaignId: string, leadId: string): Promise<void>;
   unsubscribeLead(campaignId: string, leadId: string): Promise<void>;
   messageHistory(campaignId: string, leadId: string): Promise<SmartleadHistoryItem[]>;
-  replyToThread(campaignId: string, input: { reply_to: SmartleadHistoryItem; email_body: string }): Promise<{ message_id: string | null }>;
+  replyToThread(campaignId: string, input: { lead_id: string; reply_to: SmartleadHistoryItem; email_body: string }): Promise<{ message_id: string | null }>;
 }
 
 type Json = Record<string, unknown>;
@@ -104,6 +104,24 @@ export function normalizeHistoryItem(raw: unknown): SmartleadHistoryItem {
   };
 }
 
+/**
+ * Removes a field reported by the API ("settings.foo", "sequences[0].variants", "[1].subject") from the payload.
+ * Array indexes apply to every element, so all steps are fixed at once. Returns false when nothing was removed.
+ */
+export function dropPath(payload: unknown, path: string): boolean {
+  const parts = path.replace(/\[(\d+)\]/g, ".[]").split(".").filter(Boolean);
+  const walk = (node: unknown, i: number): boolean => {
+    if (node === null || typeof node !== "object") return false;
+    const key = parts[i]!;
+    if (key === "[]") return Array.isArray(node) ? node.map((n) => walk(n, i + 1)).some(Boolean) : false;
+    const obj = node as Json;
+    if (!(key in obj)) return false;
+    if (i === parts.length - 1) { delete obj[key]; return true; }
+    return walk(obj[key], i + 1);
+  };
+  return parts.length > 0 && walk(payload, 0);
+}
+
 export class SmartleadClient implements SmartleadPort {
   constructor(private readonly apiKey: string, private readonly fetchImpl?: FetchLike, private readonly timeoutMs = 20_000) {}
 
@@ -113,16 +131,23 @@ export class SmartleadClient implements SmartleadPort {
 
   private async call(operation: string, method: "GET" | "POST" | "PATCH" | "DELETE", path: string, body?: unknown, query: Record<string, string> = {}): Promise<unknown> {
     const qs = new URLSearchParams({ ...query, api_key: this.apiKey });
-    let res;
-    try {
-      res = await requestJson(`${SMARTLEAD_BASE}${path}?${qs}`, { method, body, timeoutMs: this.timeoutMs, maxRetries: 2, fetchImpl: this.fetchImpl });
-    } catch (e) {
-      throw new SmartleadError(0, operation, this.scrub(String((e as Error)?.message ?? e)).slice(0, 300), true);
+    let payload = body === undefined ? undefined : structuredClone(body);
+    // Smartlead validates strictly and its documented field sets differ between API versions. We send a superset and
+    // drop exactly the fields the API reports as '"x" is not allowed' (bounded), so both versions work.
+    for (let attempt = 0; ; attempt++) {
+      let res;
+      try {
+        res = await requestJson(`${SMARTLEAD_BASE}${path}?${qs}`, { method, body: payload, timeoutMs: this.timeoutMs, maxRetries: 2, fetchImpl: this.fetchImpl });
+      } catch (e) {
+        throw new SmartleadError(0, operation, this.scrub(String((e as Error)?.message ?? e)).slice(0, 300), true);
+      }
+      if (res.status >= 200 && res.status < 300) return res.body;
+      const b = (res.body ?? {}) as Json;
+      const msg = this.scrub(String(b.message ?? b.error ?? (b as { non_json?: string }).non_json ?? "error")).slice(0, 300);
+      const unknown = /"([^"]+)" is not allowed/.exec(msg)?.[1];
+      if (res.status === 400 && unknown && payload !== undefined && attempt < 8 && dropPath(payload, unknown)) continue;
+      throw new SmartleadError(res.status, operation, msg, res.status === 429 || res.status >= 500 || res.status === 0);
     }
-    if (res.status >= 200 && res.status < 300) return res.body;
-    const b = (res.body ?? {}) as Json;
-    const msg = this.scrub(String(b.message ?? b.error ?? (b as { non_json?: string }).non_json ?? "error")).slice(0, 300);
-    throw new SmartleadError(res.status, operation, msg, res.status === 429 || res.status >= 500 || res.status === 0);
   }
 
   /** Tries the documented variants in order; moves on only when the endpoint itself is missing (404/405). */
@@ -173,9 +198,17 @@ export class SmartleadClient implements SmartleadPort {
   }
 
   async setSequences(campaignId: string, steps: SmartleadSequenceStep[]) {
-    await this.call("set_sequences", "POST", `/campaigns/${encodeURIComponent(campaignId)}/sequences`, {
-      sequences: steps.map((s) => ({ seq_number: s.seq_number, seq_delay_details: { delay_in_days: s.delay_in_days }, subject: s.subject, email_body: s.email_body })),
-    });
+    const list = steps.map((st) => ({
+      seq_number: st.seq_number, seq_delay_details: { delay_in_days: st.delay_in_days }, subject: st.subject, email_body: st.email_body,
+      variant_distribution_type: "MANUALLY_EQUAL", variants: [{ subject: st.subject, email_body: st.email_body, variant_label: "A" }],
+    }));
+    const path = `/campaigns/${encodeURIComponent(campaignId)}/sequences`;
+    try {
+      await this.call("set_sequences", "POST", path, { sequences: list });
+    } catch (e) {
+      if (!(e instanceof SmartleadError) || e.status !== 400 || !/array|sequences/i.test(e.message)) throw e;
+      await this.call("set_sequences", "POST", path, list);
+    }
   }
 
   async listMailboxes() {
@@ -248,10 +281,10 @@ export class SmartleadClient implements SmartleadPort {
     return list.map(normalizeHistoryItem);
   }
 
-  async replyToThread(campaignId: string, input: { reply_to: SmartleadHistoryItem; email_body: string }) {
+  async replyToThread(campaignId: string, input: { lead_id: string; reply_to: SmartleadHistoryItem; email_body: string }) {
     const r = input.reply_to;
     const body = (await this.call("reply", "POST", `/campaigns/${encodeURIComponent(campaignId)}/reply-email-thread`, {
-      email_stats_id: r.stats_id, email_body: input.email_body, reply_message_id: r.message_id, reply_email_time: r.time,
+      email_stats_id: r.stats_id, lead_id: Number(input.lead_id) || input.lead_id, email_body: input.email_body, reply_message_id: r.message_id, reply_email_time: r.time,
       reply_email_body: r.body, add_signature: false,
     })) as Json | null;
     return { message_id: str(body?.message_id ?? (body?.data as Json | undefined)?.message_id) };
