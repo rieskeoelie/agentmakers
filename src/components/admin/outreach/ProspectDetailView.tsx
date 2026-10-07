@@ -12,6 +12,7 @@ import { eventText } from './RunDetailView'
 import { FitChip, LifecycleChip, VerificationChip } from './ProspectsView'
 import { ProspectSendingSection } from './SendingPanel'
 import { IdentityReviewPanel } from './IdentityReviewPanel'
+import { OwnerDiscoveryPanel } from './OwnerRunDetail'
 import { EVENT_TONE } from './tones'
 
 type Ev = Pick<EvidenceItem, 'kind' | 'ref' | 'signal' | 'statement' | 'snippet' | 'source_url' | 'strength'> & Partial<EvidenceItem>
@@ -62,7 +63,7 @@ export function EvidenceList({ evidence, cited }: { evidence: Ev[]; cited?: Set<
 }
 
 const SECTIONS: Array<{ id: string; label: string }> = [
-  { id: 'company', label: 'Bedrijf' }, { id: 'qualification', label: 'Kwalificatie' }, { id: 'decision-maker', label: 'Beslisser' },
+  { id: 'owner', label: 'Eigenaar' }, { id: 'company', label: 'Bedrijf' }, { id: 'qualification', label: 'Kwalificatie' }, { id: 'decision-maker', label: 'Beslisser' },
   { id: 'verification', label: 'E-mailverificatie' }, { id: 'brain', label: 'Company Brain' }, { id: 'evidence', label: 'Bewijs' },
   { id: 'personalization', label: 'Personalisatie' }, { id: 'outreach', label: 'Outreach' }, { id: 'providers', label: 'Providers & kosten' }, { id: 'timeline', label: 'Tijdlijn' },
 ]
@@ -89,6 +90,8 @@ export function ProspectDetailBody({ d, outreach }: { d: ProspectDetail; outreac
   const total = d.provider_calls.reduce((s, c) => s + Number(c.cost_eur), 0)
   const { hard, resolvable } = splitReasons(p.outcome_reasons)
   const appr = reviewApprovability(d.review_blockers, d.identity_review)
+  const od = rec?.owner_discovery ?? null
+  const sections = SECTIONS.filter((s) => s.id !== 'owner' || od)
   const callCols: Array<Column<Call>> = [
     { key: 't', header: 'Tijd', nowrap: true, render: (c) => <span className="am-num am-muted">{dateTime(c.called_at)}</span> },
     { key: 'p', header: 'Provider', render: (c) => <span className="am-strong">{c.provider}</span> },
@@ -120,6 +123,8 @@ export function ProspectDetailBody({ d, outreach }: { d: ProspectDetail; outreac
           </div>
         )}
 
+        {od && <Block id="owner"><OwnerDiscoveryPanel od={od} email={p.email} /></Block>}
+
         <Block id="company">
           <KeyValue items={[
             ['Naam', p.company_name], ['Website', <ExtLink key="w" href={co.website ?? `https://${p.domain}`} />],
@@ -139,7 +144,7 @@ export function ProspectDetailBody({ d, outreach }: { d: ProspectDetail; outreac
                 <div><div className="am-strong" style={{ fontSize: 12, marginBottom: 4 }}>Negatieve signalen</div><ul style={{ margin: 0, paddingLeft: 18 }}>{fit.negative_signals.length ? fit.negative_signals.map((s) => <li key={s}>{s}</li>) : <li className="am-faint">geen</li>}</ul></div>
               </div>
             </>
-          ) : none(`Nog geen fit bepaald (${STEP_LABEL[p.current_step] ?? p.current_step}).`)}
+          ) : none(od ? 'Niet van toepassing: eigenaarsonderzoek kwalificeert geen doelgroep.' : `Nog geen fit bepaald (${STEP_LABEL[p.current_step] ?? p.current_step}).`)}
         </Block>
 
         <Block id="decision-maker">
@@ -204,10 +209,10 @@ export function ProspectDetailBody({ d, outreach }: { d: ProspectDetail; outreac
               </div>
               {rec.hook && rec.hook.rejections.length > 0 && <p className="am-faint" style={{ margin: '8px 0 0', fontSize: 12 }}>Afgekeurde openingen: {rec.hook.rejections.map((r) => r.issues.join('/')).join(' · ')}</p>}
             </>
-          ) : none('Geen mail opgesteld (alleen voor prospects met een bruikbaar e-mailadres).')}
+          ) : none(od ? 'Niet van toepassing: eigenaarsonderzoek stelt geen mail op.' : 'Geen mail opgesteld (alleen voor prospects met een bruikbaar e-mailadres).')}
         </Block>
 
-        <Block id="outreach">{outreach ?? none('Verzendstatus wordt geladen in de volledige weergave.')}</Block>
+        <Block id="outreach">{od ? none('Alleen onderzoek: deze prospect wordt nooit verzonden en komt niet in een campagne.') : outreach ?? none('Verzendstatus wordt geladen in de volledige weergave.')}</Block>
 
         <Block id="providers" aside={<span className="am-num">Totaal <span className="am-strong">{eur(total)}</span></span>}>
           {(rec?.prospeo || rec?.hunter_email_before_prospeo) && (
@@ -227,11 +232,11 @@ export function ProspectDetailBody({ d, outreach }: { d: ProspectDetail; outreac
         <div className="am-toc" aria-label="Secties">
           <div className="am-panel am-panel-pad" style={{ marginBottom: 16 }}>
             <KeyValue dense items={[
-              ['Status', <LifecycleChip key="s" p={p} />], ['Fit', <FitChip key="f" fit={fit?.classification ?? null} />],
+              ['Status', <LifecycleChip key="s" p={p} />], ...(od ? [] : [['Fit', <FitChip key="f" fit={fit?.classification ?? null} />] as [string, ReactNode]]),
               ['Beslisser', contact?.name], ['E-mail', p.email], ['Kosten', eur(p.spent_eur)], ['Bijgewerkt', dateTime(p.updated_at)],
             ]} />
           </div>
-          {SECTIONS.map((s) => <a key={s.id} href={`#ps-${s.id}`}>{s.label}</a>)}
+          {sections.map((s) => <a key={s.id} href={`#ps-${s.id}`}>{s.label}</a>)}
         </div>
       </aside>
     </div>

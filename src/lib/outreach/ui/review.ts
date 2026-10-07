@@ -20,7 +20,7 @@ export function isResolvableReason(code: string): boolean {
 }
 
 /** Identity reviews: approvable by a human ONLY when the server says the evidence substantiates them. */
-export const IDENTITY_REVIEW_REASONS = ["PARTIAL_NAME_MATCH_REVIEW", "NEAR_MATCH_IDENTITY_UNCONFIRMED"] as const;
+export const IDENTITY_REVIEW_REASONS = ["PARTIAL_NAME_MATCH_REVIEW", "NEAR_MATCH_IDENTITY_UNCONFIRMED", "OWNER_EVIDENCE_REVIEW", "DIRECTOR_NOT_OWNER"] as const;
 /** Recipient data that can still be missing after an identity approval (the prospect then stays non-READY). */
 export const MISSING_RECIPIENT_BLOCKERS = ["NO_RECIPIENT", "NO_NAMED_RECIPIENT", "DECISION_MAKER_EMAIL_NOT_FOUND"] as const;
 
@@ -59,7 +59,10 @@ export const corroborationLabel = (c: string) => CORROBORATION_NL[c] ?? c;
 export function identityApprovalText(companyName: string, identity: IdentityReview, missingAfterApproval: string[]): { title: string; description: string } {
   const c = identity.candidate;
   const who = `${c.name ?? "?"}${c.title ? ` (${c.title})` : ""}`;
-  const basis = identity.reason === "NEAR_MATCH_IDENTITY_UNCONFIRMED" && identity.evidence.near_match
+  const od = identity.evidence.owner_discovery;
+  const basis = (identity.reason === "OWNER_EVIDENCE_REVIEW" || identity.reason === "DIRECTOR_NOT_OWNER") && od
+    ? `Bron: ${od.evidence_label ?? "onbekend"}. ${identity.reason === "DIRECTOR_NOT_OWNER" ? "Deze persoon is als directeur/beslisser gevonden, niet als eigenaar; de functie blijft zo staan." : "Het oorspronkelijke bewijs wordt niet sterker gemaakt; vastgelegd wordt dat jij de identiteit hebt bevestigd."}`
+    : identity.reason === "NEAR_MATCH_IDENTITY_UNCONFIRMED" && identity.evidence.near_match
     ? `Gevonden bij "${identity.evidence.near_match.organisation}"; ondersteund door: ${identity.evidence.near_match.corroboration.map(corroborationLabel).join(", ")}. Het oorspronkelijke bewijs wordt niet sterker gemaakt; vastgelegd wordt dat jij de identiteit hebt bevestigd.`
     : c.last_name
       ? `Voornaam en functie staan op de eigen website; de achternaam komt uit één Hunter-contact op het bedrijfsdomein.`
@@ -106,6 +109,17 @@ export function reasonLabel(code: string): string {
     DECISION_MAKER_EMAIL_NOT_FOUND: "Geen zakelijk e-mailadres van de beslisser gevonden.",
     CONTACT_NOT_FOUND: "Geen beslisser gevonden.",
     PARTIAL_NAME_MATCH_REVIEW: "Alleen de voornaam (met functie) staat op de eigen website — identiteit niet volledig bevestigd.",
+    OWNER_EVIDENCE_REVIEW: "Naam en functie komen uit een bron buiten de eigen website/het register — handmatig bevestigen.",
+    DIRECTOR_NOT_OWNER: "Gevonden persoon is directeur/beslisser; eigendom is niet aangetoond.",
+    OWNER_DISCOVERY_NOT_SENDABLE: "Eigenaarsonderzoek: deze run verstuurt nooit mail.",
+    OWNER_FOUND_NO_EMAIL: "Eigenaar gevonden, maar geen geverifieerd persoonlijk zakelijk e-mailadres.",
+    DECISION_MAKER_FOUND_NO_EMAIL: "Beslisser gevonden, maar geen geverifieerd persoonlijk zakelijk e-mailadres.",
+    NO_OWNER_FOUND: "Geen eigenaar of beslisser met naam gevonden.",
+    COMPANY_AMBIGUOUS: "Bedrijfsidentiteit niet bevestigd (website hoort mogelijk niet bij dit bedrijf).",
+    WEBSITE_UNREACHABLE: "Website niet bereikbaar.",
+    WEBSITE_PLACEHOLDER: "Website is een placeholder/lege pagina.",
+    PROSPEO_NOT_CONFIGURED: "Tweede e-mailbron (Prospeo) is niet geconfigureerd.",
+    PARTIAL_IDENTITY: "Alleen voornaam bekend; er wordt geen achternaam verzonnen.",
     SUPPRESSED: "Contact staat op een uitsluitingslijst.",
     DUPLICATE_CONTACT: "Dit e-mailadres is al READY/NEEDS_REVIEW in een andere prospect.",
     DUPLICATE_COMPANY: "Dit bedrijf zit al in een andere run.",

@@ -37,11 +37,11 @@ export const EMAIL_OPTIONS: Array<{ value: ProspectFilters["email"]; label: stri
 ];
 
 /** Query string for /api/outreach/prospects (empty filters omitted). */
-export function prospectQuery(f: ProspectFilters, page: number, viewAs?: string | null): string {
+export function prospectQuery(f: ProspectFilters, page: number, viewAs?: string | null, size: number = PAGE_SIZE): string {
   const p = new URLSearchParams();
   for (const [k, v] of Object.entries(f)) if (typeof v === "string" && v.trim()) p.set(k, v.trim());
-  p.set("limit", String(PAGE_SIZE));
-  p.set("offset", String(Math.max(0, page) * PAGE_SIZE));
+  p.set("limit", String(size));
+  p.set("offset", String(Math.max(0, page) * size));
   if (viewAs) p.set("view_as", viewAs);
   return p.toString();
 }

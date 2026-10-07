@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Bar, Button, Callout, DataTable, EmptyState, ErrorState, Menu, Status, TableSkeleton, useConfirm, useLoad, type Column, type MenuItem } from '../ds'
 import { useAdmin } from '../app/AdminContext'
 import { dateTime, eur } from '../../../lib/outreach/ui/format'
-import { geography, groupRuns, isLive, PAUSE_REASON_LABEL, RUN_GROUPS, RUN_STATUS_META, runActions, runProgress } from '../../../lib/outreach/ui/runs'
+import { groupRuns, runTargetLabel, isLive, PAUSE_REASON_LABEL, RUN_GROUPS, RUN_STATUS_META, runActions, runProgress } from '../../../lib/outreach/ui/runs'
 import type { RunSummary } from '../../../lib/outreach/ui/types'
 import type { RunAction } from '../../../lib/outreach/orchestration/states'
 import { RUN_TONE } from './tones'
@@ -47,7 +47,7 @@ export function RunsTable({ runs, onOpen, onAction, onDuplicate, canOperate }: {
 }) {
   const groups = groupRuns(runs)
   const columns: Array<Column<RunSummary>> = [
-    { key: 'run', header: 'Run', sort: (r) => r.name.toLowerCase(), render: (r) => <div style={{ minWidth: 200 }}><span className="am-cell-primary">{r.name}</span><span className="am-cell-secondary">{r.campaign.niche} · {geography(r.campaign)}</span></div> },
+    { key: 'run', header: 'Run', sort: (r) => r.name.toLowerCase(), render: (r) => <div style={{ minWidth: 200 }}><span className="am-cell-primary">{r.name}</span><span className="am-cell-secondary">{runTargetLabel(r.campaign)}</span></div> },
     { key: 'status', header: 'Status', sort: (r) => r.status, nowrap: true, render: (r) => <RunStatus run={r} /> },
     { key: 'progress', header: 'Voortgang', render: (r) => { const p = runProgress(r); return <div style={{ minWidth: 120 }}><Bar pct={p.pct} tone={r.status === 'FAILED' ? 'danger' : r.status === 'PAUSED' ? 'warning' : undefined} /><span className="am-cell-secondary" style={{ marginTop: 3 }}>{p.label}</span></div> } },
     { key: 'selected', hide: 'sm', header: 'Geselecteerd', align: 'right', sort: (r) => r.funnel.selected, render: (r) => <span className="am-num">{r.funnel.selected}<span className="am-faint"> / {r.prospect_limit}</span></span> },

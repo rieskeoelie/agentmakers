@@ -8,6 +8,7 @@ import type { Actor, RunView } from "./repository";
 import { createRunForActor, isUuid, requireOperator } from "./service";
 import { decisionMakerRoleCheck, withRoleBlockers } from "./reviewRole";
 import { MIN_WORKER_SECRET_LENGTH } from "./trigger";
+import { isOwnerDiscoveryCampaign } from "../owner/config";
 import type { WorkerSettings } from "./settings";
 
 /**
@@ -30,7 +31,9 @@ const SendingModeSchema = z.enum(["AUTOPILOT", "REVIEW_BEFORE_SENDING"]);
 
 /** Create (+ optional start) a run, then store its sending mode. Nothing is ever sent in Stage 3. */
 export async function createRunWithMode(db: OutreachDb, actor: Actor, body: unknown, env: Env): Promise<{ created: boolean; run: RunView & { sending_mode?: SendingMode } }> {
-  const mode = parseOrThrow(z.object({ sending_mode: SendingModeSchema.optional() }).passthrough(), body ?? {}).sending_mode ?? "REVIEW_BEFORE_SENDING";
+  const parsed = parseOrThrow(z.object({ sending_mode: SendingModeSchema.optional(), campaign: z.unknown().optional() }).passthrough(), body ?? {});
+  // Owner Discovery runs are research only: never AUTOPILOT (the database send gate refuses them as well).
+  const mode = isOwnerDiscoveryCampaign(parsed.campaign) ? "REVIEW_BEFORE_SENDING" : parsed.sending_mode ?? "REVIEW_BEFORE_SENDING";
   const res = await createRunForActor(db, actor, body, env);
   if (res.created && mode !== (res.run as { sending_mode?: string }).sending_mode) {
     const withMode = await adminRepo.setSendingMode(db, actor, res.run.id, mode);

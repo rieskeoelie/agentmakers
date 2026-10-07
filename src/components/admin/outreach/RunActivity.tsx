@@ -49,10 +49,12 @@ function Detail({ row, names, onOpenProspect }: { row: ActivityRow; names: Recor
  * Compact, human-readable run timeline: humanized and grouped events, quiet prospect-level rows, emphasised run-level
  * rows, day separators, and technical codes per row on request.
  */
-export function RunActivity({ events, funnel, outcomes, reasons, names = {}, onOpenProspect, now }: {
+export function RunActivity({ events, funnel, outcomes, reasons, names = {}, onOpenProspect, now, ownerRun = false }: {
   events: TimelineEvent[]; funnel?: RunFunnel; outcomes?: OutcomeCounts; reasons?: ProspectReasons; names?: Record<string, string>; onOpenProspect?: (id: string) => void; now?: Date
+  /** Owner Discovery run: outcomes are research results (nothing is ever sent). */
+  ownerRun?: boolean
 }) {
-  const rows = useMemo(() => buildActivity(events, funnel, outcomes, reasons), [events, funnel, outcomes, reasons])
+  const rows = useMemo(() => buildActivity(events, funnel, outcomes, reasons, ownerRun), [events, funnel, outcomes, reasons, ownerRun])
   const [all, setAll] = useState(false)
   const [open, setOpen] = useState<string | null>(null)
   if (!rows.length) return <p className="am-muted" style={{ margin: 0 }}>Nog geen activiteit.</p>

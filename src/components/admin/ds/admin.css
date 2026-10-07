@@ -224,6 +224,16 @@
 .am-help { font-size: 12px; color: var(--am-text-3); }
 .am-field-error { font-size: 12px; color: var(--am-red); }
 .am-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+/* Choice cards (run type / owner discovery mode): a radio styled as a selectable card. */
+.am-choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.am-choice { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: var(--am-surface); border: 1px solid var(--am-border); border-radius: var(--am-r-lg); cursor: pointer; transition: border-color .12s, box-shadow .12s, background .12s; }
+.am-choice:hover { border-color: var(--am-border-strong); }
+.am-choice[data-checked] { border-color: var(--am-accent); background: var(--am-accent-soft); box-shadow: 0 0 0 1px var(--am-accent); }
+.am-choice[data-disabled] { cursor: default; opacity: .7; }
+.am-choice input { position: absolute; opacity: 0; pointer-events: none; }
+.am-choice:focus-within { box-shadow: 0 0 0 3px var(--am-accent-ring); }
+.am-choice-title { font-weight: 600; color: var(--am-text); }
+.am-choice-text { font-size: 13px; color: var(--am-text-3); line-height: 1.45; }
 .am-form-actions { display: flex; align-items: center; gap: 8px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--am-border); }
 .am-check { display: inline-flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--am-text-2); cursor: pointer; }
 .am-check input { margin-top: 2px; accent-color: var(--am-accent); }

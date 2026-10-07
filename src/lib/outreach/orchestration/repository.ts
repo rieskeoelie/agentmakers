@@ -1,5 +1,6 @@
 import type { CampaignBrain } from "../brain";
 import type { CampaignInput } from "../config";
+import type { OwnerDiscoveryInput } from "../owner/config";
 import type { ProviderCall } from "../cost";
 import type { DiscoveredCompany } from "../providers/dataforseo";
 import type { OutreachDb } from "./db";
@@ -15,7 +16,8 @@ export interface RunRow {
   name: string;
   status: RunStatus;
   status_reason: string | null;
-  campaign: CampaignInput;
+  /** Audience run: Phase 0 CampaignInput. Owner Discovery run: OwnerDiscoveryInput (run_type = OWNER_DISCOVERY). */
+  campaign: CampaignInput | OwnerDiscoveryInput;
   prospect_limit: number;
   concurrency: number;
   max_attempts: number;
@@ -128,7 +130,7 @@ const actorArgs = (a: Actor) => ({ p_actor: a.userId, p_is_superadmin: a.isSuper
 
 export const repo = {
   createRun: (db: OutreachDb, a: {
-    owner: string; actor: string; name: string; campaign: CampaignInput; prospectLimit: number; budgetCapEur: number;
+    owner: string; actor: string; name: string; campaign: CampaignInput | OwnerDiscoveryInput; prospectLimit: number; budgetCapEur: number;
     concurrency: number; maxAttempts: number; idempotencyKey: string | null;
   }) =>
     db.rpc<{ created: boolean; run: RunView }>("outreach_create_run", {
@@ -165,7 +167,7 @@ export const repo = {
       p_run_id: a.runId, p_prospect_id: a.prospectId, p_lease_token: a.leaseToken, p_calls: a.calls, p_journal: a.journal, p_step: a.step,
     }),
 
-  completeSetup: (db: OutreachDb, a: { runId: string; leaseToken: string; campaignBrainId: string | null; campaignBrain: CampaignBrain; summary: unknown; prospects: SetupProspect[] }) =>
+  completeSetup: (db: OutreachDb, a: { runId: string; leaseToken: string; campaignBrainId: string | null; campaignBrain: CampaignBrain | null; summary: unknown; prospects: SetupProspect[] }) =>
     db.rpc<Ack & { inserted?: number; blocked?: number }>("outreach_complete_setup", {
       p_run_id: a.runId, p_lease_token: a.leaseToken, p_campaign_brain_id: a.campaignBrainId, p_campaign_brain: a.campaignBrain,
       p_summary: a.summary, p_prospects: a.prospects,

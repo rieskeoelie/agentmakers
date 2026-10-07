@@ -1,4 +1,4 @@
-import type { NewRunBody } from "./newRun";
+import type { NewRunBody, OwnerRunBody } from "./newRun";
 import { prospectQuery, type ProspectFilters } from "./prospects";
 import { inboxQuery, type InboxPage, type InboxTab, type Mailbox, type ProspectSending, type RunSending, type SendingConfigView, type SendingOverview, type Thread } from "./sending";
 import type {
@@ -42,11 +42,11 @@ export function outreachApi(viewAs: string | null = null, fetchImpl: Fetch = (..
   return {
     listRuns: () => call<{ runs: RunSummary[] }>(fetchImpl, withViewAs("/api/outreach/runs", viewAs)).then((r) => r.runs),
     getRun: (id: string) => call<RunOverview>(fetchImpl, `/api/outreach/runs/${encodeURIComponent(id)}`),
-    createRun: (body: NewRunBody) =>
+    createRun: (body: NewRunBody | OwnerRunBody) =>
       call<{ created: boolean; run: RunSummary }>(fetchImpl, "/api/outreach/runs", { method: "POST", body: JSON.stringify(viewAs ? { ...body, view_as_user_id: viewAs } : body) }),
     runAction: (id: string, action: "start" | "pause" | "resume" | "stop") =>
       call<{ run: RunSummary }>(fetchImpl, `/api/outreach/runs/${encodeURIComponent(id)}/${action}`, { method: "POST", body: "{}" }).then((r) => r.run),
-    listProspects: (f: ProspectFilters, page: number) => call<Page<ProspectListItem>>(fetchImpl, `/api/outreach/prospects?${prospectQuery(f, page, viewAs)}`),
+    listProspects: (f: ProspectFilters, page: number, size?: number) => call<Page<ProspectListItem>>(fetchImpl, `/api/outreach/prospects?${prospectQuery(f, page, viewAs, size)}`),
     getProspect: (id: string) => call<ProspectDetail>(fetchImpl, `/api/outreach/prospects/${encodeURIComponent(id)}`),
     reviewQueue: (page = 0, size = 20) => call<Page<ReviewQueueItem>>(fetchImpl, withViewAs(`/api/outreach/review?limit=${size}&offset=${page * size}`, viewAs)),
     review: (id: string, action: ReviewAction, reason?: string) =>

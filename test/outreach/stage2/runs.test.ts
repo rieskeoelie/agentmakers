@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { EnvSchema } from "../../../src/lib/outreach/config.js";
+import { EnvSchema, type CampaignInput } from "../../../src/lib/outreach/config.js";
 import { OutreachError } from "../../../src/lib/outreach/orchestration/db.js";
 import { repo } from "../../../src/lib/outreach/orchestration/repository.js";
 import { createRunForActor, httpErrorFor, runActionForActor } from "../../../src/lib/outreach/orchestration/service.js";
@@ -56,8 +56,8 @@ describe("run creation", () => {
     expect(await codeOf(createRunForActor(t.db, OWNER, { campaign: { ...body.campaign, agentmakers_url: "https://evil.example/" } }, env))).toBe("VALIDATION");
     const res = await createRunForActor(t.db, OWNER, { ...body, start: true }, env);
     expect(res.run.status).toBe("QUEUED");
-    expect(res.run.campaign.mode).toBe("dry_run");
-    expect(res.run.campaign.compliance_approved).toBe(false);
+    expect((res.run.campaign as CampaignInput).mode).toBe("dry_run");
+    expect((res.run.campaign as CampaignInput).compliance_approved).toBe(false);
     expect(res.run.prospect_limit).toBe(5);
     expect(Number(res.run.budget_cap_eur)).toBe(3);
     expect(res.run.concurrency).toBe(5);

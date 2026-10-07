@@ -80,3 +80,113 @@ export const MODE_COPY: Record<SendingMode, { label: string; text: string }> = {
     text: "Prospects lopen door tot READY of NEEDS_REVIEW. Er wordt niets verzonden tot een mens ze goedkeurt en in de verzendwachtrij zet.",
   },
 };
+
+// ─── Owner Discovery ("Eigenaar vinden") ───────────────────────────────────────────────────────────────
+// Research only: no niche, landing page or message. Every field may stay empty; AgentMakers then builds a bounded
+// discovery plan itself. The server re-validates everything (OwnerDiscoveryInputSchema + DB constraints).
+
+export type RunKind = "AUDIENCE" | "OWNER";
+export const OWNER_MAX_COMPANIES_PER_RUN = 50;
+export const OWNER_MAX_BUDGET_EUR = 50;
+
+export interface OwnerRunInput {
+  name: string;
+  discoveryMode: "AUTONOMOUS" | "COMPANY_LIST";
+  country: string;
+  region: string;
+  industry: string;
+  targetPerson: "OWNER" | "DECISION_MAKER";
+  limit: string;
+  budget: string;
+  /** COMPANY_LIST: one company per line — "website" or "Naam, website". */
+  companies: string;
+}
+
+export const EMPTY_OWNER_RUN: OwnerRunInput = {
+  name: "", discoveryMode: "AUTONOMOUS", country: "Netherlands", region: "", industry: "", targetPerson: "OWNER", limit: "25", budget: "5", companies: "",
+};
+
+export const OWNER_COUNTRIES: Array<{ value: string; label: string }> = [
+  { value: "Netherlands", label: "Nederland" },
+  { value: "Belgium", label: "België" },
+];
+
+export interface OwnerRunBody {
+  name?: string;
+  sending_mode: "REVIEW_BEFORE_SENDING";
+  start: boolean;
+  campaign: {
+    run_type: "OWNER_DISCOVERY"; discovery_mode: "AUTONOMOUS" | "COMPANY_LIST"; country: string; region?: string; industry?: string;
+    target_person: "OWNER" | "DECISION_MAKER"; limit: number; max_api_budget_eur: number; language: "nl"; companies: Array<{ name?: string; website: string }>;
+  };
+}
+
+const WEBSITE_RE = /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/\S*)?$/i;
+
+/** "Naam, website" / "website" per line → company list (invalid lines are reported by line number). */
+export function parseCompanyLines(text: string): { companies: Array<{ name?: string; website: string }>; invalid: number[] } {
+  const companies: Array<{ name?: string; website: string }> = [];
+  const invalid: number[] = [];
+  text.split(/\r?\n/).forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line) return;
+    const parts = line.split(/[,;\t]/).map((x) => x.trim()).filter(Boolean);
+    const website = parts.find((x) => WEBSITE_RE.test(x));
+    if (!website) { invalid.push(i + 1); return; }
+    const name = parts.filter((x) => x !== website).join(" ").trim();
+    companies.push({ ...(name ? { name } : {}), website });
+  });
+  return { companies, invalid };
+}
+
+/** Client-side checks. Only quantity/budget (and, in list mode, the companies) can be wrong — empty fields are fine. */
+export function validateOwnerRun(input: OwnerRunInput, start = true): { ok: true; body: OwnerRunBody } | { ok: false; errors: Partial<Record<keyof OwnerRunInput, string>> } {
+  const errors: Partial<Record<keyof OwnerRunInput, string>> = {};
+  const name = input.name.trim();
+  const region = input.region.trim();
+  const industry = input.industry.trim();
+  const limit = Number(input.limit);
+  const budget = Number(String(input.budget).replace(",", "."));
+  if (name.length > 120) errors.name = "Maximaal 120 tekens.";
+  if (region.length > 80) errors.region = "Maximaal 80 tekens.";
+  if (industry.length > 100) errors.industry = "Maximaal 100 tekens.";
+  if (!Number.isInteger(limit) || limit < 1) errors.limit = `Kies een aantal van 1 tot ${OWNER_MAX_COMPANIES_PER_RUN}.`;
+  else if (limit > OWNER_MAX_COMPANIES_PER_RUN) errors.limit = `Maximaal ${OWNER_MAX_COMPANIES_PER_RUN} bedrijven per run.`;
+  if (!Number.isFinite(budget) || budget <= 0) errors.budget = "Budget moet groter dan €0 zijn.";
+  else if (budget > OWNER_MAX_BUDGET_EUR) errors.budget = `Maximaal €${OWNER_MAX_BUDGET_EUR}.`;
+  let companies: Array<{ name?: string; website: string }> = [];
+  if (input.discoveryMode === "COMPANY_LIST") {
+    const parsed = parseCompanyLines(input.companies);
+    companies = parsed.companies;
+    if (parsed.invalid.length) errors.companies = `Geen geldige website op regel ${parsed.invalid.slice(0, 5).join(", ")}.`;
+    else if (!companies.length) errors.companies = "Geef minstens één bedrijfswebsite op.";
+    else if (companies.length > OWNER_MAX_COMPANIES_PER_RUN) errors.companies = `Maximaal ${OWNER_MAX_COMPANIES_PER_RUN} bedrijven.`;
+  }
+  if (Object.keys(errors).length) return { ok: false, errors };
+  return {
+    ok: true,
+    body: {
+      ...(name ? { name } : {}), sending_mode: "REVIEW_BEFORE_SENDING", start,
+      campaign: {
+        run_type: "OWNER_DISCOVERY", discovery_mode: input.discoveryMode, country: input.country.trim() || "Netherlands",
+        ...(region ? { region } : {}), ...(industry ? { industry } : {}), target_person: input.targetPerson,
+        limit: input.discoveryMode === "COMPANY_LIST" ? Math.min(limit, Math.max(companies.length, 1)) : limit,
+        max_api_budget_eur: budget, language: "nl", companies,
+      },
+    },
+  };
+}
+
+/** Prefill for "Duplicate run" of an Owner Discovery run. */
+export function ownerInputFromRun(run: { name: string; campaign: Record<string, unknown>; budget_cap_eur: number }): OwnerRunInput {
+  const c = run.campaign as Partial<OwnerRunBody["campaign"]>;
+  return {
+    name: `${run.name} (kopie)`.slice(0, 120), discoveryMode: c.discovery_mode ?? "AUTONOMOUS", country: c.country ?? "Netherlands",
+    region: c.region ?? "", industry: c.industry ?? "", targetPerson: c.target_person ?? "OWNER",
+    limit: String(Math.min(c.limit ?? 25, OWNER_MAX_COMPANIES_PER_RUN)), budget: String(Number(run.budget_cap_eur)),
+    companies: (c.companies ?? []).map((x) => (x.name ? `${x.name}, ${x.website}` : x.website)).join("\n"),
+  };
+}
+
+export const isOwnerRun = (run: { campaign?: unknown } | null | undefined): boolean =>
+  !!run?.campaign && typeof run.campaign === "object" && (run.campaign as { run_type?: unknown }).run_type === "OWNER_DISCOVERY";

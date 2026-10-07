@@ -122,3 +122,70 @@ export function funnelRowState(index: number, active: number | null): FunnelRowS
   if (active === null) return "idle";
   return index < active ? "complete" : index === active ? "active" : "future";
 }
+
+// ─── Owner Discovery ("Eigenaar vinden") ───────────────────────────────────────────────────────────────
+
+/** Bedrijven gevonden → identiteit bevestigd → onderzocht → persoon gevonden → eigenaar/DGA bevestigd → zakelijke e-mail → READY → Review. No GOOD_FIT. */
+export function ownerFunnelSteps(f: RunFunnel): FunnelStep[] {
+  return [
+    { key: "selected", label: "Bedrijven gevonden", value: f.selected },
+    { key: "owner_identity_verified", label: "Identiteit bevestigd", value: f.owner_identity_verified ?? 0 },
+    { key: "owner_researched", label: "Onderzocht", value: f.owner_researched ?? 0 },
+    { key: "owner_person_found", label: "Persoon gevonden", value: f.owner_person_found ?? 0 },
+    { key: "owner_confirmed", label: "Eigenaar/DGA bevestigd", value: f.owner_confirmed ?? 0 },
+    { key: "owner_business_emails", label: "Zakelijke e-mail", value: f.owner_business_emails ?? 0 },
+    { key: "ready", label: "READY", value: f.ready },
+    { key: "needs_review", label: "Review", value: f.needs_review },
+  ];
+}
+
+/** Owner funnel row a prospect at this pipeline step is working towards. */
+const OWNER_STEP_ROW: Record<PipelineStep, number> = {
+  RESEARCH: 1, COMPANY_BRAIN: 1, FIT: 2, DECISION_MAKER: 3, EMAIL: 5, ELIGIBILITY: 5, PERSONALIZATION: 6, DONE: 7,
+};
+
+export function ownerActiveFunnelIndex(
+  run: Pick<RunSummary, "status" | "setup_state">,
+  prospects: Array<{ queue_state: ProspectQueueState; current_step: PipelineStep }> | null | undefined,
+): number | null {
+  if (!isLive(run.status)) return null;
+  if (run.setup_state !== "DONE") return 0;
+  if (!prospects) return null;
+  let min: number | null = null;
+  for (const p of prospects) {
+    if (p.queue_state !== "PENDING" && p.queue_state !== "IN_PROGRESS") continue;
+    const row = OWNER_STEP_ROW[p.current_step] ?? 1;
+    if (row > 6) continue;
+    min = min === null ? row : Math.min(min, row);
+  }
+  return min;
+}
+
+const PERSON_NL: Record<string, string> = { OWNER: "Eigenaar/DGA", DECISION_MAKER: "Eigenaar of directeur" };
+const MODE_NL: Record<string, string> = { AUTONOMOUS: "Zelf bedrijven zoeken", COMPANY_LIST: "Bedrijven opgeven" };
+const COUNTRY_LABEL: Record<string, string> = { Netherlands: "Nederland", Belgium: "België", Germany: "Duitsland" };
+
+/** Short target description for run lists ("Eigenaar vinden · Zelf zoeken · Nederland"). */
+export function runTargetLabel(c: { run_type?: string; niche?: string; industry?: string; discovery_mode?: string; country: string; region?: string | null }): string {
+  if (c.run_type === "OWNER_DISCOVERY") {
+    const where = [c.region, COUNTRY_LABEL[c.country] ?? c.country].filter(Boolean).join(", ");
+    return ["Eigenaar vinden", c.industry || (c.discovery_mode === "COMPANY_LIST" ? "eigen lijst" : "branche automatisch"), where].join(" · ");
+  }
+  return `${c.niche ?? ""} · ${geography(c)}`;
+}
+
+export const ownerModeLabel = (m?: string) => MODE_NL[m ?? "AUTONOMOUS"] ?? m ?? "—";
+export const ownerTargetPersonLabel = (t?: string) => PERSON_NL[t ?? "OWNER"] ?? t ?? "—";
+export const countryLabel = (c: string) => COUNTRY_LABEL[c] ?? c;
+
+const STOP_NL: Record<string, string> = {
+  RESULT_TARGET: "Genoeg kandidaten gevonden", MAX_ITERATIONS: "Maximaal aantal zoekrondes bereikt", BUDGET: "Budgetgrens bereikt",
+  NO_NEW_COMPANIES: "Te weinig nieuwe bedrijven per zoekronde", PLAN_EXHAUSTED: "Zoekplan afgerond", COMPANY_LIST: "Opgegeven lijst gebruikt",
+};
+export const stopReasonLabel = (s?: string | null) => (s ? STOP_NL[s] ?? s : "—");
+
+const REJECT_NL: Record<string, string> = {
+  NO_WEBSITE: "geen website", DIRECTORY_OR_SOCIAL_DOMAIN: "alleen gids/social-pagina", EXCLUDED_DOMAIN: "uitgesloten domein",
+  LIKELY_CHAIN_OR_FRANCHISE: "waarschijnlijk keten/franchise", INVALID_WEBSITE: "ongeldige website",
+};
+export const rejectionLabel = (r: string) => (r.startsWith("CLOSED:") ? "gesloten" : REJECT_NL[r] ?? r);

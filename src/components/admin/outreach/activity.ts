@@ -37,6 +37,14 @@ const OUTCOME: Record<string, { one: string; many: (n: number) => string; tone: 
   FAILED: { one: 'Prospect mislukt', many: (n) => `${n} prospects mislukt`, tone: 'danger' },
 }
 
+/** Owner Discovery runs never send: outcomes are described as research results. */
+const OWNER_OUTCOME: Record<string, { one: string; many: (n: number) => string; tone: ActivityTone }> = {
+  READY: { one: 'Eigenaar en e-mailadres volledig geverifieerd (READY)', many: (n) => `${n} eigenaren volledig geverifieerd`, tone: 'success' },
+  NEEDS_REVIEW: { one: 'Eigenaar gevonden, handmatige bevestiging nodig', many: (n) => `${n} kandidaten wachten op review`, tone: 'warning' },
+  CONTACT_NOT_FOUND: { one: 'Geen eigenaar gevonden', many: (n) => `${n} bedrijven zonder gevonden eigenaar`, tone: 'neutral' },
+  DECISION_MAKER_EMAIL_NOT_FOUND: { one: 'Eigenaar gevonden, geen geverifieerd e-mailadres', many: (n) => `${n} eigenaren zonder geverifieerd e-mailadres`, tone: 'warning' },
+}
+
 const REVIEW: Record<string, { one: string; tone: ActivityTone }> = {
   APPROVE: { one: 'Goedgekeurd in review', tone: 'success' },
   REJECT: { one: 'Afgewezen in review', tone: 'neutral' },
@@ -56,6 +64,7 @@ export function skipReasonLabel(reasons: string[] | undefined): { key: string; l
   if (!r) return null
   if (/WEBSITE_PLACEHOLDER/.test(r)) return { key: 'placeholder', label: 'website is een placeholder' }
   if (/WEBSITE_UNREACHABLE/.test(r)) return { key: 'unreachable', label: 'website niet bereikbaar' }
+  if (/COMPANY_AMBIGUOUS/.test(r)) return { key: 'ambiguous', label: 'bedrijfsidentiteit niet bevestigd' }
   if (/FIT_SKIP|NICHE_MISMATCH|EXISTING_VOICE_AI/.test(r)) return { key: 'nofit', label: 'geen fit' }
   if (/DUPLICATE_CONTACT/.test(r)) return { key: 'duplicate', label: 'dubbel contactadres' }
   return { key: 'other', label: 'overige reden' }
@@ -68,7 +77,14 @@ export type OutcomeCounts = Partial<Record<string, number>>
  * Completion summary. With the run's own prospect outcomes it lists them per outcome; without them it only uses
  * unambiguous funnel counts (the funnel's "skipped" bucket also contains not-found outcomes, so it is not shown).
  */
-export function completionSummary(f: RunFunnel, outcomes?: OutcomeCounts): string {
+export function completionSummary(f: RunFunnel, outcomes?: OutcomeCounts, ownerRun = false): string {
+  if (ownerRun) {
+    const parts = [plural(f.finished, 'bedrijf onderzocht', 'bedrijven onderzocht'), `${f.ready} READY`]
+    if (f.needs_review) parts.push(`${f.needs_review} review`)
+    if (f.owner_found_no_email) parts.push(`${f.owner_found_no_email} eigenaar zonder e-mail`)
+    if (f.failed) parts.push(`${f.failed} mislukt`)
+    return parts.join(' · ')
+  }
   const parts = [plural(f.finished, 'prospect verwerkt', 'prospects verwerkt')]
   if (!outcomes) {
     parts.push(`${f.ready} READY`)
@@ -91,7 +107,7 @@ export function completionSummary(f: RunFunnel, outcomes?: OutcomeCounts): strin
 }
 
 /** Human description of one stored event, or null when it adds nothing for a person. */
-export function describeEvent(e: TimelineEvent, funnel?: RunFunnel, outcomes?: OutcomeCounts, reasons?: ProspectReasons): Described | null {
+export function describeEvent(e: TimelineEvent, funnel?: RunFunnel, outcomes?: OutcomeCounts, reasons?: ProspectReasons, ownerRun = false): Described | null {
   const d = (e.data ?? {}) as Record<string, unknown>
   switch (e.type) {
     // Internal bookkeeping: worker claims and the "manual reply started" half of a reply.
@@ -103,7 +119,7 @@ export function describeEvent(e: TimelineEvent, funnel?: RunFunnel, outcomes?: O
       if (to === 'RUNNING') return { group: null, one: from === 'PAUSED' ? 'Run hervat' : 'Run gestart', tone: 'neutral', level: 'run' }
       if (to === 'QUEUED' && from === 'PAUSED') return { group: null, one: 'Run hervat', tone: 'neutral', level: 'run' }
       if (to === 'PAUSED') return { group: null, one: d.reason === 'BUDGET_EXHAUSTED' ? 'Run gepauzeerd: budget op' : 'Run gepauzeerd', tone: 'warning', level: 'run' }
-      if (to === 'COMPLETED') return { group: null, one: 'Run afgerond', tone: 'success', level: 'run', sub: funnel ? completionSummary(funnel, outcomes) : undefined }
+      if (to === 'COMPLETED') return { group: null, one: 'Run afgerond', tone: 'success', level: 'run', sub: funnel ? completionSummary(funnel, outcomes, ownerRun) : undefined }
       if (to === 'STOPPED') return { group: null, one: 'Run gestopt', tone: 'neutral', level: 'run' }
       if (to === 'FAILED') return { group: null, one: 'Run mislukt', tone: 'danger', level: 'run' }
       return { group: null, one: 'Status van de run gewijzigd', tone: 'neutral', level: 'run' }
@@ -122,7 +138,7 @@ export function describeEvent(e: TimelineEvent, funnel?: RunFunnel, outcomes?: O
         const why = skipReasonLabel(e.prospect_id ? reasons?.[e.prospect_id] : undefined)
         if (why) return { group: `done:SKIPPED:${why.key}`, one: `Overgeslagen: ${why.label}`, many: (n) => `${n} prospects overgeslagen: ${why.label}`, tone: 'neutral', level: 'detail' }
       }
-      const o = OUTCOME[s(d.outcome)]
+      const o = (ownerRun ? OWNER_OUTCOME[s(d.outcome)] : undefined) ?? OUTCOME[s(d.outcome)]
       if (!o) return { group: `done:${s(d.outcome)}`, one: 'Prospect verwerkt', many: (n) => `${n} prospects verwerkt`, tone: 'neutral', level: 'detail' }
       return { group: `done:${s(d.outcome)}`, one: o.one, many: o.many, tone: o.tone, level: 'detail' }
     }
@@ -170,11 +186,11 @@ export function describeEvent(e: TimelineEvent, funnel?: RunFunnel, outcomes?: O
  * Builds the timeline: hides noise, humanizes, and merges consecutive events of the same kind into one row
  * (e.g. five CONTACT_NOT_FOUND outcomes → "5 prospects zonder contactpersoon"). Input and output are newest first.
  */
-export function buildActivity(events: TimelineEvent[], funnel?: RunFunnel, outcomes?: OutcomeCounts, reasons?: ProspectReasons): ActivityRow[] {
+export function buildActivity(events: TimelineEvent[], funnel?: RunFunnel, outcomes?: OutcomeCounts, reasons?: ProspectReasons, ownerRun = false): ActivityRow[] {
   const rows: ActivityRow[] = []
   let last: { row: ActivityRow; group: string | null; d: Described } | null = null
   for (const e of events) {
-    const d = describeEvent(e, funnel, outcomes, reasons)
+    const d = describeEvent(e, funnel, outcomes, reasons, ownerRun)
     if (!d) continue
     if (last && d.group && last.group === d.group) {
       last.row.events.push(e)

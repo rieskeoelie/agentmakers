@@ -1,3 +1,4 @@
+import type { OwnerDiscoveryResult } from "./owner/pipeline";
 import { buildCampaignBrain, categoryDecision, categoryMatchesNiche, type BrainCache, type CampaignBrain } from "./brain";
 import { buildBrief, type ProspectBrief } from "./brief";
 import { HARD_MAX_PROSPECTS, type CampaignInput } from "./config";
@@ -47,6 +48,8 @@ export interface ProspectRecord {
   hunter_email_before_prospeo: string | null;
   /** Homepage loaded only on the alternate canonical host (www ↔ bare domain). */
   website_host_fallback?: { from: string; to: string; reason: string } | null;
+  /** Owner Discovery runs only: owner-first research result (identity, person, evidence, email, status). */
+  owner_discovery?: OwnerDiscoveryResult;
   cost_eur: number;
 }
 

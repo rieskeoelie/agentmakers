@@ -6,7 +6,7 @@ import {
 import { useAdmin } from '../app/AdminContext'
 import { shortDate, type Lead } from '../app/model'
 import { dateTime } from '../../../lib/outreach/ui/format'
-import { isLive, runProgress } from '../../../lib/outreach/ui/runs'
+import { isLive, runProgress, runTargetLabel } from '../../../lib/outreach/ui/runs'
 import type { InboxItem, SendingOverview } from '../../../lib/outreach/ui/sending'
 import type { RunSummary } from '../../../lib/outreach/ui/types'
 import { ClassChip } from '../outreach/InboxView'
@@ -55,7 +55,7 @@ export function OverviewScreen() {
   const loading = runs.data === null && !runs.error
 
   const runCols: Array<Column<RunSummary>> = [
-    { key: 'n', header: 'Run', render: (r) => <div><span className="am-cell-primary">{r.name}</span><span className="am-cell-secondary">{r.campaign.niche}</span></div> },
+    { key: 'n', header: 'Run', render: (r) => <div><span className="am-cell-primary">{r.name}</span><span className="am-cell-secondary">{r.campaign.run_type === 'OWNER_DISCOVERY' ? runTargetLabel(r.campaign) : r.campaign.niche}</span></div> },
     { key: 's', header: 'Status', nowrap: true, render: (r) => <RunStatus run={r} /> },
     { key: 'p', header: 'Voortgang', render: (r) => { const p = runProgress(r); return <div style={{ minWidth: 90 }}><Bar pct={p.pct} tone={r.status === 'PAUSED' ? 'warning' : undefined} /></div> } },
     { key: 'r', header: 'READY', align: 'right', render: (r) => <span className="am-num">{r.funnel.ready}</span> },

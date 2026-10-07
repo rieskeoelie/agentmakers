@@ -4,6 +4,7 @@ import { pipelineSettings } from "../adapter";
 import { OutreachError, type OutreachDb } from "./db";
 import { repo, type Actor, type RunView } from "./repository";
 import { RUN_ACTIONS, type RunAction } from "./states";
+import { autoOwnerRunName, isOwnerDiscoveryCampaign, OWNER_MAX_COMPANIES, OwnerDiscoveryInputSchema } from "../owner/config";
 
 /**
  * API-facing operations. Authorization follows the existing AgentMakers model:
@@ -35,6 +36,7 @@ export const CreateRunBodySchema = z.object({
 export async function createRunForActor(db: OutreachDb, actor: Actor, body: unknown, env: Env): Promise<{ created: boolean; run: RunView }> {
   requireOperator(actor);
   const b = parseOrThrow(CreateRunBodySchema, body);
+  if (isOwnerDiscoveryCampaign(b.campaign)) return createOwnerRun(db, actor, b, env);
   // Stage 2 runs use real providers and never send: Phase 0 "dry_run" semantics, compliance approval impossible.
   const campaign = parseOrThrow(CampaignInputSchema, { ...b.campaign, mode: "dry_run", compliance_approved: false });
   const owner = actor.isSuperAdmin && b.view_as_user_id ? b.view_as_user_id : actor.userId;
@@ -43,6 +45,23 @@ export async function createRunForActor(db: OutreachDb, actor: Actor, body: unkn
   const res = await repo.createRun(db, {
     owner, actor: actor.userId, name: b.name ?? campaign.name, campaign, prospectLimit,
     budgetCapEur: effectiveBudget(campaign, env), concurrency: pipelineSettings(env).concurrency,
+    maxAttempts: DEFAULT_MAX_ATTEMPTS, idempotencyKey: b.idempotency_key ?? null,
+  });
+  if (b.start && res.created) return { created: true, run: await repo.runAction(db, actor, res.run.id, "start") };
+  return res;
+}
+
+/**
+ * Owner Discovery ("Eigenaar vinden"): research only. Every field may be blank (AgentMakers builds a bounded plan);
+ * the name is generated when empty. Bounded by OWNER_MAX_COMPANIES and the environment's budget ceiling. Never sends.
+ */
+async function createOwnerRun(db: OutreachDb, actor: Actor, b: z.infer<typeof CreateRunBodySchema>, env: Env): Promise<{ created: boolean; run: RunView }> {
+  const input = parseOrThrow(OwnerDiscoveryInputSchema, b.campaign);
+  const owner = actor.isSuperAdmin && b.view_as_user_id ? b.view_as_user_id : actor.userId;
+  const res = await repo.createRun(db, {
+    owner, actor: actor.userId, name: b.name ?? autoOwnerRunName(input), campaign: input,
+    prospectLimit: Math.min(input.limit, OWNER_MAX_COMPANIES),
+    budgetCapEur: Math.min(input.max_api_budget_eur, env.PROOF_MAX_API_BUDGET_EUR), concurrency: pipelineSettings(env).concurrency,
     maxAttempts: DEFAULT_MAX_ATTEMPTS, idempotencyKey: b.idempotency_key ?? null,
   });
   if (b.start && res.created) return { created: true, run: await repo.runAction(db, actor, res.run.id, "start") };

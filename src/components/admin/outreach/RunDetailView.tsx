@@ -6,16 +6,17 @@ import {
 import { useAdmin } from '../app/AdminContext'
 import { dateTime, duration, eur } from '../../../lib/outreach/ui/format'
 import { reasonLabel } from '../../../lib/outreach/ui/review'
-import { activeFunnelIndex, budgetUse, funnelRowState, funnelSteps, geography, isLive, PAUSE_REASON_LABEL, RUN_STATUS_META, runActions, runProgress } from '../../../lib/outreach/ui/runs'
+import { activeFunnelIndex, budgetUse, geography, isLive, ownerActiveFunnelIndex, PAUSE_REASON_LABEL, RUN_STATUS_META, runActions, runProgress } from '../../../lib/outreach/ui/runs'
 import { EMPTY_FILTERS } from '../../../lib/outreach/ui/prospects'
-import type { RunFunnel as RunFunnelCounts } from '../../../lib/outreach/ui/types'
-import type { RunOverview, TimelineEvent } from '../../../lib/outreach/ui/types'
-import { MODE_COPY } from '../../../lib/outreach/ui/newRun'
+import type { ProspectListItem, RunOverview, TimelineEvent } from '../../../lib/outreach/ui/types'
+import { isOwnerRun, MODE_COPY } from '../../../lib/outreach/ui/newRun'
 import type { RunAction } from '../../../lib/outreach/orchestration/states'
 import { RunStatus, useRunActions } from './RunsView'
 import { RunActivity } from './RunActivity'
 import type { OutcomeCounts, ProspectReasons } from './activity'
 import { RunSendingSection } from './SendingPanel'
+import { RunFunnelChart } from './RunFunnelChart'
+import { OwnerRunBody } from './OwnerRunDetail'
 import { eventLabel } from './tones'
 
 const EVENT_LABEL: Record<string, string> = {
@@ -35,41 +36,21 @@ export function eventText(e: TimelineEvent): string {
   return base
 }
 
-const ROW_TONE: Partial<Record<string, 'success' | 'warning'>> = { ready: 'success', needs_review: 'warning' }
-
-/**
- * Run funnel. Completed rows keep their colour and stay static, the one row being processed gets a calm pulse on its
- * track (never on text or numbers), later rows are neutral grey. With nothing processing every row is static.
- */
-export function RunFunnelChart({ funnel, activeIndex }: { funnel: RunFunnelCounts; activeIndex: number | null }) {
-  const steps = funnelSteps(funnel)
-  const max = Math.max(1, ...steps.map((s) => s.value))
-  return (
-    <div className="am-stack am-funnel" style={{ gap: 10 }}>
-      {steps.map((s, i) => {
-        const state = funnelRowState(i, activeIndex)
-        return (
-          <div key={s.key} className="am-funnel-row" data-state={state} aria-current={state === 'active' ? 'step' : undefined}
-            title={state === 'active' ? 'Wordt nu verwerkt' : undefined}
-            style={{ display: 'grid', gridTemplateColumns: '150px 1fr 48px', alignItems: 'center', gap: 12 }}>
-            <span className="am-muted">{s.label}</span>
-            <Bar pct={Math.round((s.value / max) * 100)} state={state === 'active' ? 'active' : undefined}
-              tone={state === 'future' ? 'muted' : ROW_TONE[s.key]} />
-            <span className="am-num am-strong" style={{ textAlign: 'right' }}>{s.value}</span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
+export { RunFunnelChart }
 
 type ErrRow = RunOverview['errors'][number]
 type BlockedRow = RunOverview['blocked'][number]
 
 /** Presentational run detail body: metrics, funnel, blockers/errors, cost and activity. */
-export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, sending, activeIndex = null, names = {}, outcomes, reasons }: {
+export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, sending, activeIndex = null, names = {}, outcomes, reasons, prospects }: {
   data: RunOverview; sending?: ReactNode; activeIndex?: number | null; names?: Record<string, string>; outcomes?: OutcomeCounts; reasons?: ProspectReasons; onAction?: (a: RunAction) => void; onOpenProspect: (id: string) => void; onOpenProspects?: () => void; busy?: boolean; canOperate?: boolean; now?: number
+  /** The run's own prospects (Owner Discovery results table). */
+  prospects?: ProspectListItem[] | null
 }) {
+  if (isOwnerRun(data.run)) {
+    return <OwnerRunBody data={data} prospects={prospects} activeIndex={activeIndex} names={names} outcomes={outcomes} reasons={reasons}
+      onOpenProspect={onOpenProspect} onOpenProspects={onOpenProspects} now={now} />
+  }
   const r = data.run
   const p = runProgress(r)
   const used = budgetUse(r)
@@ -162,13 +143,14 @@ export function RunDetailScreen({ runId }: { runId: string }) {
     return () => clearInterval(t)
   }, [live, reload])
 
-  // Which funnel step is being processed: derived from the run's own prospects (existing endpoint, ≤ 20 per run).
-  // Also gives the activity timeline the company names of its prospects.
+  // Which funnel step is being processed: derived from the run's own prospects (existing endpoint; ≤ 20 per audience
+  // run, ≤ 50 per Owner Discovery run). Also gives the activity timeline the company names of its prospects.
   const { data: steps, reload: reloadSteps } = useLoad(useCallback(
-    () => a.api.listProspects({ ...EMPTY_FILTERS, run_id: runId }, 0).then((p) => p.items).catch(() => null),
+    () => a.api.listProspects({ ...EMPTY_FILTERS, run_id: runId }, 0, 50).then((p) => p.items).catch(() => null),
     [a.api, runId]))
   useEffect(() => { if (live) reloadSteps() }, [data, live, reloadSteps])
-  const activeIndex = data ? activeFunnelIndex(data.run, data.run.setup_state === 'DONE' ? steps : null) : null
+  const owner = !!data && isOwnerRun(data.run)
+  const activeIndex = data ? (owner ? ownerActiveFunnelIndex : activeFunnelIndex)(data.run, data.run.setup_state === 'DONE' ? steps : null) : null
   const names = useMemo(() => Object.fromEntries((steps ?? []).map((p) => [p.id, p.company_name])), [steps])
   const reasons = useMemo<ProspectReasons>(() => Object.fromEntries((steps ?? []).map((p) => [p.id, p.outcome_reasons])), [steps])
   // Outcome counts for the completion summary — only when the full list of the run's prospects is known.
@@ -203,9 +185,9 @@ export function RunDetailScreen({ runId }: { runId: string }) {
       {actionError && <div style={{ marginBottom: 16 }}><Callout tone="danger" action={<Button size="sm" variant="ghost" onClick={clearError}>Sluiten</Button>}>{actionError}</Callout></div>}
       {error && !data && <ErrorState message={error} onRetry={reload} />}
       {!data && !error && <BlockSkeleton lines={8} />}
-      {data && <RunDetailBody data={data} activeIndex={activeIndex} names={names} outcomes={outcomes} reasons={reasons} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })}
+      {data && <RunDetailBody data={data} activeIndex={activeIndex} names={names} outcomes={outcomes} reasons={reasons} prospects={steps} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })}
         onOpenProspects={() => a.navigate({ screen: 'outreach', view: 'prospects', runId: data.run.id })}
-        sending={data.run.status !== 'CREATED' ? <RunSendingSection runId={data.run.id} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })} /> : undefined} />}
+        sending={data.run.status !== 'CREATED' && !owner ? <RunSendingSection runId={data.run.id} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })} /> : undefined} />}
       {confirmDialog}
     </Page>
   )

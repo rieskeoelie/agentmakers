@@ -11,6 +11,10 @@ import { DbBrainCache } from "./brainStore";
 import { companyKey, contactKey, normalizeEmail } from "./normalize";
 import { repo, type Ack, type ClaimedProspect, type ClaimedSetup, type ProspectResult, type SetupProspect } from "./repository";
 import type { WorkerSettings } from "./settings";
+import { isOwnerDiscoveryCampaign, OWNER_MAX_COMPANIES, OwnerDiscoveryInputSchema } from "../owner/config";
+import { companiesFromList, discoverOwnerCompanies } from "../owner/discovery";
+import { processOwnerProspect } from "../owner/pipeline";
+import { buildDiscoveryPlan } from "../owner/plan";
 
 /** Provider dependencies for one job, bound to that job's own CostTracker. */
 export interface JobDeps {
@@ -32,6 +36,7 @@ const errMessage = (e: unknown) => ((e as Error)?.message ?? String(e)).slice(0,
 
 // ─── Setup job: Campaign Brain → DISCOVER → DEDUPE → PREFILTER → create prospects ─────────────────
 export async function runSetupJob(ctx: WorkerContext, job: ClaimedSetup): Promise<Ack> {
+  if (isOwnerDiscoveryCampaign(job.run.campaign)) return runOwnerSetupJob(ctx, job);
   const { db } = ctx;
   const { run, lease_token } = job;
   const campaign = CampaignInputSchema.parse(run.campaign);
@@ -73,13 +78,47 @@ export async function runSetupJob(ctx: WorkerContext, job: ClaimedSetup): Promis
   }
 }
 
+// ─── Owner Discovery setup: bounded discovery plan (or the user's company list) → select → create prospects ──
+// No Campaign Brain, no landing page, no messaging. The plan, every iteration and the stop reason are stored in the
+// run's discovery_summary (audit trail). Never sends.
+export async function runOwnerSetupJob(ctx: WorkerContext, job: ClaimedSetup): Promise<Ack> {
+  const { db } = ctx;
+  const { run, lease_token } = job;
+  const input = OwnerDiscoveryInputSchema.parse(run.campaign);
+  const cost = new CostTracker(run.id, job.reservation_eur);
+  const { deps } = ctx.makeDeps(cost);
+  const rec = new CallRecorder({ db, runId: run.id, prospectId: null, leaseToken: lease_token, cost, journal: await repo.getJournal(db, run.id) });
+  try {
+    // The plan is derived from the run's creation time, so a retried setup replays exactly the same queries.
+    const res = input.discovery_mode === "COMPANY_LIST"
+      ? companiesFromList(input)
+      : await discoverOwnerCompanies(input, buildDiscoveryPlan(input, new Date(run.created_at)), rec.discovery(deps.discovery));
+    await rec.persist();
+    if (res.summary.stop_reason === "BUDGET" && res.selected.length === 0) {
+      return repo.deferSetupForBudget(db, run.id, lease_token, ctx.settings.minReservationEur);
+    }
+    const selected = res.selected.slice(0, Math.min(run.prospect_limit, OWNER_MAX_COMPANIES));
+    const prospects: SetupProspect[] = [];
+    selected.forEach((c: DiscoveredCompany, i) => {
+      const domain = rootDomain(c.domain);
+      if (domain) prospects.push({ position: i + 1, company_name: c.company_name, domain, company_key: companyKey(c.company_name), company: c });
+    });
+    const summary = { run_type: "OWNER_DISCOVERY", ...res.summary, selected: prospects.length };
+    return await repo.completeSetup(db, { runId: run.id, leaseToken: lease_token, campaignBrainId: null, campaignBrain: null, summary, prospects });
+  } catch (e) {
+    await rec.persist().catch(() => undefined);
+    if (isBudgetError(e)) return repo.deferSetupForBudget(db, run.id, lease_token, ctx.settings.minReservationEur);
+    return repo.failSetup(db, run.id, lease_token, errMessage(e), true);
+  }
+}
+
 // ─── Prospect job: RESEARCH → COMPANY_BRAIN → FIT → DECISION_MAKER → EMAIL → ELIGIBILITY → PERSONALIZATION ──
 export async function runProspectJob(ctx: WorkerContext, job: ClaimedProspect): Promise<Ack> {
   const { db } = ctx;
   const { run, prospect, lease_token } = job;
+  const owner = isOwnerDiscoveryCampaign(run.campaign) ? OwnerDiscoveryInputSchema.parse(run.campaign) : null;
   const brain = run.campaign_brain;
-  if (!brain) return repo.failProspect(db, prospect.id, lease_token, "RUN_HAS_NO_CAMPAIGN_BRAIN", false);
-  const campaign = CampaignInputSchema.parse(run.campaign);
+  if (!owner && !brain) return repo.failProspect(db, prospect.id, lease_token, "RUN_HAS_NO_CAMPAIGN_BRAIN", false);
   const cost = new CostTracker(run.id, job.reservation_eur);
   const { deps: base } = ctx.makeDeps(cost);
   const rec = new CallRecorder({ db, runId: run.id, prospectId: prospect.id, leaseToken: lease_token, cost, journal: await repo.getJournal(db, prospect.id) });
@@ -98,7 +137,9 @@ export async function runProspectJob(ctx: WorkerContext, job: ClaimedProspect): 
 
   let record: ProspectRecord;
   try {
-    record = await processProspect(prospect.company, prospect.position, campaign, brain, deps);
+    record = owner
+      ? await processOwnerProspect(prospect.company, prospect.position, owner, deps)
+      : await processProspect(prospect.company, prospect.position, CampaignInputSchema.parse(run.campaign), brain!, deps);
   } finally {
     await rec.persist();
   }

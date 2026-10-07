@@ -2,8 +2,13 @@
  * View models returned by the outreach admin API (Stage 3). Client-safe: no server imports.
  */
 import type { PipelineStep, ProspectOutcome, ProspectQueueState, RunStatus } from "../orchestration/states";
+import type { OwnerDiscoveryResult } from "../owner/pipeline";
+import type { OwnerDiscoverySummary } from "../owner/discovery";
 
 export type { PipelineStep, ProspectOutcome, ProspectQueueState, RunStatus };
+/** Owner Discovery per-prospect result (record.owner_discovery) and run-level discovery summary. */
+export type OwnerDiscoveryView = OwnerDiscoveryResult;
+export type OwnerDiscoverySummaryView = OwnerDiscoverySummary & { run_type?: "OWNER_DISCOVERY" };
 export type SendingMode = "AUTOPILOT" | "REVIEW_BEFORE_SENDING";
 export type FitClass = "GOOD_FIT" | "POSSIBLE_FIT" | "SKIP";
 
@@ -26,6 +31,13 @@ export interface RunFunnel {
   in_progress: number;
   finished: number;
   cancelled: number;
+  /** Owner Discovery counts (0 for audience runs; absent before the owner-discovery migration). */
+  owner_identity_verified?: number;
+  owner_researched?: number;
+  owner_person_found?: number;
+  owner_confirmed?: number;
+  owner_business_emails?: number;
+  owner_found_no_email?: number;
 }
 
 export interface CampaignView {
@@ -39,6 +51,12 @@ export interface CampaignView {
   formality?: "formal" | "informal";
   max_api_budget_eur?: number;
   sender_name?: string;
+  /** Owner Discovery runs ("Eigenaar vinden"): no niche / landing page. */
+  run_type?: "OWNER_DISCOVERY";
+  discovery_mode?: "AUTONOMOUS" | "COMPANY_LIST";
+  industry?: string;
+  target_person?: "OWNER" | "DECISION_MAKER";
+  companies?: Array<{ name?: string; website: string }>;
 }
 
 export interface RunSummary {
@@ -61,6 +79,7 @@ export interface RunSummary {
   started_at: string | null;
   finished_at: string | null;
   funnel: RunFunnel;
+  discovery_summary?: unknown;
 }
 
 export interface RunOverview {
@@ -101,6 +120,8 @@ export interface ProspectListItem {
   spent_eur: number;
   attempts: number;
   updated_at: string;
+  /** Owner Discovery result (null for audience runs). */
+  owner?: OwnerDiscoveryView | null;
 }
 
 export interface Page<T> {
@@ -192,6 +213,7 @@ export interface ProspectRecordView {
   prospeo: { result: string; reason?: string } | null;
   hunter_email_before_prospeo: string | null;
   fetch_errors: Array<{ url: string; error: string }>;
+  owner_discovery?: OwnerDiscoveryView;
 }
 
 export interface ReviewQueueItem {
@@ -233,13 +255,15 @@ export interface ReviewActionResult {
 
 /** Server verdict for an identity review (outreach_identity_review). */
 export interface IdentityReview {
-  reason: "PARTIAL_NAME_MATCH_REVIEW" | "NEAR_MATCH_IDENTITY_UNCONFIRMED";
+  reason: "PARTIAL_NAME_MATCH_REVIEW" | "NEAR_MATCH_IDENTITY_UNCONFIRMED" | "OWNER_EVIDENCE_REVIEW" | "DIRECTOR_NOT_OWNER";
   substantiated: boolean;
   candidate: { name: string | null; first_name: string | null; last_name: string | null; title: string | null; source: string | null; identification: string | null; title_source_url: string | null };
   evidence: {
     near_match?: { full_name: string; organisation: string; result_url: string; evidence: string; corroboration: string[]; uncertainty: string } | null;
     title_source_url?: string | null;
     surname_source?: string | null;
+    owner_discovery?: { source: string | null; role_class: "OWNER" | "DIRECTOR" | null; evidence_label: string | null; confidence_reason: string | null;
+      company_identity: { state: string; canonical_domain: string; website: string | null; evidence: string[] } | null; title_source_url: string | null } | null;
   };
 }
 

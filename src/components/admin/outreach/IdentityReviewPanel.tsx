@@ -7,7 +7,10 @@ import type { IdentityReview } from '../../../lib/outreach/ui/types'
 export function IdentityReviewPanel({ identity, missingAfterApproval }: { identity: IdentityReview; missingAfterApproval: string[] }) {
   const c = identity.candidate
   const nm = identity.evidence.near_match
-  const evidence = nm
+  const od = identity.evidence.owner_discovery
+  const evidence = od
+    ? <span>{od.evidence_label ?? 'Onbekende bron'}{od.title_source_url ? <> · <ExtLink href={od.title_source_url} /></> : null}{od.company_identity?.state === 'VERIFIED' ? ' · bedrijfsidentiteit bevestigd' : ''}</span>
+    : nm
     ? <span>Gevonden bij “{nm.organisation}” · ondersteund door: {nm.corroboration.map(corroborationLabel).join(', ')}{nm.result_url ? <> · <ExtLink href={nm.result_url} /></> : null}</span>
     : <span>Voornaam + functie op de eigen website{identity.evidence.title_source_url ? <> · <ExtLink href={identity.evidence.title_source_url} /></> : null}{identity.evidence.surname_source ? ' · achternaam uit één Hunter-contact op het bedrijfsdomein' : ' · geen achternaam bekend'}</span>
   return (
@@ -17,7 +20,7 @@ export function IdentityReviewPanel({ identity, missingAfterApproval }: { identi
           ['Kandidaat', c.name],
           ['Functie (geclaimd)', c.title],
           ['Bewijs', evidence],
-          ['Onzekerheid', nm?.uncertainty ?? reasonLabel(identity.reason)],
+          ['Onzekerheid', nm?.uncertainty ?? od?.confidence_reason ?? reasonLabel(identity.reason)],
           ['Waarom review', reasonLabel(identity.reason)],
           ['Na bevestiging', missingAfterApproval.length ? `blijft niet-READY — ${missingAfterApproval.map(reasonLabel).join(' · ')}` : 'normale regels; READY alleen als alles klopt'],
         ]} />
