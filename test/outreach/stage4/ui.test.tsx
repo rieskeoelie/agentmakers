@@ -56,7 +56,7 @@ describe("Inbox UI", () => {
     expect(out).not.toContain("Bevestig: verstuur");
     expect(out).toContain("Naar CRM (lead)");
     expect(out).toContain("Adres niet meer benaderen");
-    expect(out).toContain("COMPANY BRAIN");
+    expect(out).toContain("Company Brain");
     const confirm = html(<ThreadBody {...base} draft="Hallo" confirm />);
     expect(confirm).toContain(`Bevestig: verstuur naar ${thread.send.email}`);
     expect(latestSuggestion(thread.messages)?.suggested_reply).toContain("Goede vraag");

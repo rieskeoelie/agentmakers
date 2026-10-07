@@ -4,6 +4,18 @@
     "incremental": false,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src/lib/outreach/**/*.ts", "src/components/admin/outreach/**/*.tsx", "test/outreach/**/*.ts", "test/outreach/**/*.tsx", "test/security/**/*.ts", "vitest.config.mts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src/lib/outreach/**/*.ts",
+    "src/components/admin/**/*.tsx",
+    "test/outreach/**/*.ts",
+    "test/outreach/**/*.tsx",
+    "test/security/**/*.ts",
+    "vitest.config.mts",
+    "src/components/admin/**/*.ts",
+    "test/admin/**/*.ts",
+    "test/admin/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
