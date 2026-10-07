@@ -6,7 +6,7 @@ import {
 import { useAdmin } from '../app/AdminContext'
 import { dateTime, duration, eur } from '../../../lib/outreach/ui/format'
 import { reasonLabel } from '../../../lib/outreach/ui/review'
-import { activeFunnelIndex, budgetUse, geography, isLive, ownerActiveFunnelIndex, PAUSE_REASON_LABEL, RUN_STATUS_META, runActions, runProgress } from '../../../lib/outreach/ui/runs'
+import { activeFunnelIndex, budgetUse, geography, isLive, ownerActiveFunnelIndex, PAUSE_REASON_LABEL, runActions, runProgress, runStatusHint } from '../../../lib/outreach/ui/runs'
 import { EMPTY_FILTERS } from '../../../lib/outreach/ui/prospects'
 import type { ProspectListItem, RunOverview, TimelineEvent } from '../../../lib/outreach/ui/types'
 import { isOwnerRun, MODE_COPY } from '../../../lib/outreach/ui/newRun'
@@ -171,7 +171,7 @@ export function RunDetailScreen({ runId }: { runId: string }) {
     <Page>
       <PageHeader breadcrumb={[{ label: 'Outreach', onClick: toRuns }, { label: 'Runs', onClick: toRuns }]}
         title={r ? r.name : 'Run'} status={r ? <RunStatus run={r} /> : undefined}
-        subtitle={r ? <span data-testid="run-status-text">{r.status_reason ? (PAUSE_REASON_LABEL[r.status_reason] ?? r.status_reason) : RUN_STATUS_META[r.status].hint}
+        subtitle={r ? <span data-testid="run-status-text">{r.status_reason ? (PAUSE_REASON_LABEL[r.status_reason] ?? r.status_reason) : runStatusHint(r)}
           {r.status === 'RUNNING' && r.funnel.in_progress > 0 ? ` ${r.funnel.in_progress} bezig, ${r.funnel.pending} in wachtrij.` : ''}</span> : undefined}
         actions={r ? <>
           <Menu label="Meer acties" items={[

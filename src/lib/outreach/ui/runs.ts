@@ -185,7 +185,20 @@ const STOP_NL: Record<string, string> = {
 export const stopReasonLabel = (s?: string | null) => (s ? STOP_NL[s] ?? s : "—");
 
 const REJECT_NL: Record<string, string> = {
-  NO_WEBSITE: "geen website", DIRECTORY_OR_SOCIAL_DOMAIN: "alleen gids/social-pagina", EXCLUDED_DOMAIN: "uitgesloten domein",
+  NO_WEBSITE: "geen website", DIRECTORY_OR_SOCIAL_DOMAIN: "alleen gids/social-pagina", DIRECTORY_SITE: "gids/directory", EXCLUDED_DOMAIN: "uitgesloten domein",
   LIKELY_CHAIN_OR_FRANCHISE: "waarschijnlijk keten/franchise", INVALID_WEBSITE: "ongeldige website",
 };
 export const rejectionLabel = (r: string) => (r.startsWith("CLOSED:") ? "gesloten" : REJECT_NL[r] ?? r);
+
+const OWNER_STATUS_HINT: Partial<Record<RunStatus, string>> = {
+  QUEUED: "Wacht op een worker; het eigenaarsonderzoek start zo.",
+  RUNNING: "Bedrijven worden onderzocht op eigenaar/DGA en zakelijke contactgegevens.",
+  COMPLETED: "Alle bedrijven zijn onderzocht.",
+  STOPPED: "Handmatig gestopt; resterende bedrijven niet onderzocht.",
+};
+
+/** Run header hint: owner-specific copy for Owner Discovery runs; audience runs keep RUN_STATUS_META. */
+export function runStatusHint(run: { status: RunStatus; campaign?: { run_type?: string } | null }): string {
+  if (run.campaign?.run_type === "OWNER_DISCOVERY") return OWNER_STATUS_HINT[run.status] ?? RUN_STATUS_META[run.status].hint;
+  return RUN_STATUS_META[run.status].hint;
+}

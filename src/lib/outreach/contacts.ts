@@ -1,7 +1,8 @@
 import { isFreeMail, isGenericEmail, type VerificationStatus, type EmailSource } from "./eligibility";
 import { rootDomain } from "./domain";
 import type { ContactProvider, HunterContact } from "./providers/hunter";
-import { extractFirstNameOwners, extractPeople, type FetchedPage, type WebsitePerson } from "./research";
+import { nonPersonReason } from "./personName";
+import { extractFirstNameOwners, extractPeople, type FetchedPage, type RejectedNameCandidate, type WebsitePerson } from "./research";
 import { hunterMetadataDecisionMakers, matchRole, rankContacts, type RoleMatch } from "./roles";
 import { findDecisionMakerViaPublicSearch, type NearMatchCandidate, type PublicSearchReport } from "./publicSearch";
 import type { PublicSearchProvider } from "./providers/dataforseo";
@@ -63,6 +64,8 @@ export interface ContactSelection {
   hunter_candidates?: HunterCandidateAudit[];
   /** Domains Domain Search ran on: the website domain + at most one mail domain published on the company's own site. */
   email_domains_searched?: string[];
+  /** Audit: website words rejected as a person name (a role/occupation such as "Kapster" is never a name). */
+  rejected_person_candidates?: RejectedNameCandidate[];
 }
 
 export interface HunterCandidateAudit {
@@ -145,6 +148,7 @@ export async function discoverContact(input: {
     registry: null as RegistryTrace | null,
     hunter_candidates: [] as HunterCandidateAudit[],
     email_domains_searched: [input.domain] as string[],
+    rejected_person_candidates: [] as RejectedNameCandidate[],
   };
 
   // Path A — Hunter Domain Search + role ranking
@@ -256,7 +260,8 @@ export async function discoverContact(input: {
   if (!identified) {
     const ownerPriority = priority.filter((r) => !/^(partner|maat|vennoot|practice manager|operations manager|office manager)$/i.test(r.trim()));
     const isOwnerRole = (t: string) => matchRole(t, ownerPriority) !== null;
-    const firsts = extractFirstNameOwners(sitePages, isOwnerRole);
+    const firsts = extractFirstNameOwners(sitePages, isOwnerRole, base.rejected_person_candidates);
+    for (const r of base.rejected_person_candidates) notes.push(`Website word "${r.candidate}" next to "${r.title}" rejected as a person name: ${r.reason}.`);
     const fp = firsts[0];
     if (fp) {
       const m = matchRole(fp.title, priority)!;
@@ -333,7 +338,13 @@ export async function discoverContact(input: {
     });
     base.public_search = ps;
     notes.push(`Public search: ${ps.queries.length} quer${ps.queries.length === 1 ? "y" : "ies"}, ${ps.results_seen} result(s), ${ps.rejected.length} weak candidate(s) rejected${ps.errors.length ? `, errors: ${ps.errors.join("; ")}` : ""}.`);
-    const c = ps.selected;
+    // Defence in depth: a "name" that is a role, heading or label never reaches person-level email lookup.
+    const notPerson = (n: string, url: string) => {
+      const why = nonPersonReason(n, { url });
+      if (why) notes.push(`"${n}" rejected as a person (${why}) — no email lookup.`);
+      return !!why;
+    };
+    const c = ps.selected && !notPerson(ps.selected.full_name, ps.selected.result_url) ? ps.selected : null;
     if (c) {
       const who = { name: c.full_name, first_name: c.first_name, last_name: c.last_name, title: c.title, title_source_url: c.result_url, role_match: c.role_match, identification: "full_name" as const };
       const f = await input.hunter.emailFinder(input.domain, c.first_name, c.last_name, input.prospect);
@@ -349,7 +360,7 @@ export async function discoverContact(input: {
       identified = { ...who, source: "public_search", linkedin: c.is_linkedin_result ? c.result_url : null };
     }
     // Review-only near match (identity not confirmed): only when no verified candidate was found.
-    const nm = !c ? ps.review_candidates?.[0] : undefined;
+    const nm = !c ? ps.review_candidates?.find((x) => !notPerson(x.full_name, x.result_url)) : undefined;
     if (nm) {
       base.near_match = nm;
       notes.push(`Review-only near match: "${nm.full_name}" (${nm.title}) at "${nm.organisation}" — ${nm.uncertainty} Corroboration: ${nm.corroboration.join(", ")}.`);

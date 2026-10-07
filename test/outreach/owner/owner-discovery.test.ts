@@ -191,8 +191,8 @@ describe("owner evidence → status", () => {
     const { rec, od } = await run("hovenierbakker.nl", { site });
     expect(od.confidence).toBe("PARTIAL");
     expect(od.person).toMatchObject({ first_name: "Kees", last_name: null });
-    expect(rec.status).not.toBe("READY");
-    expect(rec.status_reasons).toContain("PARTIAL_IDENTITY");
+    expect(rec.status).toBe("NEEDS_REVIEW");
+    expect(rec.status_reasons).toEqual(["PARTIAL_NAME_MATCH_REVIEW"]);
   });
 
   it("vague title / seniority only → insufficient evidence (rejected)", () => {

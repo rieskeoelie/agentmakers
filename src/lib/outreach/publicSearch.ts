@@ -1,6 +1,7 @@
 import { rootDomain } from "./domain";
 import type { PublicSearchProvider, SearchResult } from "./providers/dataforseo";
-import { isPersonName, sanitizeSnippet, splitName, looksLikeInjection } from "./research";
+import { isPersonNameShape, sanitizeSnippet, splitName, looksLikeInjection } from "./research";
+import { nonPersonReason } from "./personName";
 import { jobTitleVerdict, matchRole, type RoleMatch } from "./roles";
 import { DEFAULT_ROLE_PRIORITY } from "./config";
 import { defaultVocabulary, type RoleVocabulary } from "./vocabulary";
@@ -133,8 +134,23 @@ function isLinkedInProfile(url: string): boolean {
   }
 }
 
+/** Name-shaped text that is not a person (role word, section heading, publication or organisation label). */
+export interface NonPersonRejection { name: string; title: string; reason: string }
+
+/**
+ * Person check with result context: name-shaped AND not a role/heading/publication/label. A rejected name-shaped
+ * fragment is recorded (audit) so it never silently becomes — or silently disappears as — a candidate.
+ */
+function personOrReject(n: string, title: string, url: string, rejected: NonPersonRejection[]): boolean {
+  if (!isPersonNameShape(n)) return false;
+  const why = nonPersonReason(n.replace(/^(dr|drs|mr|ir|ing|prof)\.?\s+/i, ""), { url });
+  if (!why) return true;
+  if (!rejected.some((x) => x.name === n)) rejected.push({ name: n, title, reason: `NOT_A_PERSON:${why}` });
+  return false;
+}
+
 /** Split title/snippet into small fragments; pair (name, role) from the same or adjacent fragments. */
-function nameRolePairs(text: string, priority: string[]): Array<{ name: string; title: string; match: RoleMatch }> {
+function nameRolePairs(text: string, priority: string[], url = "", rejected: NonPersonRejection[] = []): Array<{ name: string; title: string; match: RoleMatch }> {
   const out: Array<{ name: string; title: string; match: RoleMatch }> = [];
   const frags = text
     .split(/\s+[|–—-]\s+|\s*[·•]\s*|,\s+|:\s+|\.\s+|\s+(?:is|was|als|as)\s+(?:de\s+|the\s+|onze\s+|our\s+)?|\s+(?:bij|at)\s+(?=[A-Z])|\s*[()]\s*/)
@@ -146,7 +162,7 @@ function nameRolePairs(text: string, priority: string[]): Array<{ name: string; 
     if (!m || f.length > 80) continue;
     for (const j of [i - 1, i + 1]) {
       const n = frags[j];
-      if (n && isPersonName(n)) {
+      if (n && personOrReject(n, f, url, rejected)) {
         out.push({ name: n.replace(/^(dr|drs|mr|ir|ing|prof)\.?\s+/i, ""), title: f, match: m });
         break;
       }
@@ -238,10 +254,11 @@ export function evaluateResult(
   // Person + role. LinkedIn profile titles follow "<Name> - <headline/company> | LinkedIn": the first segment is the person.
   type Pair = { name: string; title: string; match: RoleMatch };
   const pairs: Pair[] = [];
+  const nonPersons: NonPersonRejection[] = [];
   if (isLinkedInProfile(r.url)) {
     const segs = r.title.replace(/\s*\|\s*LinkedIn.*$/i, "").split(/\s+[-–—|]\s+/).map((x) => x.trim()).filter(Boolean);
     const person = segs[0];
-    if (person && isPersonName(person) && !isCompanyName(person)) {
+    if (person && personOrReject(person, segs[1] ?? "", r.url, nonPersons) && !isCompanyName(person)) {
       const frags = [...segs.slice(1), ...r.snippet.split(/\s*[·•|]\s*|\.\s+|;\s*|\s+-\s+/)].map((x) => x.trim()).filter((x) => x && x.length <= 80);
       for (const fr of frags) {
         const m = matchRole(fr, priority);
@@ -249,8 +266,12 @@ export function evaluateResult(
       }
     }
   }
-  if (!pairs.length) pairs.push(...nameRolePairs(r.title, priority).concat(nameRolePairs(r.snippet, priority)).filter((p) => !isCompanyName(p.name)));
-  if (!pairs.length) return { candidate: null, reason: "NO_NAMED_PERSON_WITH_DECISION_MAKER_ROLE" };
+  if (!pairs.length) pairs.push(...nameRolePairs(r.title, priority, r.url, nonPersons).concat(nameRolePairs(r.snippet, priority, r.url, nonPersons)).filter((p) => !isCompanyName(p.name)));
+  if (!pairs.length) {
+    // Name-shaped text next to a role that is not a person ("Campus Life" — a section heading): rejected, with reason.
+    const np = nonPersons[0];
+    return np ? { candidate: null, reason: np.reason, name: np.name, title: np.title } : { candidate: null, reason: "NO_NAMED_PERSON_WITH_DECISION_MAKER_ROLE" };
+  }
 
   // Tightened candidate checks: the "name" must not just be the business name, the "title" must be a job title
   // (not a slogan / sentence fragment / marketing use of "partner"), and must not name a different organisation.

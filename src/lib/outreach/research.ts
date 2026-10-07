@@ -1,6 +1,7 @@
 import { parseHtml, selectResearchPages, type PageKind, type ParsedPage } from "./html";
 import type { CostTracker } from "./cost";
 import { safeFetch, type SafeFetchOptions } from "./safeFetch";
+import { isOccupationalWord, nonPersonReason } from "./personName";
 
 /* ------------------------------------------------------------------ */
 /* Fetching                                                            */
@@ -414,6 +415,11 @@ export interface WebsitePerson {
 }
 
 export function isPersonName(raw: string): boolean {
+  return isPersonNameShape(raw) && nonPersonReason(raw.replace(NAME_PREFIX, "").trim()) === null;
+}
+
+/** Shape only: 2–5 capitalised tokens incl. a ≥3-letter surname, no digits/URLs, no known non-name word. */
+export function isPersonNameShape(raw: string): boolean {
   const s = raw.replace(NAME_PREFIX, "").trim();
   if (s.length < 4 || s.length > 50 || /\d|@|https?:/.test(s)) return false;
   const tokens = s.split(/\s+/);
@@ -510,11 +516,22 @@ export function isFirstNameOnly(raw: string): boolean {
   const s = raw.trim();
   if (!FIRST_NAME.test(s)) return false;
   const lower = s.toLowerCase();
-  return !NON_NAME_WORDS.has(lower) && !TUSSENVOEGSELS.has(lower);
+  return !NON_NAME_WORDS.has(lower) && !TUSSENVOEGSELS.has(lower) && !isOccupationalWord(s);
 }
 
-export function extractFirstNameOwners(pages: FetchedPage[], isOwnerRole: (text: string) => boolean): PartialWebsitePerson[] {
+/** A first-name-shaped word rejected because it is a role/occupation ("Kapster" next to "Eigenaresse"). */
+export interface RejectedNameCandidate { candidate: string; title: string; source_url: string; reason: "OCCUPATIONAL_TITLE_AS_NAME" }
+
+export function extractFirstNameOwners(pages: FetchedPage[], isOwnerRole: (text: string) => boolean, rejected?: RejectedNameCandidate[]): PartialWebsitePerson[] {
   const out: PartialWebsitePerson[] = [];
+  const isFirstName = (cand: string, title: string, page: FetchedPage) => {
+    if (isFirstNameOnly(cand)) return true;
+    const c = cand.trim();
+    if (rejected && FIRST_NAME.test(c) && isOccupationalWord(c) && !rejected.some((r) => r.candidate === c && r.source_url === page.url)) {
+      rejected.push({ candidate: c, title: title.trim(), source_url: page.url, reason: "OCCUPATIONAL_TITLE_AS_NAME" });
+    }
+    return false;
+  };
   const push = (first: string, title: string, page: FetchedPage, snippet: string) => {
     if (out.some((p) => p.first_name === first)) return;
     out.push({ first_name: first, title: title.trim(), source_url: page.url, snippet: sanitizeSnippet(snippet) });
@@ -529,15 +546,15 @@ export function extractFirstNameOwners(pages: FetchedPage[], isOwnerRole: (text:
       const parts = line.split(/\s+[–—|-]\s+|,\s+|:\s+/);
       if (parts.length === 2) {
         const [a, b] = parts as [string, string];
-        if (isFirstNameOnly(a) && isOwnerRole(b) && b.length <= 40) { push(a, b, page, line); continue; }
-        if (isOwnerRole(a) && a.length <= 40 && isFirstNameOnly(b)) { push(b, a, page, line); continue; }
+        if (isOwnerRole(b) && b.length <= 40 && isFirstName(a, b, page)) { push(a, b, page, line); continue; }
+        if (isOwnerRole(a) && a.length <= 40 && isFirstName(b, a, page)) { push(b, a, page, line); continue; }
       }
       // Profile card: a title line directly under (preferred) or above a first-name line.
       if (line.length <= 40 && isOwnerRole(line)) {
         const prev = lines[i - 1];
         const next = lines[i + 1];
-        if (prev && isFirstNameOnly(prev)) push(prev, line, page, `${prev} — ${line}`);
-        else if (next && isFirstNameOnly(next)) push(next, line, page, `${line} — ${next}`);
+        if (prev && isFirstName(prev, line, page)) push(prev, line, page, `${prev} — ${line}`);
+        else if (next && isFirstName(next, line, page)) push(next, line, page, `${line} — ${next}`);
       }
     }
   }

@@ -49,6 +49,24 @@ export function rootDomain(input: string | null | undefined): string | null {
   return lastTwo;
 }
 
+/**
+ * Third-party company directories / business listings ("gids"). Known sites plus a name pattern; a site shared by
+ * several unrelated businesses is detected separately by Owner Discovery (shared domain, no name match).
+ */
+const DIRECTORY_DOMAINS = [
+  "telefoonboek.nl", "detelefoongids.nl", "goudengids.nl", "opendi.nl", "cylex.nl", "nlcompanies.org", "ivof.com", "bedrijvenpagina.nl",
+  "openingstijden.nl", "oozo.nl", "drimble.nl", "infobel.com", "kompass.com", "hotfrog.nl", "yably.nl", "bedrijfsinformatie.nl",
+  "allebedrijvenin.nl", "companyinfo.nl", "bizzy.org", "localbeautys.com", "salonkee.nl",
+];
+const DIRECTORY_LABEL = /(companies|bedrijven|bedrijfsgids|bedrijvengids|gids|directory|listings?|yellowpages|telefoonboek|openingstijden|bedrijfsinfo|companyinfo|salongids)/;
+
+export function isDirectoryDomain(domain: string): boolean {
+  const root = rootDomain(domain);
+  if (!root) return false;
+  if (DIRECTORY_DOMAINS.some((d) => root === d)) return true;
+  return DIRECTORY_LABEL.test(root.split(".")[0] ?? "");
+}
+
 export function isNonCompanyDomain(domain: string): boolean {
   return NON_COMPANY_DOMAINS.some((d) => domain === d || domain.endsWith(`.${d}`));
 }

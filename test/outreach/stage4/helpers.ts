@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { TestDb } from "../stage2/helpers.js";
 import { createTestDb } from "../stage2/helpers.js";
-import { IDENTITY_REVIEW_MIGRATION, OWNER_DISCOVERY_MIGRATION, STAGE3_MIGRATION } from "../stage3/helpers.js";
+import { IDENTITY_REVIEW_MIGRATION, OWNER_DISCOVERY_MIGRATION, OWNER_FUNNEL_FIX_MIGRATION, STAGE3_MIGRATION } from "../stage3/helpers.js";
 import type { SmartleadHistoryItem, SmartleadLeadInput, SmartleadMailbox, SmartleadPort, SmartleadSequenceStep } from "../../../src/lib/outreach/sending/smartlead.js";
 import { SmartleadError } from "../../../src/lib/outreach/sending/smartlead.js";
 import type { SendContext } from "../../../src/lib/outreach/sending/sender.js";
@@ -37,6 +37,9 @@ export async function createStage4Db(): Promise<TestDb> {
   const owner = readFileSync(OWNER_DISCOVERY_MIGRATION, "utf8");
   await t.pg.exec(owner);
   await t.pg.exec(owner); // re-runnable
+  const funnelFix = readFileSync(OWNER_FUNNEL_FIX_MIGRATION, "utf8");
+  await t.pg.exec(funnelFix);
+  await t.pg.exec(funnelFix); // re-runnable
   return t;
 }
 

@@ -248,20 +248,23 @@ export async function processOwnerProspect(company: DiscoveredCompany, index: nu
     const ownerWanted = input.target_person === "OWNER";
     const directorOnly = ownerWanted && rc === "DIRECTOR";
     const noEmailStatus: OwnerStatus = rc === "OWNER" ? "OWNER_FOUND_NO_EMAIL" : "DECISION_MAKER_FOUND_NO_EMAIL";
-    if (!elig || elig.eligibility === "NOT_ELIGIBLE") {
-      return finish("DECISION_MAKER_EMAIL_NOT_FOUND", noEmailStatus, [
-        ...(rec.prospeo?.result === "NOT_CONFIGURED" ? ["PROSPEO_NOT_CONFIGURED"] : []),
-        ...(conf.confidence === "PARTIAL" ? ["PARTIAL_IDENTITY"] : []),
-      ]);
-    }
-    if (conf.confidence === "VERIFIED" && !directorOnly && elig.eligibility === "ELIGIBLE") return finish("READY", "READY");
+    // Identity review and email availability are separate: a person whose identity/role needs human confirmation is
+    // NEEDS_REVIEW whether or not an email was found. Approving the identity never makes a prospect without a verified
+    // personal business email READY (the database keeps it DECISION_MAKER_EMAIL_NOT_FOUND after approval).
     const review: string[] = [];
     if (contact.identification === "near_match_review") review.push("NEAR_MATCH_IDENTITY_UNCONFIRMED");
     else if (contact.identification === "first_name_hunter_match") review.push("PARTIAL_NAME_MATCH_REVIEW");
     else if (conf.confidence === "PARTIAL") review.push("PARTIAL_NAME_MATCH_REVIEW");
     else if (conf.confidence === "REVIEW") review.push("OWNER_EVIDENCE_REVIEW");
     if (directorOnly) review.push("DIRECTOR_NOT_OWNER");
-    if (elig.eligibility === "REVIEW_ONLY") review.push("EMAIL_NOT_ELIGIBLE:REVIEW_ONLY");
+    const usable = !!elig && elig.eligibility !== "NOT_ELIGIBLE";
+    if (!usable) {
+      if (review.length) return finish("NEEDS_REVIEW", "NEEDS_REVIEW", review);
+      // Verified identity (website/registry), but no verified personal business email.
+      return finish("DECISION_MAKER_EMAIL_NOT_FOUND", noEmailStatus, rec.prospeo?.result === "NOT_CONFIGURED" ? ["PROSPEO_NOT_CONFIGURED"] : []);
+    }
+    if (conf.confidence === "VERIFIED" && !directorOnly && elig!.eligibility === "ELIGIBLE") return finish("READY", "READY");
+    if (elig!.eligibility === "REVIEW_ONLY") review.push("EMAIL_NOT_ELIGIBLE:REVIEW_ONLY");
     return finish("NEEDS_REVIEW", "NEEDS_REVIEW", review);
   } catch (e) {
     const err = e as Error;

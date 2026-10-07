@@ -1,5 +1,5 @@
 import { companyAliases } from "../companyName";
-import { isNonCompanyDomain, rootDomain } from "../domain";
+import { isDirectoryDomain, isNonCompanyDomain, rootDomain } from "../domain";
 import type { CompanyDiscoveryProvider, DiscoveredCompany } from "../providers/dataforseo";
 import type { OwnerDiscoveryInput } from "./config";
 import type { DiscoveryPlan } from "./plan";
@@ -25,7 +25,7 @@ export interface OwnerDiscoverySummary {
   selection: Array<{ company_name: string; domain: string; score: number; signals: string[] }>;
 }
 
-interface Candidate { company: DiscoveredCompany; root: string; names: Set<string>; score: number; signals: string[] }
+interface Candidate { company: DiscoveredCompany; root: string; names: Set<string>; listings: DiscoveredCompany[]; score: number; signals: string[] }
 
 const fold = (s: string) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -42,9 +42,16 @@ export function selectionSignals(c: DiscoveredCompany, root: string, categoryQue
   return { score, signals };
 }
 
+/** Shared domain: a brand domain of a chain, or a directory that matches none of the businesses listed on it. */
+function sharedDomainReason(c: Candidate): "LIKELY_CHAIN_OR_FRANCHISE" | "DIRECTORY_SITE" {
+  const brandMatch = c.listings.some((l) => selectionSignals(l, c.root, null).signals.includes("DOMAIN_MATCHES_COMPANY_NAME"));
+  return brandMatch ? "LIKELY_CHAIN_OR_FRANCHISE" : "DIRECTORY_SITE";
+}
+
 function prefilterOne(c: DiscoveredCompany, input: OwnerDiscoveryInput): { root: string } | { reason: string } {
   const root = rootDomain(c.domain);
   if (!c.domain || !root) return { reason: "NO_WEBSITE" };
+  if (isDirectoryDomain(c.domain)) return { reason: "DIRECTORY_SITE" };
   if (isNonCompanyDomain(c.domain)) return { reason: "DIRECTORY_OR_SOCIAL_DOMAIN" };
   if (input.exclude_domains.map((d) => rootDomain(d)).includes(root)) return { reason: "EXCLUDED_DOMAIN" };
   if (c.closed_signal) return { reason: `CLOSED:${c.closed_signal}` };
@@ -74,9 +81,9 @@ export async function discoverOwnerCompanies(input: OwnerDiscoveryInput, plan: D
       const pf = prefilterOne(c, input);
       if ("reason" in pf) { rejected.push({ company_name: c.company_name, domain: c.domain, reason: pf.reason }); continue; }
       const existing = byRoot.get(pf.root);
-      if (existing) { existing.names.add(fold(c.company_name)); continue; }
+      if (existing) { existing.names.add(fold(c.company_name)); existing.listings.push(c); continue; }
       const sig = selectionSignals(c, pf.root, q.category);
-      byRoot.set(pf.root, { company: c, root: pf.root, names: new Set([fold(c.company_name)]), ...sig });
+      byRoot.set(pf.root, { company: c, root: pf.root, names: new Set([fold(c.company_name)]), listings: [c], ...sig });
       fresh++;
     }
     iterations.push({ query, returned: found.length, new_eligible: fresh });
@@ -85,10 +92,12 @@ export async function discoverOwnerCompanies(input: OwnerDiscoveryInput, plan: D
     if (iterations.length > 1 && fresh < plan.limits.min_new_per_iteration) { stop = "NO_NEW_COMPANIES"; break; }
     if (iterations.length >= plan.limits.max_iterations) { stop = "MAX_ITERATIONS"; break; }
   }
-  // One website shared by differently named listings = chain / franchise / platform: ownership is not a single owner.
+  // One website shared by differently named listings: when the domain carries their (common) brand it is a chain /
+  // franchise; when it matches none of their names it is a third-party directory or listing site. Neither is a
+  // single company's own website.
   const eligible: Candidate[] = [];
   for (const c of byRoot.values()) {
-    if (c.names.size > 1) rejected.push({ company_name: c.company.company_name, domain: c.root, reason: "LIKELY_CHAIN_OR_FRANCHISE" });
+    if (c.names.size > 1) rejected.push({ company_name: c.company.company_name, domain: c.root, reason: sharedDomainReason(c) });
     else eligible.push(c);
   }
   const ranked = eligible.sort((a, b) => b.score - a.score || (a.company.raw_reference.rank ?? 999) - (b.company.raw_reference.rank ?? 999));
