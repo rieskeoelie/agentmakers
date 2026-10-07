@@ -11,7 +11,7 @@ The engine reads them via `loadOutreachEnv()` in `src/lib/outreach/adapter.ts`; 
 |---|---|
 | `DATAFORSEO_LOGIN` | DataForSEO company discovery and public decision-maker search |
 | `DATAFORSEO_PASSWORD` | DataForSEO company discovery and public decision-maker search |
-| `HUNTER_API_KEY` | Hunter decision-maker email lookup and verification (also used by `/api/admin/hunter-lookup`) |
+| `HUNTER_API_KEY` | Hunter decision-maker email lookup and verification |
 
 `ANTHROPIC_API_KEY` is also required; it is already part of the existing production configuration.
 
@@ -22,6 +22,17 @@ The engine reads them via `loadOutreachEnv()` in `src/lib/outreach/adapter.ts`; 
 | `CRON_SECRET` | Authorizes `/api/outreach/worker` (`Authorization: Bearer …`). Vercel Cron sends it automatically. Must be at least 16 characters; without it the worker refuses every request and runs never start. |
 
 The worker also needs the existing `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (server-side only).
+
+## Sending (Stage 4 — Smartlead)
+
+| Variable | Used for | If unset |
+|---|---|---|
+| `SMARTLEAD_API_KEY` | Cold sending + follow-up sequences via Smartlead (Sensitive, Production only) | Nothing is ever pushed; stop/kill-switch propagation is skipped |
+| `OUTREACH_WEBHOOK_SECRET` | Token in the Smartlead webhook URL (`/api/outreach/webhooks/smartlead?token=…`), ≥ 24 characters (Sensitive) | Webhooks are rejected (401); the sync polling still ingests sends/replies |
+| `OUTREACH_PUBLIC_BASE_URL` | Public https origin used in the webhook URL | Falls back to `NEXT_PUBLIC_SITE_URL` |
+| `OUTREACH_SENDING_DISABLED` | Hard environment kill switch (`true` = nothing is pushed, campaigns are paused) | Database kill switch only |
+
+Resend (`RESEND_API_KEY`) stays transactional only (confirmations, admin notifications, weekly report, inbound demo follow-up).
 
 ## Optional
 
