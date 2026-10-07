@@ -10,7 +10,7 @@ export interface JsonResponse {
 export type FetchLike = (url: string, init: RequestInit) => Promise<Response>;
 
 export interface RequestOptions {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   headers?: Record<string, string>;
   body?: unknown;
   timeoutMs?: number;
@@ -22,7 +22,7 @@ export interface RequestOptions {
   fetchImpl?: FetchLike;
 }
 
-export const ALLOWED_PROVIDER_HOSTS = new Set(["api.dataforseo.com", "api.hunter.io", "api.anthropic.com", "api.prospeo.io"]);
+export const ALLOWED_PROVIDER_HOSTS = new Set(["api.dataforseo.com", "api.hunter.io", "api.anthropic.com", "api.prospeo.io", "server.smartlead.ai"]);
 
 export class ProviderHttpError extends Error {
   constructor(public readonly status: number, public readonly body: unknown, message: string) {

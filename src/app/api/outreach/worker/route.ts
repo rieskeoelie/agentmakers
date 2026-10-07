@@ -6,12 +6,14 @@ import { outreachDb } from '@/lib/outreach/orchestration/http'
 import { workerSettingsFromEnv } from '@/lib/outreach/orchestration/settings'
 import { isWorkerAuthorized, kickWorker } from '@/lib/outreach/orchestration/trigger'
 import { runWorkerTick } from '@/lib/outreach/orchestration/worker'
+import { runSendingWork, sendContext, sendingEnvFrom } from '@/lib/outreach/sending/runtime'
 
 // Worker ticks run after the 202 response (after()), bounded by this limit; leases (900 s) outlive it.
 export const maxDuration = 300
 
 /**
- * Outreach worker. Called by: start/resume (kick), its own continuation chain, and the daily Vercel cron (sweeper).
+ * Outreach worker. Called by: start/resume (kick), its own continuation chain, queue actions, and the daily Vercel cron (sweeper).
+ * Each invocation runs one research tick and one sending tick.
  * Auth: Authorization: Bearer <CRON_SECRET>.
  */
 async function handle(req: NextRequest) {
@@ -39,6 +41,14 @@ async function handle(req: NextRequest) {
       if (result.hasMoreWork) await kickWorker({ origin, secret })
     } catch (e) {
       console.error('[outreach-worker] tick failed', e)
+    }
+    // Sending: stop propagation, kill switch, autopilot, pushes (final gate in the claim), sync, reply analysis.
+    try {
+      const log = (message: string, data?: Record<string, unknown>) => console.log('[outreach-sender]', message, data ?? '')
+      const res = await runSendingWork(sendContext(outreachDb(), sendingEnvFrom(), log), env)
+      console.log('[outreach-sender] tick', JSON.stringify(res))
+    } catch (e) {
+      console.error('[outreach-sender] tick failed', e)
     }
   })
   return NextResponse.json({ accepted: true }, { status: 202 })

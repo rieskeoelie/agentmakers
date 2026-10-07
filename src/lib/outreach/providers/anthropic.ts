@@ -20,7 +20,7 @@ import { requestJson, type FetchLike } from "../http";
 export const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 export const STRUCTURED_TOOL_NAME = "submit_structured_output";
 
-export type LlmTask = "campaign_brain" | "personalization_hook";
+export type LlmTask = "campaign_brain" | "personalization_hook" | "reply_classification";
 
 export interface StructuredRequest<T> {
   task: LlmTask;
