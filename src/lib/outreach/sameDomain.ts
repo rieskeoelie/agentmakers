@@ -3,6 +3,10 @@ import { parseHtml } from "./html";
 import type { CostTracker } from "./cost";
 import type { PublicSearchProvider } from "./providers/dataforseo";
 import type { FetchedPage, PageFetcher } from "./research";
+import { DEFAULT_ROLE_PRIORITY } from "./config";
+import { defaultVocabulary, type RoleVocabulary } from "./vocabulary";
+
+const DEFAULT_TEAM_KEYWORDS = defaultVocabulary(DEFAULT_ROLE_PRIORITY).teamPageKeywords;
 
 /**
  * Same-domain leadership/team page discovery (runs BEFORE the public Google/LinkedIn fallback, only when the
@@ -19,19 +23,10 @@ import type { FetchedPage, PageFetcher } from "./research";
 export const MAX_EXTRA_TEAM_PAGES = 3;
 export const MAX_DISCOVERY_FETCHES = 3;
 
-const KEYWORDS: Array<[RegExp, number]> = [
-  [/team/, 6],
-  [/medewerker/, 6],
-  [/directie/, 6],
-  [/management/, 5],
-  [/organisatie/, 4],
-  [/over-?ons/, 3],
-  [/onze-?praktijk/, 3],
-  [/praktijk/, 2],
-];
 const EXCLUDE = /(vacature|werken-bij|privacy|cookie|klacht|tarieven|prijzen|blog|nieuws|actueel|behandeling|huisregels|gegevens-wijzigen|inschrijven|afspraak|contact|spoed|\.(pdf|jpe?g|png|zip|docx?)$)/;
 
-export function scoreTeamUrl(url: string, anchorText = ""): number {
+/** Keywords come from the campaign's niche vocabulary (team/about/history pages; practice wording only for practices). */
+export function scoreTeamUrl(url: string, anchorText = "", keywords: Array<[RegExp, number]> = DEFAULT_TEAM_KEYWORDS): number {
   let path: string;
   try {
     path = decodeURIComponent(new URL(url).pathname).toLowerCase();
@@ -40,7 +35,7 @@ export function scoreTeamUrl(url: string, anchorText = ""): number {
   }
   if (EXCLUDE.test(path)) return 0;
   const hay = `${path} ${anchorText.toLowerCase()}`;
-  return KEYWORDS.reduce((s, [re, w]) => s + (re.test(hay) ? w : 0), 0);
+  return keywords.reduce((s, [re, w]) => s + (re.test(hay) ? w : 0), 0);
 }
 
 const sameCompanyDomain = (url: string, domain: string) => {
@@ -88,7 +83,9 @@ export async function discoverTeamPages(input: {
   prospect: string;
   cost?: CostTracker;
   maxTextChars?: number;
+  vocabulary?: RoleVocabulary;
 }): Promise<{ pages: FetchedPage[]; trace: SameDomainTrace }> {
+  const vocab = input.vocabulary ?? defaultVocabulary(DEFAULT_ROLE_PRIORITY);
   const trace: SameDomainTrace = { candidates: [], fetched: [], discovery_fetches: [], site_search_query: null, errors: [] };
   const already = new Set(input.pages.map((p) => normUrl(p.url)));
   const seen = new Set<string>(already);
@@ -96,7 +93,7 @@ export async function discoverTeamPages(input: {
     if (!sameCompanyDomain(url, input.domain)) return; // never leave the company domain
     const key = normUrl(url);
     if (seen.has(key)) return;
-    const score = scoreTeamUrl(url, anchor);
+    const score = scoreTeamUrl(url, anchor, vocab.teamPageKeywords);
     if (score <= 0) return;
     seen.add(key);
     // Fetch the URL as published (trailing slash kept); the normalised key is only for de-duplication.
@@ -151,7 +148,7 @@ export async function discoverTeamPages(input: {
   // D. one site-restricted search, only if nothing was found so far
   if (!trace.candidates.length && input.search) {
     const host = rootDomain(input.domain)!;
-    const q = `site:${host} (team OR medewerkers OR praktijk OR over-ons OR organisatie OR management)`;
+    const q = `site:${host} (${vocab.siteSearchTerms.join(" OR ")})`;
     trace.site_search_query = q;
     try {
       const results = await input.search.search(q, input.prospect, { country: input.country, language: input.language });

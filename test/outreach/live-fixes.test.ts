@@ -13,6 +13,7 @@ import { buildQueries, evaluateResult, MAX_PUBLIC_SEARCHES } from "../../src/lib
 import { renderEmail, validateMessage } from "../../src/lib/outreach/render.js";
 import type { FetchedPage, PageFetcher } from "../../src/lib/outreach/research.js";
 import { matchRole } from "../../src/lib/outreach/roles.js";
+import { roleVocabulary } from "../../src/lib/outreach/vocabulary.js";
 import { briefFromHtml, fixtureBrain, mockFetch } from "./helpers.js";
 
 const P = DEFAULT_ROLE_PRIORITY;
@@ -65,7 +66,8 @@ describe("PUBLIC SEARCH FALLBACK", () => {
     expect(r.failure_reason).toBe("CONTACT_NOT_FOUND");
   });
   it("builds role-intent queries for the exact (core) company name; second query may target public LinkedIn results", () => {
-    const q = buildQueries(COMPANY.companyName, "nl", "Hoorn");
+    // Dental campaign → practice vocabulary (the validated dental wording is kept for practice niches).
+    const q = buildQueries(COMPANY.companyName, "nl", "Hoorn", roleVocabulary("tandarts", P));
     expect(q).toHaveLength(2);
     expect(q[0]).toMatch(/^"Octant Mondzorg" \(eigenaar OR praktijkhouder/);
     expect(q[1]).toMatch(/^site:linkedin\.com\/in "Octant Mondzorg"/);

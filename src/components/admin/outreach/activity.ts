@@ -33,7 +33,7 @@ const OUTCOME: Record<string, { one: string; many: (n: number) => string; tone: 
   CONTACT_NOT_FOUND: { one: 'Geen contactpersoon gevonden', many: (n) => `${n} prospects zonder contactpersoon`, tone: 'warning' },
   DECISION_MAKER_EMAIL_NOT_FOUND: { one: 'Beslisser gevonden, maar geen zakelijk e-mailadres', many: (n) => `${n} beslissers zonder zakelijk e-mailadres`, tone: 'warning' },
   EMAIL_NOT_ELIGIBLE: { one: 'E-mailadres niet bruikbaar', many: (n) => `${n} prospects met onbruikbaar e-mailadres`, tone: 'warning' },
-  SKIPPED: { one: 'Prospect overgeslagen (geen fit)', many: (n) => `${n} prospects overgeslagen`, tone: 'neutral' },
+  SKIPPED: { one: 'Prospect overgeslagen', many: (n) => `${n} prospects overgeslagen`, tone: 'neutral' },
   FAILED: { one: 'Prospect mislukt', many: (n) => `${n} prospects mislukt`, tone: 'danger' },
 }
 
@@ -46,6 +46,20 @@ const REVIEW: Record<string, { one: string; tone: ActivityTone }> = {
 
 const s = (v: unknown) => (v === null || v === undefined ? '' : String(v))
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+
+/** The run's own prospects' outcome reasons (prospect id → reasons), used to name the actual skip reason. */
+export type ProspectReasons = Record<string, string[] | undefined>
+
+/** Why a prospect was SKIPPED, from its stored outcome reasons. Null when unknown (then no reason is claimed). */
+export function skipReasonLabel(reasons: string[] | undefined): { key: string; label: string } | null {
+  const r = (reasons ?? []).join(' ')
+  if (!r) return null
+  if (/WEBSITE_PLACEHOLDER/.test(r)) return { key: 'placeholder', label: 'website is een placeholder' }
+  if (/WEBSITE_UNREACHABLE/.test(r)) return { key: 'unreachable', label: 'website niet bereikbaar' }
+  if (/FIT_SKIP|NICHE_MISMATCH|EXISTING_VOICE_AI/.test(r)) return { key: 'nofit', label: 'geen fit' }
+  if (/DUPLICATE_CONTACT/.test(r)) return { key: 'duplicate', label: 'dubbel contactadres' }
+  return { key: 'other', label: 'overige reden' }
+}
 
 /** Per-outcome counts taken from the run's own prospects (real data, not estimated). */
 export type OutcomeCounts = Partial<Record<string, number>>
@@ -77,7 +91,7 @@ export function completionSummary(f: RunFunnel, outcomes?: OutcomeCounts): strin
 }
 
 /** Human description of one stored event, or null when it adds nothing for a person. */
-export function describeEvent(e: TimelineEvent, funnel?: RunFunnel, outcomes?: OutcomeCounts): Described | null {
+export function describeEvent(e: TimelineEvent, funnel?: RunFunnel, outcomes?: OutcomeCounts, reasons?: ProspectReasons): Described | null {
   const d = (e.data ?? {}) as Record<string, unknown>
   switch (e.type) {
     // Internal bookkeeping: worker claims and the "manual reply started" half of a reply.
@@ -104,6 +118,10 @@ export function describeEvent(e: TimelineEvent, funnel?: RunFunnel, outcomes?: O
     case 'SETUP_RETRY_SCHEDULED': return { group: 'setup-retry', one: 'Bedrijven zoeken opnieuw ingepland', many: (n) => `Bedrijven zoeken ${n}× opnieuw ingepland`, tone: 'warning', level: 'run' }
     case 'SETUP_LEASE_EXPIRED': return { group: null, one: 'Bedrijven zoeken hervat na onderbreking', tone: 'neutral', level: 'run' }
     case 'PROSPECT_DONE': {
+      if (s(d.outcome) === 'SKIPPED') {
+        const why = skipReasonLabel(e.prospect_id ? reasons?.[e.prospect_id] : undefined)
+        if (why) return { group: `done:SKIPPED:${why.key}`, one: `Overgeslagen: ${why.label}`, many: (n) => `${n} prospects overgeslagen: ${why.label}`, tone: 'neutral', level: 'detail' }
+      }
       const o = OUTCOME[s(d.outcome)]
       if (!o) return { group: `done:${s(d.outcome)}`, one: 'Prospect verwerkt', many: (n) => `${n} prospects verwerkt`, tone: 'neutral', level: 'detail' }
       return { group: `done:${s(d.outcome)}`, one: o.one, many: o.many, tone: o.tone, level: 'detail' }
@@ -147,11 +165,11 @@ export function describeEvent(e: TimelineEvent, funnel?: RunFunnel, outcomes?: O
  * Builds the timeline: hides noise, humanizes, and merges consecutive events of the same kind into one row
  * (e.g. five CONTACT_NOT_FOUND outcomes → "5 prospects zonder contactpersoon"). Input and output are newest first.
  */
-export function buildActivity(events: TimelineEvent[], funnel?: RunFunnel, outcomes?: OutcomeCounts): ActivityRow[] {
+export function buildActivity(events: TimelineEvent[], funnel?: RunFunnel, outcomes?: OutcomeCounts, reasons?: ProspectReasons): ActivityRow[] {
   const rows: ActivityRow[] = []
   let last: { row: ActivityRow; group: string | null; d: Described } | null = null
   for (const e of events) {
-    const d = describeEvent(e, funnel, outcomes)
+    const d = describeEvent(e, funnel, outcomes, reasons)
     if (!d) continue
     if (last && d.group && last.group === d.group) {
       last.row.events.push(e)

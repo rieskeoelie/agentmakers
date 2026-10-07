@@ -178,6 +178,8 @@ export class DataForSeoDiscovery implements CompanyDiscoveryProvider {
  */
 export const DFS_ORGANIC_LIVE_URL = "https://api.dataforseo.com/v3/serp/google/organic/live/advanced";
 export const DFS_ORGANIC_EST_USD = 0.002;
+/** DataForSEO task status "No Search Results." (https://docs.dataforseo.com/v3/appendix/errors/). */
+export const DFS_NO_SEARCH_RESULTS = 40102;
 const ADVANCED_OPERATOR = /\b(site|inurl|intitle|allinurl|allintitle|intext|allintext):/i;
 
 export function estimateOrganicUsd(keyword: string): number {
@@ -227,13 +229,16 @@ export class DataForSeoOrganicSearch implements PublicSearchProvider {
     const usd = parsed.success ? (parsed.data.cost ?? null) : null;
     const task = parsed.success ? parsed.data.tasks?.[0] : undefined;
     const items = task?.result?.[0]?.items ?? [];
-    const ok = res.status === 200 && parsed.success && task?.status_code === 20000;
+    // 40102 "No Search Results" is a valid, empty answer — not a provider failure.
+    const noResults = res.status === 200 && parsed.success && task?.status_code === DFS_NO_SEARCH_RESULTS;
+    const ok = res.status === 200 && parsed.success && (task?.status_code === 20000 || noResults);
     this.cost.record({
       prospect, provider: "dataforseo", operation: "serp_organic_live", estimated_cost_eur: est,
       actual_cost_eur: usd === null ? null : usd * this.usdToEur, native_cost: usd === null ? null : `$${usd}`,
-      result: !ok ? "error" : items.length ? "ok" : "empty",
+      result: !ok ? "error" : items.length && !noResults ? "ok" : "empty",
       detail: `keyword=${JSON.stringify(keyword)} task_status=${task?.status_code ?? "?"}`,
     });
+    if (noResults) return [];
     if (!ok) throw new Error(`DataForSEO organic HTTP ${res.status} task ${task?.status_code ?? "?"}: ${task?.status_message ?? "unexpected response"}`);
     const out: SearchResult[] = [];
     for (const raw of items) {

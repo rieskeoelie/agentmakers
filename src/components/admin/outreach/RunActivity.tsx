@@ -2,7 +2,7 @@
 import { Fragment, useMemo, useState } from 'react'
 import { Icon, LinkButton } from '../ds'
 import type { RunFunnel, TimelineEvent } from '../../../lib/outreach/ui/types'
-import { buildActivity, dayLabel, timeOf, type ActivityRow, type OutcomeCounts } from './activity'
+import { buildActivity, dayLabel, timeOf, type ActivityRow, type OutcomeCounts, type ProspectReasons } from './activity'
 
 const COLLAPSED_ROWS = 10
 
@@ -49,10 +49,10 @@ function Detail({ row, names, onOpenProspect }: { row: ActivityRow; names: Recor
  * Compact, human-readable run timeline: humanized and grouped events, quiet prospect-level rows, emphasised run-level
  * rows, day separators, and technical codes per row on request.
  */
-export function RunActivity({ events, funnel, outcomes, names = {}, onOpenProspect, now }: {
-  events: TimelineEvent[]; funnel?: RunFunnel; outcomes?: OutcomeCounts; names?: Record<string, string>; onOpenProspect?: (id: string) => void; now?: Date
+export function RunActivity({ events, funnel, outcomes, reasons, names = {}, onOpenProspect, now }: {
+  events: TimelineEvent[]; funnel?: RunFunnel; outcomes?: OutcomeCounts; reasons?: ProspectReasons; names?: Record<string, string>; onOpenProspect?: (id: string) => void; now?: Date
 }) {
-  const rows = useMemo(() => buildActivity(events, funnel, outcomes), [events, funnel, outcomes])
+  const rows = useMemo(() => buildActivity(events, funnel, outcomes, reasons), [events, funnel, outcomes, reasons])
   const [all, setAll] = useState(false)
   const [open, setOpen] = useState<string | null>(null)
   if (!rows.length) return <p className="am-muted" style={{ margin: 0 }}>Nog geen activiteit.</p>

@@ -1,5 +1,6 @@
 import { CampaignInputSchema } from "../config";
 import { matchRole } from "../roles";
+import { reviewGatePriority } from "../vocabulary";
 
 /**
  * Decision-maker role check for review approvals — the Phase 0 rule, not a Stage 3 list:
@@ -20,7 +21,7 @@ function priorityOf(stored: unknown): string[] {
 }
 
 export function decisionMakerRoleCheck(title: string | null | undefined, storedPriority: unknown): RoleCheck {
-  const m = matchRole(title, priorityOf(storedPriority));
+  const m = matchRole(title, reviewGatePriority(priorityOf(storedPriority)));
   return { title: title ?? null, qualified: m !== null, matched_role: m?.matched_role ?? null };
 }
 

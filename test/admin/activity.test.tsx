@@ -12,7 +12,7 @@ describe("run activity", () => {
     expect(rows.map((r) => r.text)).toEqual([
       "Run afgerond",
       "5 prospects zonder contactpersoon",
-      "Prospect overgeslagen (geen fit)",
+      "Prospect overgeslagen", // no outcome reasons passed → no reason is claimed
       "Beslisser gevonden, maar geen zakelijk e-mailadres",
       "3 prospects overgeslagen",
       "10 bedrijven geselecteerd uit 80",

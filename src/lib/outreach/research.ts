@@ -34,6 +34,74 @@ export class SafePageFetcher implements PageFetcher {
 export interface WebsiteFetchResult {
   pages: FetchedPage[];
   errors: Array<{ url: string; error: string }>;
+  /** Set when the homepage is an obvious placeholder / parking / configuration page (reason). Pages are then not researched. */
+  placeholder?: string | null;
+  /** Set when the homepage only loaded on the alternate canonical host (www ↔ bare domain). */
+  host_fallback?: { from: string; to: string; reason: string } | null;
+}
+
+/**
+ * Host-level failures (TLS certificate/handshake, DNS, connection refused/reset/unreachable, timeout) — the host did
+ * not serve us at all, so the alternate canonical host may. HTTP status errors and SSRF rejections never qualify.
+ */
+export function isHostLevelFailure(e: unknown): boolean {
+  const err = e as { name?: string; code?: string; message?: string } | undefined;
+  if (!err || err.name === "UnsafeUrlError") return false;
+  const msg = String(err.message ?? "");
+  if (/^HTTP \d{3}$|Content-type not allowed|Response (too large|exceeded)|Too many redirects|Redirect/i.test(msg)) return false;
+  const code = String(err.code ?? "");
+  if (/^(ERR_TLS_|ERR_SSL_|CERT_|DEPTH_ZERO_SELF_SIGNED_CERT|SELF_SIGNED_CERT_IN_CHAIN|UNABLE_TO_VERIFY_LEAF_SIGNATURE|UNABLE_TO_GET_ISSUER_CERT|EPROTO|ECONNREFUSED|ECONNRESET|ENOTFOUND|EAI_AGAIN|EHOSTUNREACH|ENETUNREACH|ETIMEDOUT)/.test(code)) return true;
+  return /altnames|certificate|self[- ]signed|handshake|ssl|tls|ECONNREFUSED|ECONNRESET|ENOTFOUND|EAI_AGAIN|EHOSTUNREACH|ENETUNREACH|ETIMEDOUT|socket hang up|Timeout after/i.test(msg);
+}
+
+/** www.example.nl ↔ example.nl (same scheme/path). Null for other subdomains, IPs or unparsable URLs. */
+export function alternateCanonicalUrl(url: string): string | null {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  const host = u.hostname.toLowerCase();
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(host) || host.includes(":")) return null;
+  const labels = host.split(".");
+  if (labels[0] === "www" && labels.length >= 3) u.hostname = labels.slice(1).join(".");
+  else if (labels.length === 2 || (labels.length === 3 && /^(co|com|org|net|ac|gov)$/.test(labels[1]!))) u.hostname = `www.${host}`;
+  else return null;
+  return u.toString();
+}
+
+const PLACEHOLDER_PHRASES = /configuration (is )?in progress|please stand by|domain (name )?(is )?(parked|for sale)|this domain (may be|is) for sale|domein(naam)? (is )?(te koop|geparkeerd|gereserveerd)|deze (website|domeinnaam|domein) is (nog niet|geregistreerd|gereserveerd)|(website|site) (is )?(coming soon|under construction|in aanbouw|in onderhoud)|binnenkort online|under construction|coming soon|default (web ?)?page|welcome to nginx|apache2? (ubuntu |debian )?default page|^it works!?$|parkingcrew|sedoparking|bodis\.com|hier komt (binnenkort )?een (nieuwe )?website/im;
+
+/**
+ * Obvious placeholder / parking / configuration homepage? Conservative: a known placeholder phrase on a page with
+ * little text, or a practically empty page (< 4 words) without internal links or application script (a JS-rendered
+ * site is NOT a placeholder). Returns the reason or null.
+ */
+export function detectPlaceholder(rawHtml: string, parsed: ParsedPage, pageUrl: string): string | null {
+  const text = `${parsed.title}\n${parsed.text}`;
+  const words = parsed.text.split(/\s+/).filter((w) => /[a-zà-ÿ]{2,}/i.test(w)).length;
+  const phrase = text.match(PLACEHOLDER_PHRASES)?.[0];
+  if (phrase && words < 150) return `PLACEHOLDER_TEXT: "${phrase.trim().slice(0, 60)}"`;
+  let host = "";
+  try {
+    host = new URL(pageUrl).hostname.replace(/^www\./, "");
+  } catch {
+    /* ignore */
+  }
+  const internalLinks = parsed.links.filter((l) => {
+    if (!l.href || /^(#|mailto:|tel:|javascript:)/i.test(l.href)) return false;
+    try {
+      const u = new URL(l.href, pageUrl);
+      return u.hostname.replace(/^www\./, "") === host && u.pathname.replace(/\/+$/, "") !== new URL(pageUrl).pathname.replace(/\/+$/, "");
+    } catch {
+      return false;
+    }
+  }).length;
+  const appShell = /<script\b[^>]*\bsrc\s*=/i.test(rawHtml) || /<div[^>]+id\s*=\s*["'](root|app|__next|__nuxt)["']/i.test(rawHtml);
+  // Practically empty (a real one-line site such as "Afspraak maken? Bel ons op …" is NOT a placeholder).
+  if (words < 4 && internalLinks === 0 && !appShell) return `NO_CONTENT: ${words} word(s), no internal links`;
+  return null;
 }
 
 /** Fetch homepage + up to (maxPages-1) relevant internal pages. Homepage failure is fatal for the prospect. */
@@ -48,6 +116,7 @@ export async function fetchWebsite(
 
   const homeUrl = /^https?:\/\//i.test(website) ? website : `https://${website}`;
   let home;
+  let host_fallback: WebsiteFetchResult["host_fallback"] = null;
   try {
     home = await fetcher.fetch(homeUrl);
     record(homeUrl, true);
@@ -55,10 +124,24 @@ export async function fetchWebsite(
     const msg = (e as Error).message;
     record(homeUrl, false, msg);
     errors.push({ url: homeUrl, error: msg });
-    return { pages: [], errors };
+    // www ↔ bare-domain retry, only for host-level failures. Same fetcher → same SSRF/redirect/size protections.
+    const alt = isHostLevelFailure(e) ? alternateCanonicalUrl(homeUrl) : null;
+    if (!alt) return { pages: [], errors, placeholder: null, host_fallback: null };
+    try {
+      home = await fetcher.fetch(alt);
+      record(alt, true, `alternate canonical host after: ${msg.slice(0, 120)}`);
+      host_fallback = { from: homeUrl, to: alt, reason: msg.slice(0, 200) };
+    } catch (e2) {
+      const msg2 = (e2 as Error).message;
+      record(alt, false, msg2);
+      errors.push({ url: alt, error: msg2 });
+      return { pages: [], errors, placeholder: null, host_fallback: null };
+    }
   }
   const homeParsed = parseHtml(home.body, opts.maxTextChars);
   const pages: FetchedPage[] = [{ url: home.finalUrl, kind: "home", fetched_at: home.fetchedAt, parsed: homeParsed }];
+  const placeholder = detectPlaceholder(home.body, homeParsed, home.finalUrl);
+  if (placeholder) return { pages, errors, placeholder, host_fallback };
   const targets = selectResearchPages(home.finalUrl, homeParsed.links, Math.max(1, opts.maxPages));
 
   // small per-site concurrency (2)
@@ -77,7 +160,7 @@ export async function fetchWebsite(
       }
     });
   }
-  return { pages, errors };
+  return { pages, errors, placeholder: null, host_fallback };
 }
 
 /* ------------------------------------------------------------------ */
@@ -407,4 +490,56 @@ export function extractPeople(pages: FetchedPage[], isRole: (text: string) => bo
     }
   }
   return people;
+}
+
+/**
+ * Partial decision makers: the company's OWN page pairs a single first name with an owner/director-type title,
+ * e.g. a profile card "Richard" / "Eigenaar" or a line "Richard – eigenaar". Only a first name is recorded —
+ * a surname is never derived (not from the company name, not from the domain).
+ */
+export interface PartialWebsitePerson {
+  first_name: string;
+  title: string;
+  source_url: string;
+  snippet: string;
+}
+
+const FIRST_NAME = /^[A-ZÀ-Ý][a-zà-ÿ'’-]{1,14}$/;
+
+export function isFirstNameOnly(raw: string): boolean {
+  const s = raw.trim();
+  if (!FIRST_NAME.test(s)) return false;
+  const lower = s.toLowerCase();
+  return !NON_NAME_WORDS.has(lower) && !TUSSENVOEGSELS.has(lower);
+}
+
+export function extractFirstNameOwners(pages: FetchedPage[], isOwnerRole: (text: string) => boolean): PartialWebsitePerson[] {
+  const out: PartialWebsitePerson[] = [];
+  const push = (first: string, title: string, page: FetchedPage, snippet: string) => {
+    if (out.some((p) => p.first_name === first)) return;
+    out.push({ first_name: first, title: title.trim(), source_url: page.url, snippet: sanitizeSnippet(snippet) });
+  };
+  for (const page of pages) {
+    if (!["team", "about", "contact", "home"].includes(page.kind)) continue;
+    const lines = page.parsed.lines.filter((l) => !looksLikeInjection(l));
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]!;
+      if (line.length > 60) continue;
+      // "Richard – Eigenaar" | "Eigenaar: Richard"
+      const parts = line.split(/\s+[–—|-]\s+|,\s+|:\s+/);
+      if (parts.length === 2) {
+        const [a, b] = parts as [string, string];
+        if (isFirstNameOnly(a) && isOwnerRole(b) && b.length <= 40) { push(a, b, page, line); continue; }
+        if (isOwnerRole(a) && a.length <= 40 && isFirstNameOnly(b)) { push(b, a, page, line); continue; }
+      }
+      // Profile card: a title line directly under (preferred) or above a first-name line.
+      if (line.length <= 40 && isOwnerRole(line)) {
+        const prev = lines[i - 1];
+        const next = lines[i + 1];
+        if (prev && isFirstNameOnly(prev)) push(prev, line, page, `${prev} — ${line}`);
+        else if (next && isFirstNameOnly(next)) push(next, line, page, `${line} — ${next}`);
+      }
+    }
+  }
+  return out;
 }

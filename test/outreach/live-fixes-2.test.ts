@@ -6,6 +6,7 @@ import { discoverContact } from "../../src/lib/outreach/contacts.js";
 import { geographyDecision } from "../../src/lib/outreach/geo.js";
 import { parseHtml } from "../../src/lib/outreach/html.js";
 import { prefilter } from "../../src/lib/outreach/pipeline.js";
+import { roleVocabulary } from "../../src/lib/outreach/vocabulary.js";
 import type { DiscoveredCompany, PublicSearchProvider, SearchResult } from "../../src/lib/outreach/providers/dataforseo.js";
 import type { ContactProvider, DomainSearchResult, FinderResult, HunterContact } from "../../src/lib/outreach/providers/hunter.js";
 import { evaluateResult } from "../../src/lib/outreach/publicSearch.js";
@@ -136,6 +137,7 @@ describe("1. SAME-DOMAIN DECISION-MAKER PAGE DISCOVERY", () => {
     const r = await discoverContact({
       domain: "thcvandedem.nl", pages: [page("https://www.thcvandedem.nl/", "home", "<p>Welkom</p>")], priority: P, hunter: stubHunter([]).h, prospect: "thcvandedem.nl",
       sameDomain: { fetcher: site.fetcher, homeUrl: "https://www.thcvandedem.nl/", search, language: "nl", country: "Netherlands" },
+      vocabulary: roleVocabulary("tandarts", P), // dental practice → practice wording
     });
     expect(queries[0]).toBe("site:thcvandedem.nl (team OR medewerkers OR praktijk OR over-ons OR organisatie OR management)");
     expect(queries.filter((q) => q.startsWith("site:thcvandedem.nl"))).toHaveLength(1);
@@ -160,8 +162,9 @@ describe("1. SAME-DOMAIN DECISION-MAKER PAGE DISCOVERY", () => {
   });
 
   it("URL scoring prioritises leadership/team pages and ignores irrelevant ones", () => {
-    expect(scoreTeamUrl("https://x.nl/ons-team/")).toBeGreaterThan(scoreTeamUrl("https://x.nl/over-ons/"));
-    expect(scoreTeamUrl("https://x.nl/medewerkers-praktijk-balfoort/")).toBeGreaterThan(scoreTeamUrl("https://x.nl/ons-team/"));
+    const practice = roleVocabulary("tandarts", P).teamPageKeywords; // dental practice wording
+    expect(scoreTeamUrl("https://x.nl/ons-team/", "", practice)).toBeGreaterThan(scoreTeamUrl("https://x.nl/over-ons/", "", practice));
+    expect(scoreTeamUrl("https://x.nl/medewerkers-praktijk-balfoort/", "", practice)).toBeGreaterThan(scoreTeamUrl("https://x.nl/ons-team/", "", practice));
     for (const u of ["https://x.nl/vacatures/team/", "https://x.nl/privacy/", "https://x.nl/tarieven/", "https://x.nl/tandarts-zwaag/"]) expect(scoreTeamUrl(u), u).toBe(0);
   });
 

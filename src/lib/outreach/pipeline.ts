@@ -14,6 +14,7 @@ import type { ContactProvider } from "./providers/hunter";
 import type { LLMProvider } from "./providers/anthropic";
 import { renderEmail, validateMessage, type ProspectStatus, type RenderedEmail } from "./render";
 import { extractEvidence, fetchWebsite, type PageFetcher } from "./research";
+import { roleVocabulary } from "./vocabulary";
 
 export type StageName = "prefilter" | "website_fetch" | "evidence" | "fit" | "contact" | "eligibility" | "brief" | "hook" | "render";
 export interface StageStatus {
@@ -43,13 +44,18 @@ export interface ProspectRecord {
   prospeo: ProspeoTrace | null;
   /** Hunter's review-only address when Prospeo supplied a verified replacement (kept for audit). */
   hunter_email_before_prospeo: string | null;
+  /** Homepage loaded only on the alternate canonical host (www ↔ bare domain). */
+  website_host_fallback?: { from: string; to: string; reason: string } | null;
   cost_eur: number;
 }
 
 export type ProspeoTrace =
   | ({ request: ProspeoRequest } & ProspeoOutcome)
   | { request: ProspeoRequest; result: "error"; reason: string }
-  | { result: "not_run"; reason: string };
+  /** Not needed for this prospect (reason says why). */
+  | { result: "not_run"; reason: string }
+  /** Would have run (reason = why), but Prospeo is not configured — the fallback was UNAVAILABLE, not unnecessary. */
+  | { result: "NOT_CONFIGURED"; reason: string };
 
 /**
  * When may the Prospeo email fallback run? Only AFTER Hunter, only for a strongly identified named decision maker
@@ -141,7 +147,7 @@ export async function processProspect(company: DiscoveredCompany, index: number,
   const domain = rootDomain(company.domain)!;
   const rec: ProspectRecord = {
     index, company, domain, status: "FAILED", status_reasons: [], warnings: [], stages: newStages(), pages: [], fetch_errors: [],
-    contact: null, verification_status: null, email_eligibility: null, prospeo: null, hunter_email_before_prospeo: null, fit: null, brief: null, hook: null, email: null, quarantined_snippets: [], cost_eur: 0,
+    contact: null, verification_status: null, email_eligibility: null, prospeo: null, hunter_email_before_prospeo: null, website_host_fallback: null, fit: null, brief: null, hook: null, email: null, quarantined_snippets: [], cost_eur: 0,
   };
   rec.stages.prefilter = { status: "ok" };
   let stage: StageName = "website_fetch";
@@ -154,13 +160,21 @@ export async function processProspect(company: DiscoveredCompany, index: number,
     const site = await fetchWebsite(company.website ?? `https://${company.domain}`, deps.websiteFetcher, { maxPages: deps.settings.maxPages, maxTextChars: deps.settings.maxTextChars, prospect: domain });
     rec.pages = site.pages.map((p) => ({ url: p.url, kind: p.kind, fetched_at: p.fetched_at }));
     rec.fetch_errors = site.errors;
+    rec.website_host_fallback = site.host_fallback ?? null;
+    if (site.placeholder) {
+      // Placeholder / parking / configuration page: not a researched website — no Hunter or search spend.
+      rec.stages.website_fetch = { status: "skipped", reason: `WEBSITE_PLACEHOLDER: ${site.placeholder}` };
+      rec.status = "SKIPPED";
+      rec.status_reasons = ["WEBSITE_PLACEHOLDER"];
+      return finish();
+    }
     if (!site.pages.length) {
       rec.stages.website_fetch = { status: "failed", reason: `WEBSITE_UNREACHABLE: ${site.errors[0]?.error ?? "unknown"}` };
       rec.status = "SKIPPED";
       rec.status_reasons = ["WEBSITE_UNREACHABLE"];
       return finish();
     }
-    rec.stages.website_fetch = { status: "ok", reason: `${site.pages.length} page(s)` };
+    rec.stages.website_fetch = { status: "ok", reason: `${site.pages.length} page(s)${site.host_fallback ? ` via alternate host ${new URL(site.host_fallback.to).hostname}` : ""}` };
 
     // 2. Evidence + fit BEFORE paid contact discovery (no Hunter credits on SKIP companies)
     stage = "evidence";
@@ -178,10 +192,11 @@ export async function processProspect(company: DiscoveredCompany, index: number,
       return finish();
     }
 
-    // 3. Contact discovery (Hunter)
+    // 3. Contact discovery (Hunter) — role titles and search wording follow the campaign niche + role configuration.
     stage = "contact";
+    const vocabulary = roleVocabulary(campaign.niche, campaign.decision_maker_priority);
     const contact = await discoverContact({
-      domain, pages: site.pages, priority: campaign.decision_maker_priority, hunter: deps.hunter, prospect: domain,
+      domain, pages: site.pages, priority: vocabulary.priority, vocabulary, hunter: deps.hunter, prospect: domain,
       publicSearch: deps.publicSearch ? { provider: deps.publicSearch, companyName: company.company_name, city: company.city, language: campaign.language, country: campaign.country } : undefined,
       sameDomain: { fetcher: deps.websiteFetcher, homeUrl: rec.pages[0]!.url, search: deps.publicSearch, language: campaign.language, country: campaign.country, cost: deps.cost },
     });
@@ -227,6 +242,9 @@ export async function processProspect(company: DiscoveredCompany, index: number,
         rec.prospeo = { request: req, result: "error", reason: (e as Error).message.slice(0, 200) };
         contact.notes.push(`Prospeo error (Hunter result kept): ${(e as Error).message.slice(0, 160)}`);
       }
+    } else if (pr.run) {
+      rec.prospeo = { result: "NOT_CONFIGURED", reason: pr.reason };
+      contact.notes.push(`Prospeo fallback would apply (${pr.reason}) but is not configured — unavailable, not unnecessary.`);
     } else {
       rec.prospeo = { result: "not_run", reason: pr.reason };
     }
@@ -273,6 +291,11 @@ export async function processProspect(company: DiscoveredCompany, index: number,
     rec.status = v.status;
     rec.status_reasons = v.issues;
     rec.warnings = v.warnings;
+    // A decision maker matched on first name only (website title + one Hunter contact) is never auto-sendable.
+    if (contact.identification === "first_name_hunter_match" && (rec.status === "READY" || rec.status === "NEEDS_REVIEW")) {
+      rec.status = "NEEDS_REVIEW";
+      rec.status_reasons = [...rec.status_reasons, "PARTIAL_NAME_MATCH_REVIEW"];
+    }
     rec.stages.render = { status: "ok", reason: v.status };
     return finish();
   } catch (e) {

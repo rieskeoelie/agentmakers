@@ -1,7 +1,9 @@
 import { rootDomain } from "./domain";
 import type { PublicSearchProvider, SearchResult } from "./providers/dataforseo";
 import { isPersonName, sanitizeSnippet, splitName, looksLikeInjection } from "./research";
-import { matchRole, type RoleMatch } from "./roles";
+import { jobTitleVerdict, matchRole, type RoleMatch } from "./roles";
+import { DEFAULT_ROLE_PRIORITY } from "./config";
+import { defaultVocabulary, type RoleVocabulary } from "./vocabulary";
 import { companyAliases, fold as foldName, matchCompanyAlias, strongNameAliases } from "./companyName";
 
 /** Recover the original-cased words of an alias from the company name (for readable queries). */
@@ -48,6 +50,18 @@ export interface PublicSearchReport {
   selected: PublicSearchCandidate | null;
   rejected: Array<{ result_url: string; reason: string; name?: string; title?: string }>;
   errors: string[];
+  /** Audit: every result seen (title + URL without query string) and the verdict for candidate discovery. */
+  results?: Array<{ title: string; url: string; verdict: string }>;
+}
+
+/** URL for audit storage: origin + path only (no query string / fragment). */
+export function auditUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.origin}${u.pathname}`.slice(0, 200);
+  } catch {
+    return url.split(/[?#]/)[0]!.slice(0, 200);
+  }
 }
 
 const fold = (s: string) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -57,15 +71,45 @@ export function coreCompanyName(name: string): string {
   return name.split(/\s+[|–—-]\s+|:\s+/)[0]!.replace(/\b(b\.?v\.?|v\.?o\.?f\.?|n\.?v\.?)\s*$/i, "").trim();
 }
 
-export function buildQueries(companyName: string, language: "nl" | "en", city: string | null = null): string[] {
-  // Search for the normalised alias ("Octant Mondzorg"), not the Maps title with city/tagline; generic names keep the core name.
+export function buildQueries(companyName: string, language: "nl" | "en", city: string | null = null, vocabulary: RoleVocabulary = defaultVocabulary(DEFAULT_ROLE_PRIORITY)): string[] {
   const alias = companyAliases(companyName, city).aliases[0];
   const n = (alias ? aliasDisplay(companyName, alias) : coreCompanyName(companyName)).replace(/"/g, "");
-  const roles = language === "nl"
-    ? "(eigenaar OR praktijkhouder OR praktijkeigenaar OR directeur OR praktijkmanager OR vestigingsmanager)"
-    : "(owner OR founder OR partner OR \"managing director\" OR \"practice manager\" OR \"clinic manager\")";
-  const liRoles = language === "nl" ? "(praktijkmanager OR eigenaar OR praktijkhouder OR directeur)" : "(\"practice manager\" OR owner OR director)";
+  const roles = `(${vocabulary.searchRoles[language].join(" OR ")})`;
+  const liRoles = `(${vocabulary.linkedinRoles[language].join(" OR ")})`;
   return [`"${n}" ${roles}`, `site:linkedin.com/in "${n}" ${liRoles}`].slice(0, MAX_PUBLIC_SEARCHES);
+}
+
+/**
+ * Does a person name merely repeat the company/business name ("Piet Has" for "Vakgarage Piet Has B.V.")?
+ * Such a "name" in search metadata refers to the business, not to an identified person.
+ */
+export function nameEqualsCompanyName(personName: string, companyName: string): boolean {
+  const toks = (x: string) => fold(x).replace(/[^a-z0-9&' ]/g, " ").split(/\s+/).filter((t) => t && !/^(b\.?v|n\.?v|v\.?o\.?f|bv|nv|vof)$/.test(t));
+  const p = toks(personName.replace(/^(dr|drs|mr|ir|ing|prof)\.?\s+/i, ""));
+  const c = toks(coreCompanyName(companyName));
+  if (p.length < 2) return false;
+  for (let i = 0; i + p.length <= c.length; i++) if (p.every((t, k) => c[i + k] === t)) return true;
+  return false;
+}
+
+/**
+ * "Eigenaar Auto Tensen Enkhuizen" / "eigenaar van Autohuis Wittelte": the title itself names an organisation that is
+ * not this company (no alias, no brand tokens, no domain label) → a different company's decision maker.
+ */
+export function otherOrganisationInTitle(title: string, match: RoleMatch, ca: ReturnType<typeof companyAliases>, domain: string | null): string | null {
+  const esc = match.matched_text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const m = title.match(new RegExp(`${esc}\\s+(?:(?:van|bij|at|of|@)\\s+)?(.+)$`, "i"));
+  if (!m) return null;
+  const rest = m[1]!.trim();
+  if (!/^[A-ZÀ-Ý0-9]/.test(rest)) return null; // lowercase continuation is not an organisation name
+  const fr = foldName(rest);
+  const restTokens = fr.replace(/[^a-z0-9&' ]/g, " ").split(/\s+/).filter(Boolean);
+  if (restTokens.every((t) => ca.cityTokens.includes(t))) return null;
+  if (matchCompanyAlias(rest, ca).matched) return null;
+  const label = domain ? foldName(domain).replace(/^www\./, "").split(".")[0]!.replace(/[^a-z0-9]/g, "") : "";
+  if (label && fr.replace(/[^a-z0-9]/g, "").includes(label)) return null;
+  if (ca.brand.length && ca.brand.filter((b) => b.length >= 3).every((b) => restTokens.includes(b))) return null;
+  return rest.slice(0, 80);
 }
 
 function isLinkedInProfile(url: string): boolean {
@@ -110,7 +154,8 @@ export function evaluateResult(
   const isCompanyName = (n: string) => ca.aliases.includes(foldName(n).replace(/[^a-z0-9&' ]/g, "").replace(/\s+/g, " ").trim());
 
   // Person + role. LinkedIn profile titles follow "<Name> - <headline/company> | LinkedIn": the first segment is the person.
-  let best: { name: string; title: string; match: RoleMatch } | undefined;
+  type Pair = { name: string; title: string; match: RoleMatch };
+  const pairs: Pair[] = [];
   if (isLinkedInProfile(r.url)) {
     const segs = r.title.replace(/\s*\|\s*LinkedIn.*$/i, "").split(/\s+[-–—|]\s+/).map((x) => x.trim()).filter(Boolean);
     const person = segs[0];
@@ -118,15 +163,27 @@ export function evaluateResult(
       const frags = [...segs.slice(1), ...r.snippet.split(/\s*[·•|]\s*|\.\s+|;\s*|\s+-\s+/)].map((x) => x.trim()).filter((x) => x && x.length <= 80);
       for (const fr of frags) {
         const m = matchRole(fr, priority);
-        if (m && (!best || m.rank < best.match.rank)) best = { name: person.replace(/^(dr|drs|mr|ir|ing|prof)\.?\s+/i, ""), title: fr, match: m };
+        if (m) pairs.push({ name: person.replace(/^(dr|drs|mr|ir|ing|prof)\.?\s+/i, ""), title: fr, match: m });
       }
     }
   }
-  if (!best) {
-    const pairs = nameRolePairs(r.title, priority).concat(nameRolePairs(r.snippet, priority)).filter((p) => !isCompanyName(p.name));
-    best = pairs.sort((a, b) => a.match.rank - b.match.rank)[0];
+  if (!pairs.length) pairs.push(...nameRolePairs(r.title, priority).concat(nameRolePairs(r.snippet, priority)).filter((p) => !isCompanyName(p.name)));
+  if (!pairs.length) return { candidate: null, reason: "NO_NAMED_PERSON_WITH_DECISION_MAKER_ROLE" };
+
+  // Tightened candidate checks: the "name" must not just be the business name, the "title" must be a job title
+  // (not a slogan / sentence fragment / marketing use of "partner"), and must not name a different organisation.
+  let firstRejection: { reason: string; name: string; title: string } | undefined;
+  const valid: Pair[] = [];
+  for (const p of pairs.sort((x, y) => x.match.rank - y.match.rank)) {
+    const reject = (reason: string) => { firstRejection ??= { reason, name: p.name, title: p.title }; };
+    if (nameEqualsCompanyName(p.name, company.name)) { reject("NAME_EQUALS_COMPANY_NAME"); continue; }
+    const tv = jobTitleVerdict(p.title, p.match);
+    if (!tv.ok) { reject(tv.reason); continue; }
+    if (otherOrganisationInTitle(p.title, p.match, ca, company.domain)) { reject("TITLE_REFERS_TO_OTHER_COMPANY"); continue; }
+    valid.push(p);
   }
-  if (!best) return { candidate: null, reason: "NO_NAMED_PERSON_WITH_DECISION_MAKER_ROLE" };
+  const best = valid[0];
+  if (!best) return { candidate: null, ...firstRejection! };
 
   // Association with the exact company — inside this same result.
   const companyRoot = rootDomain(company.domain);
@@ -178,9 +235,11 @@ export async function findDecisionMakerViaPublicSearch(input: {
   language: "nl" | "en";
   country: string;
   prospect: string;
+  /** Niche-aware query wording (default: generic, no practice terms). */
+  vocabulary?: RoleVocabulary;
 }): Promise<PublicSearchReport> {
-  const report: PublicSearchReport = { queries: [], results_seen: 0, selected: null, rejected: [], errors: [] };
-  for (const q of buildQueries(input.company.name, input.language, input.company.city).slice(0, MAX_PUBLIC_SEARCHES)) {
+  const report: PublicSearchReport = { queries: [], results_seen: 0, selected: null, rejected: [], errors: [], results: [] };
+  for (const q of buildQueries(input.company.name, input.language, input.company.city, input.vocabulary).slice(0, MAX_PUBLIC_SEARCHES)) {
     report.queries.push(q);
     let results: SearchResult[];
     try {
@@ -194,6 +253,7 @@ export async function findDecisionMakerViaPublicSearch(input: {
     const strong: PublicSearchCandidate[] = [];
     for (const r of results) {
       const ev = evaluateResult(r, input.company, input.priority);
+      report.results!.push({ title: sanitizeSnippet(r.title, 140), url: auditUrl(r.url), verdict: ev.candidate ? "CANDIDATE" : ev.reason ?? "NO_CANDIDATE" });
       if (ev.candidate) strong.push(ev.candidate);
       else if (ev.name || ev.reason === "INSTRUCTION_LIKE_TEXT_IGNORED") report.rejected.push({ result_url: r.url, reason: ev.reason!, name: ev.name, title: ev.title });
     }

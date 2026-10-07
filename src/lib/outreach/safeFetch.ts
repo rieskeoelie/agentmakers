@@ -161,6 +161,12 @@ function defaultResolver(host: string): Promise<LookupAddress[]> {
 
 const DEFAULT_CT = ["text/html", "application/xhtml+xml", "text/plain"];
 
+/**
+ * Honest research user-agent (names us + a contact URL). It deliberately avoids the token "Bot": live small-business
+ * hosting (nginx rules matching /bot/i) answered HTTP 403 to "AgentMakersResearchBot/0.1" and 200/301 to this one.
+ */
+export const DEFAULT_USER_AGENT = "AgentMakersResearch/0.1 (+https://www.agentmakers.io)";
+
 function fetchOnce(u: URL, opts: Required<Pick<SafeFetchOptions, "timeoutMs" | "maxBytes">> & SafeFetchOptions) {
   const ipPolicy = opts.ipPolicy ?? isPublicIp;
   const resolver = opts.resolver ?? defaultResolver;
@@ -185,7 +191,7 @@ function fetchOnce(u: URL, opts: Required<Pick<SafeFetchOptions, "timeoutMs" | "
         method: "GET",
         lookup: lookup as never,
         headers: {
-          "user-agent": opts.userAgent ?? "AgentMakersResearchBot/0.1 (+https://www.agentmakers.io)",
+          "user-agent": opts.userAgent ?? DEFAULT_USER_AGENT,
           accept: "text/html,application/xhtml+xml;q=0.9,text/plain;q=0.5",
           "accept-encoding": "gzip, deflate, br",
           "accept-language": "nl,en;q=0.8",

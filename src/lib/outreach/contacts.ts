@@ -1,12 +1,14 @@
-import { isGenericEmail, type VerificationStatus, type EmailSource } from "./eligibility";
+import { isFreeMail, isGenericEmail, type VerificationStatus, type EmailSource } from "./eligibility";
+import { rootDomain } from "./domain";
 import type { ContactProvider, HunterContact } from "./providers/hunter";
-import { extractPeople, type FetchedPage, type WebsitePerson } from "./research";
+import { extractFirstNameOwners, extractPeople, type FetchedPage, type WebsitePerson } from "./research";
 import { hunterMetadataDecisionMakers, matchRole, rankContacts, type RoleMatch } from "./roles";
 import { findDecisionMakerViaPublicSearch, type PublicSearchReport } from "./publicSearch";
 import type { PublicSearchProvider } from "./providers/dataforseo";
 import { discoverTeamPages, type SameDomainTrace } from "./sameDomain";
 import type { PageFetcher } from "./research";
 import type { CostTracker } from "./cost";
+import { defaultVocabulary, type RoleVocabulary } from "./vocabulary";
 
 export type ContactSource =
   | "hunter_domain_search"
@@ -41,6 +43,57 @@ export interface ContactSelection {
   public_search: PublicSearchReport | null;
   /** Same-domain extra team-page discovery trace (null when it did not run). */
   same_domain_discovery: SameDomainTrace | null;
+  /**
+   * How the decision maker was identified. "first_name_only": the company's own site pairs only a first name with an
+   * owner/director title (no surname — never inferred). "first_name_hunter_match": that first name matched exactly one
+   * Hunter contact on the company's mail domain (full name from Hunter; always routed to review).
+   */
+  identification?: "full_name" | "first_name_only" | "first_name_hunter_match";
+  /** Audit: Hunter Domain Search people (name, position, verdict) — no email addresses of non-selected people. */
+  hunter_candidates?: HunterCandidateAudit[];
+  /** Domains Domain Search ran on: the website domain + at most one mail domain published on the company's own site. */
+  email_domains_searched?: string[];
+}
+
+export interface HunterCandidateAudit {
+  domain: string;
+  name: string | null;
+  position: string | null;
+  type: string | null;
+  seniority: string | null;
+  verdict: "SELECTED" | "GENERIC_MAILBOX" | "NO_PRIORITY_TITLE" | "NOT_SELECTED";
+  role?: string;
+}
+
+/** Free / ISP / platform mail domains never count as a company mail domain. */
+function isPlatformMailDomain(d: string): boolean {
+  return isFreeMail(`x@${d}`) || /(^|\.)(wixsite|wix|jimdo|squarespace|mijnwebwinkel|strato|transip|hostnet|vimexx|mailchimp|sendgrid|google|outlook|office365)\./.test(d);
+}
+
+const label = (d: string) => (d.split(".")[0] ?? "").replace(/[^a-z0-9]/g, "");
+
+/**
+ * Mail domains the company publishes on its OWN website (mailto links / visible addresses) that differ from the
+ * website domain — only when the domain label is clearly the same brand (contains / is contained in the website label,
+ * e.g. destadsgarage.nl ↔ stadsgarage.nl). Franchise / platform / free-mail domains are excluded.
+ */
+export function publishedCompanyMailDomains(pages: FetchedPage[], websiteDomain: string): string[] {
+  const site = rootDomain(websiteDomain);
+  if (!site) return [];
+  const found = new Set<string>();
+  const add = (email: string) => {
+    const d = rootDomain(email.split("@")[1]?.toLowerCase().replace(/[^a-z0-9.-]/g, "") ?? "");
+    if (!d || d === site || isPlatformMailDomain(d)) return;
+    const a = label(d), b = label(site);
+    if (a.length < 4 || b.length < 4) return;
+    if (a.includes(b) || b.includes(a)) found.add(d);
+  };
+  const RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi;
+  for (const p of pages) {
+    for (const l of p.parsed.links) if (/^mailto:/i.test(l.href)) add(decodeURIComponent(l.href.replace(/^mailto:/i, "").split("?")[0]!));
+    for (const m of p.parsed.text.matchAll(RE)) add(m[0]);
+  }
+  return [...found].slice(0, 1);
 }
 
 const fold = (s: string | null | undefined) => (s ?? "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -63,42 +116,68 @@ export async function discoverContact(input: {
   publicSearch?: { provider: PublicSearchProvider; companyName: string; city: string | null; language: "nl" | "en"; country: string };
   /** Optional same-domain team/leadership page discovery (≤3 extra pages) when crawled pages name no decision maker. */
   sameDomain?: { fetcher: PageFetcher; homeUrl: string; search?: PublicSearchProvider; language: "nl" | "en"; country: string; cost?: CostTracker };
+  /** Niche-aware role vocabulary. When given, its effective priority replaces `priority` for title matching. */
+  vocabulary?: RoleVocabulary;
 }): Promise<ContactSelection> {
   const notes: string[] = [];
+  const vocab = input.vocabulary ?? defaultVocabulary(input.priority);
+  const priority = input.vocabulary ? input.vocabulary.priority : input.priority;
   const base = {
     name: null, first_name: null, last_name: null, title: null, title_source_url: null, role_match: null,
     email: null, email_source: "none" as EmailSource, verification_status: "not_verified" as VerificationStatus,
     hunter_confidence: null, linkedin: null, notes, failure_reason: null, company_generic_emails: [] as string[],
     public_search: null as PublicSearchReport | null,
     same_domain_discovery: null as SameDomainTrace | null,
+    identification: undefined as ContactSelection["identification"],
+    hunter_candidates: [] as HunterCandidateAudit[],
+    email_domains_searched: [input.domain] as string[],
   };
 
   // Path A — Hunter Domain Search + role ranking
   const ds = await input.hunter.domainSearch(input.domain, input.prospect);
   // Generic/role mailboxes are split off as company metadata; only named personal addresses can be recipients.
   const isGenericContact = (c: HunterContact) => c.type === "generic" || isGenericEmail(c.email);
-  base.company_generic_emails = ds.contacts.filter(isGenericContact).map((c) => c.email);
-  const personal = ds.contacts.filter((c) => !isGenericContact(c));
-  notes.push(`Domain Search: ${ds.contacts.length} email(s) (${base.company_generic_emails.length} generic, metadata only), accept_all=${ds.accept_all}`);
-  const ranked = rankContacts(personal, input.priority);
+  const allContacts: Array<HunterContact & { _domain: string }> = ds.contacts.map((c) => ({ ...c, _domain: input.domain }));
+  notes.push(`Domain Search: ${ds.contacts.length} email(s) (${ds.contacts.filter(isGenericContact).length} generic, metadata only), accept_all=${ds.accept_all}`);
+  // Second mail domain published on the company's OWN site (e.g. website destadsgarage.nl, mail info@stadsgarage.nl).
+  if (!ds.contacts.some((c) => !isGenericContact(c))) {
+    for (const alt of publishedCompanyMailDomains(input.pages, input.domain)) {
+      const ads = await input.hunter.domainSearch(alt, input.prospect);
+      base.email_domains_searched.push(alt);
+      allContacts.push(...ads.contacts.map((c) => ({ ...c, _domain: alt })));
+      notes.push(`Domain Search on company-published mail domain ${alt}: ${ads.contacts.length} email(s) (${ads.contacts.filter(isGenericContact).length} generic).`);
+    }
+  }
+  base.company_generic_emails = allContacts.filter(isGenericContact).map((c) => c.email);
+  const personal = allContacts.filter((c) => !isGenericContact(c));
+  const ranked = rankContacts(personal, priority);
+  const audit = (selected: HunterContact | null) => {
+    base.hunter_candidates = allContacts.map((c) => {
+      const m = matchRole(c.position, priority);
+      const verdict: HunterCandidateAudit["verdict"] = c === selected ? "SELECTED" : isGenericContact(c) ? "GENERIC_MAILBOX" : m ? "NOT_SELECTED" : "NO_PRIORITY_TITLE";
+      return { domain: c._domain, name: [c.first_name, c.last_name].filter(Boolean).join(" ") || null, position: c.position, type: c.type, seniority: c.seniority, verdict, ...(m ? { role: m.matched_role } : {}) };
+    });
+  };
+  audit(null);
   if (ranked.length) {
     const top = ranked[0]!;
     const c = top.contact;
+    audit(c);
     notes.push(`Selected by title match "${top.match.matched_text}" → priority "${top.match.matched_role}" (rank ${top.match.rank}); ${ranked.length} matching candidate(s).`);
     return {
       ...base,
       name: [c.first_name, c.last_name].filter(Boolean).join(" ") || null,
       first_name: c.first_name, last_name: c.last_name, title: c.position, source: "hunter_domain_search",
       role_match: top.match, email: c.email, email_source: "hunter_domain_search", verification_status: c.verification_status,
-      hunter_confidence: c.confidence, linkedin: c.linkedin,
+      hunter_confidence: c.confidence, linkedin: c.linkedin, identification: "full_name",
     };
   }
 
   // A named, relevant person whose ONLY Hunter address is a generic mailbox is identified, but has no decision-maker email.
   let identified: Partial<ContactSelection> | null = null;
   const namedGeneric = rankContacts(
-    ds.contacts.filter((c) => isGenericContact(c) && c.first_name && c.last_name).map((c) => ({ ...c, type: "personal" as const })),
-    input.priority,
+    allContacts.filter((c) => isGenericContact(c) && c.first_name && c.last_name).map((c) => ({ ...c, type: "personal" as const })),
+    priority,
   )[0];
   if (namedGeneric) {
     const c = namedGeneric.contact;
@@ -106,7 +185,7 @@ export async function discoverContact(input: {
   }
 
   // Path B — website names + explicit titles, then Hunter (DS match or Email Finder)
-  const isRole = (t: string) => matchRole(t, input.priority) !== null;
+  const isRole = (t: string) => matchRole(t, priority) !== null;
   let sitePages = input.pages;
   if (!identified && input.sameDomain && extractPeople(sitePages, isRole).length === 0) {
     // Same-domain leadership/team pages (links, sitemap, one site: search) — before any public Google/LinkedIn fallback.
@@ -114,28 +193,30 @@ export async function discoverContact(input: {
       domain: input.domain, homeUrl: input.sameDomain.homeUrl, pages: input.pages, fetcher: input.sameDomain.fetcher,
       found: (page) => extractPeople([page], isRole).length > 0, search: input.sameDomain.search,
       country: input.sameDomain.country, language: input.sameDomain.language, prospect: input.prospect, cost: input.sameDomain.cost,
+      vocabulary: vocab,
     });
     base.same_domain_discovery = sd.trace;
     sitePages = [...input.pages, ...sd.pages];
     notes.push(`Same-domain team discovery: ${sd.trace.candidates.length} candidate page(s), fetched ${sd.trace.fetched.length}${sd.trace.site_search_query ? " (incl. site: search)" : ""}.`);
   }
   const people = extractPeople(sitePages, isRole)
-    .map((p) => ({ p, m: matchRole(p.title, input.priority)! }))
+    .map((p) => ({ p, m: matchRole(p.title, priority)! }))
     .sort((a, b) => a.m.rank - b.m.rank);
   notes.push(`Website person discovery: ${people.length} named person(s) with a priority title.`);
   let finderCalls = 0;
   if (people[0] && !identified) {
     const { p, m } = people[0];
-    identified = { name: p.full_name, first_name: p.first_name, last_name: p.last_name, title: p.title, title_source_url: p.source_url, source: "website_title", role_match: m };
+    identified = { name: p.full_name, first_name: p.first_name, last_name: p.last_name, title: p.title, title_source_url: p.source_url, source: "website_title", role_match: m, identification: "full_name" };
   }
   for (const { p, m } of people) {
     const inDs = personal.find((c) => sameName(c, p));
     if (inDs) {
+      audit(inDs);
       notes.push(`Website person "${p.full_name}" (${p.title}) found in Domain Search results.`);
       return {
         ...base, name: p.full_name, first_name: p.first_name, last_name: p.last_name, title: p.title, title_source_url: p.source_url,
         source: "website_title+hunter_domain_search", role_match: m, email: inDs.email, email_source: "hunter_domain_search",
-        verification_status: inDs.verification_status, hunter_confidence: inDs.confidence, linkedin: inDs.linkedin,
+        verification_status: inDs.verification_status, hunter_confidence: inDs.confidence, linkedin: inDs.linkedin, identification: "full_name",
       };
     }
     if (finderCalls >= MAX_FINDER_CALLS || !p.last_name) continue;
@@ -149,27 +230,56 @@ export async function discoverContact(input: {
       return {
         ...base, name: p.full_name, first_name: p.first_name, last_name: p.last_name, title: p.title, title_source_url: p.source_url,
         source: "website_title+hunter_email_finder", role_match: m, email: f.email, email_source: "hunter_email_finder",
-        verification_status: f.verification_status, hunter_confidence: f.score, linkedin: f.linkedin,
+        verification_status: f.verification_status, hunter_confidence: f.score, linkedin: f.linkedin, identification: "full_name",
       };
     }
     notes.push(`Email Finder: no address for "${p.full_name}".`);
   }
 
-  // Public search fallback — only when neither Hunter nor the website yielded a relevant named person.
+  // Partial decision maker: first name + owner/director title on the company's OWN site (no surname — never inferred).
+  // It does not block the public search below (which may find the full name with evidence).
+  let partial: Partial<ContactSelection> | null = null;
+  if (!identified) {
+    const ownerPriority = priority.filter((r) => !/^(partner|maat|vennoot|practice manager|operations manager|office manager)$/i.test(r.trim()));
+    const isOwnerRole = (t: string) => matchRole(t, ownerPriority) !== null;
+    const firsts = extractFirstNameOwners(sitePages, isOwnerRole);
+    const fp = firsts[0];
+    if (fp) {
+      const m = matchRole(fp.title, priority)!;
+      notes.push(`Website partial decision maker: first name "${fp.first_name}" with title "${fp.title}" (${fp.source_url}); surname not published — not inferred.`);
+      const sameFirst = personal.filter((c) => c.first_name && c.last_name && fold(c.first_name) === fold(fp.first_name));
+      if (sameFirst.length === 1) {
+        const c = sameFirst[0]!;
+        audit(c);
+        notes.push(`First name "${fp.first_name}" matches exactly one Hunter contact on ${c._domain} — full name from Hunter; routed to review.`);
+        return {
+          ...base, name: `${c.first_name} ${c.last_name}`, first_name: c.first_name, last_name: c.last_name, title: fp.title, title_source_url: fp.source_url,
+          source: "website_title+hunter_domain_search", role_match: m, email: c.email, email_source: "hunter_domain_search",
+          verification_status: c.verification_status, hunter_confidence: c.confidence, linkedin: c.linkedin, identification: "first_name_hunter_match",
+        };
+      }
+      if (sameFirst.length > 1) notes.push(`First name "${fp.first_name}" matches ${sameFirst.length} Hunter contacts — ambiguous, not used.`);
+      notes.push(`Email Finder not attempted for "${fp.first_name}": surname unknown (no inference from company name).`);
+      partial = { name: fp.first_name, first_name: fp.first_name, last_name: null, title: fp.title, title_source_url: fp.source_url, source: "website_title", role_match: m, identification: "first_name_only" };
+    }
+  }
+
+  // Public search fallback — only when neither Hunter nor the website yielded a relevant (fully) named person.
   if (!identified && input.publicSearch) {
     const ps = await findDecisionMakerViaPublicSearch({
       search: input.publicSearch.provider,
       company: { name: input.publicSearch.companyName, domain: input.domain, city: input.publicSearch.city },
-      priority: input.priority,
+      priority,
       language: input.publicSearch.language,
       country: input.publicSearch.country,
       prospect: input.prospect,
+      vocabulary: vocab,
     });
     base.public_search = ps;
     notes.push(`Public search: ${ps.queries.length} quer${ps.queries.length === 1 ? "y" : "ies"}, ${ps.results_seen} result(s), ${ps.rejected.length} weak candidate(s) rejected${ps.errors.length ? `, errors: ${ps.errors.join("; ")}` : ""}.`);
     const c = ps.selected;
     if (c) {
-      const who = { name: c.full_name, first_name: c.first_name, last_name: c.last_name, title: c.title, title_source_url: c.result_url, role_match: c.role_match };
+      const who = { name: c.full_name, first_name: c.first_name, last_name: c.last_name, title: c.title, title_source_url: c.result_url, role_match: c.role_match, identification: "full_name" as const };
       const f = await input.hunter.emailFinder(input.domain, c.first_name, c.last_name, input.prospect);
       if (f?.email && !isGenericEmail(f.email)) {
         notes.push(`Public search found "${c.full_name}" (${c.title}, ${c.confidence}) → Email Finder found address.`);
@@ -187,6 +297,7 @@ export async function discoverContact(input: {
   // Weaker fallback — Hunter seniority metadata (flagged as risk in the brief)
   const meta = hunterMetadataDecisionMakers(personal)[0];
   if (meta) {
+    audit(meta);
     notes.push(`Fallback: Hunter metadata seniority=executive (${meta.position ?? "no title"}).`);
     return {
       ...base, name: [meta.first_name, meta.last_name].filter(Boolean).join(" ") || null, first_name: meta.first_name, last_name: meta.last_name,
@@ -197,8 +308,11 @@ export async function discoverContact(input: {
 
   // Generic mailboxes are NOT a fallback recipient and never count as a decision-maker email.
   const generics = base.company_generic_emails.length ? ` Generic mailbox(es) kept as company metadata only: ${base.company_generic_emails.join(", ")}` : "";
+  if (!identified && partial) identified = partial;
   if (identified) {
-    notes.push(`Named decision maker "${identified.name}" (${identified.title}) identified, but no business email found.${generics}`);
+    notes.push(identified.identification === "first_name_only"
+      ? `Partial decision maker "${identified.name}" (${identified.title}) identified (first name only), but no business email found.${generics}`
+      : `Named decision maker "${identified.name}" (${identified.title}) identified, but no business email found.${generics}`);
     return { ...base, ...identified, email: null, email_source: "none", verification_status: "not_verified", failure_reason: "DECISION_MAKER_EMAIL_NOT_FOUND" } as ContactSelection;
   }
   notes.push(`No relevant named decision maker found.${generics}`);

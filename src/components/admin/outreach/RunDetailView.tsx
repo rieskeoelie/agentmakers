@@ -14,7 +14,7 @@ import { MODE_COPY } from '../../../lib/outreach/ui/newRun'
 import type { RunAction } from '../../../lib/outreach/orchestration/states'
 import { RunStatus, useRunActions } from './RunsView'
 import { RunActivity } from './RunActivity'
-import type { OutcomeCounts } from './activity'
+import type { OutcomeCounts, ProspectReasons } from './activity'
 import { RunSendingSection } from './SendingPanel'
 import { eventLabel } from './tones'
 
@@ -67,8 +67,8 @@ type ErrRow = RunOverview['errors'][number]
 type BlockedRow = RunOverview['blocked'][number]
 
 /** Presentational run detail body: metrics, funnel, blockers/errors, cost and activity. */
-export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, sending, activeIndex = null, names = {}, outcomes }: {
-  data: RunOverview; sending?: ReactNode; activeIndex?: number | null; names?: Record<string, string>; outcomes?: OutcomeCounts; onAction?: (a: RunAction) => void; onOpenProspect: (id: string) => void; onOpenProspects?: () => void; busy?: boolean; canOperate?: boolean; now?: number
+export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, sending, activeIndex = null, names = {}, outcomes, reasons }: {
+  data: RunOverview; sending?: ReactNode; activeIndex?: number | null; names?: Record<string, string>; outcomes?: OutcomeCounts; reasons?: ProspectReasons; onAction?: (a: RunAction) => void; onOpenProspect: (id: string) => void; onOpenProspects?: () => void; busy?: boolean; canOperate?: boolean; now?: number
 }) {
   const r = data.run
   const p = runProgress(r)
@@ -141,7 +141,7 @@ export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, send
           </Section>
           <Section title="Activiteit">
             <div className="am-panel am-panel-pad">
-              <RunActivity events={data.recent_events} funnel={r.funnel} outcomes={outcomes} names={names} onOpenProspect={onOpenProspect} />
+              <RunActivity events={data.recent_events} funnel={r.funnel} outcomes={outcomes} reasons={reasons} names={names} onOpenProspect={onOpenProspect} />
             </div>
           </Section>
         </aside>
@@ -170,6 +170,7 @@ export function RunDetailScreen({ runId }: { runId: string }) {
   useEffect(() => { if (live) reloadSteps() }, [data, live, reloadSteps])
   const activeIndex = data ? activeFunnelIndex(data.run, data.run.setup_state === 'DONE' ? steps : null) : null
   const names = useMemo(() => Object.fromEntries((steps ?? []).map((p) => [p.id, p.company_name])), [steps])
+  const reasons = useMemo<ProspectReasons>(() => Object.fromEntries((steps ?? []).map((p) => [p.id, p.outcome_reasons])), [steps])
   // Outcome counts for the completion summary — only when the full list of the run's prospects is known.
   const outcomes = useMemo(() => {
     if (!steps || !data || steps.length < data.run.funnel.total) return undefined
@@ -202,7 +203,7 @@ export function RunDetailScreen({ runId }: { runId: string }) {
       {actionError && <div style={{ marginBottom: 16 }}><Callout tone="danger" action={<Button size="sm" variant="ghost" onClick={clearError}>Sluiten</Button>}>{actionError}</Callout></div>}
       {error && !data && <ErrorState message={error} onRetry={reload} />}
       {!data && !error && <BlockSkeleton lines={8} />}
-      {data && <RunDetailBody data={data} activeIndex={activeIndex} names={names} outcomes={outcomes} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })}
+      {data && <RunDetailBody data={data} activeIndex={activeIndex} names={names} outcomes={outcomes} reasons={reasons} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })}
         onOpenProspects={() => a.navigate({ screen: 'outreach', view: 'prospects', runId: data.run.id })}
         sending={data.run.status !== 'CREATED' ? <RunSendingSection runId={data.run.id} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })} /> : undefined} />}
       {confirmDialog}

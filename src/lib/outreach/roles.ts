@@ -98,3 +98,34 @@ export function hunterMetadataDecisionMakers<T extends RankableContact>(contacts
     .filter((c) => (!c.type || c.type === "personal") && c.seniority === "executive" && (!c.position || !NEGATIVE_MODIFIERS.test(c.position)))
     .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
 }
+
+/** Roles whose word is also common in marketing copy ("uw betrouwbare partner in mobiliteit"). */
+const AMBIGUOUS_ROLE_WORDS = new Set(["partner", "maat", "vennoot"]);
+/** Words that turn a role word into marketing copy / a sentence when they precede it. */
+const COPY_MARKERS = /\b(sinds|since|al|ruim|jaar|jaren|years|uw|jouw|onze|your|our|betrouwbare?|vertrouwde?|ideale?|perfecte?|vaste?|trusted|reliable|ideal|perfect)\b/;
+const FOLLOW_MARKERS = new Set(["in", "voor", "van", "for", "of", "met", "with", "op", "on"]);
+
+export type TitleVerdict = { ok: true } | { ok: false; reason: "TITLE_IS_SENTENCE_FRAGMENT" | "AMBIGUOUS_ROLE_NOT_A_JOB_TITLE" };
+
+/**
+ * Is the text around a matched role an actual job title ("Eigenaar", "Algemeen directeur", "Partner bij X")
+ * rather than a slogan or sentence fragment ("sinds 1987 een betrouwbare partner in mobiliteit")?
+ * Used for public-search metadata, where titles/snippets are marketing copy as often as job titles.
+ */
+export function jobTitleVerdict(text: string, match: RoleMatch): TitleVerdict {
+  const words = normalizeRole(text).split(" ").filter(Boolean);
+  const phrase = normalizeRole(match.matched_text).split(" ");
+  let at = -1;
+  for (let i = 0; i + phrase.length <= words.length && at < 0; i++) if (phrase.every((p, k) => words[i + k] === p)) at = i;
+  if (at < 0) return { ok: true };
+  const before = words.slice(0, at).join(" ");
+  const after = words[at + phrase.length];
+  if (words.length > 8 || (at > 2 && words.length > 5) || /\d{4}/.test(before) || COPY_MARKERS.test(before)) {
+    return { ok: false, reason: "TITLE_IS_SENTENCE_FRAGMENT" };
+  }
+  if (phrase.length === 1 && AMBIGUOUS_ROLE_WORDS.has(phrase[0]!)) {
+    if (after && FOLLOW_MARKERS.has(after)) return { ok: false, reason: "AMBIGUOUS_ROLE_NOT_A_JOB_TITLE" };
+    if (words.length > 4) return { ok: false, reason: "AMBIGUOUS_ROLE_NOT_A_JOB_TITLE" };
+  }
+  return { ok: true };
+}
