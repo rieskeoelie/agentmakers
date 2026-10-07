@@ -9,7 +9,7 @@ import { Btn, C, Chip, ErrorBox, Field, input, KeyValue, Loading, panel, Section
 const ok = (b: boolean, yes = 'ingesteld', no = 'ontbreekt') => <Chip color={b ? C.green : C.red} bg={b ? C.greenBg : C.redBg}>{b ? yes : no}</Chip>
 
 /** Sending status + kill switch + limits (presentational). Enabling needs a second, explicit click. */
-export function SendingBody({ o, mailboxes, busy, onPatch }: { o: SendingOverview; mailboxes: Mailbox[] | null; busy: boolean; onPatch: (p: Partial<SendingConfigView>) => void }) {
+export function SendingBody({ o, mailboxes, busy, onPatch, onSync }: { o: SendingOverview; mailboxes: Mailbox[] | null; busy: boolean; onPatch: (p: Partial<SendingConfigView>) => void; onSync?: () => void }) {
   const c = o.config
   const live = c.sending_enabled && !o.provider.env_kill_switch && o.provider.smartlead_configured
   const [arm, setArm] = useState(false)
@@ -33,6 +33,7 @@ export function SendingBody({ o, mailboxes, busy, onPatch }: { o: SendingOvervie
             : o.can_configure && (!arm
               ? <Btn kind="primary" disabled={busy || !o.provider.smartlead_configured} onClick={() => setArm(true)}>Verzenden aanzetten…</Btn>
               : <><Btn kind="primary" disabled={busy} onClick={() => { setArm(false); onPatch({ sending_enabled: true }) }}>Bevestig: verzenden AAN</Btn><Btn kind="ghost" onClick={() => setArm(false)}>Annuleer</Btn></>)}
+          {onSync && o.provider.smartlead_configured && <Btn disabled={busy} onClick={onSync}>Nu synchroniseren</Btn>}
         </div>
       </div>
       <div style={panel}>
@@ -101,12 +102,25 @@ export function SendingPanel({ api, onChanged }: { api: OutreachApi; onChanged?:
       setBusy(false)
     }
   }
+  const sync = async () => {
+    setBusy(true)
+    setErr(null)
+    try {
+      await api.syncNow()
+      res.reload()
+      onChanged?.()
+    } catch (e) {
+      setErr((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
   return (
     <div>
       {err && <ErrorBox message={err} />}
       {res.error && <ErrorBox message={res.error} onRetry={res.reload} />}
       {!res.data && !res.error && <Loading />}
-      {res.data && <SendingBody key={res.data.config.updated_at} o={res.data} mailboxes={mb.data?.configured ? mb.data.mailboxes : null} busy={busy} onPatch={patch} />}
+      {res.data && <SendingBody key={res.data.config.updated_at} o={res.data} mailboxes={mb.data?.configured ? mb.data.mailboxes : null} busy={busy} onPatch={patch} onSync={sync} />}
     </div>
   )
 }

@@ -55,6 +55,7 @@ export function outreachApi(viewAs: string | null = null, fetchImpl: Fetch = (..
     sending: () => call<SendingOverview>(fetchImpl, withViewAs("/api/outreach/sending", viewAs)),
     setSending: (patch: Partial<SendingConfigView>) =>
       call<{ config: SendingConfigView }>(fetchImpl, "/api/outreach/sending", { method: "PATCH", body: JSON.stringify(patch) }).then((r) => r.config),
+    syncNow: () => call<{ send: Record<string, number | boolean>; analysis: { analyzed: number; failed: number } }>(fetchImpl, "/api/outreach/sending/sync", { method: "POST", body: "{}" }),
     mailboxes: () => call<{ configured: boolean; mailboxes: Mailbox[] }>(fetchImpl, "/api/outreach/sending/mailboxes"),
     runSending: (id: string) => call<RunSending>(fetchImpl, `/api/outreach/runs/${encodeURIComponent(id)}/sending`),
     queueRun: (id: string) =>

@@ -119,6 +119,14 @@ describe("Smartlead client", () => {
     await expect(new SmartleadClient(KEY, f3).pauseLead("1", "2")).rejects.toBeInstanceOf(SmartleadError);
     expect(urls.length).toBe(1);
   });
+  it("sequences: classic per-step subject/body first; single-variant form only when that shape is refused", async () => {
+    const bodies: unknown[] = [];
+    const { f } = fetchOf((_u, init) => { const b = JSON.parse(String(init.body)); bodies.push(b); return "seq_variants" in (b.sequences?.[0] ?? {}) ? [200, { ok: true }] : [406, { message: "Invalid sequence" }]; });
+    await new SmartleadClient(KEY, f).setSequences("9", [{ seq_number: 1, delay_in_days: 0, subject: "s", email_body: "b" }, { seq_number: 2, delay_in_days: 3, subject: "", email_body: "c" }]);
+    expect(bodies.length).toBe(2);
+    expect(bodies[0]).toEqual({ sequences: [{ seq_number: 1, seq_delay_details: { delay_in_days: 0 }, subject: "s", email_body: "b" }, { seq_number: 2, seq_delay_details: { delay_in_days: 3 }, subject: "", email_body: "c" }] });
+    expect(JSON.stringify(bodies)).not.toContain("MANUALLY_EQUAL");
+  });
   it("normalizes message history in both shapes", () => {
     expect(normalizeHistoryItem({ stats_id: "s", type: "REPLY", message_id: "<m>", time: "t", email_body: "b", email_seq_number: "2" })).toMatchObject({ type: "REPLY", stats_id: "s", sequence_number: 2 });
     expect(normalizeHistoryItem({ id: "i", direction: "outbound", body: "b" })).toMatchObject({ type: "SENT", stats_id: "i" });

@@ -198,17 +198,25 @@ export class SmartleadClient implements SmartleadPort {
   }
 
   async setSequences(campaignId: string, steps: SmartleadSequenceStep[]) {
-    const list = steps.map((st) => ({
-      seq_number: st.seq_number, seq_delay_details: { delay_in_days: st.delay_in_days }, subject: st.subject, email_body: st.email_body,
-      variant_distribution_type: "MANUALLY_EQUAL", variants: [{ subject: st.subject, email_body: st.email_body, variant_label: "A" }],
-    }));
+    const base = (st: SmartleadSequenceStep) => ({ seq_number: st.seq_number, seq_delay_details: { delay_in_days: st.delay_in_days } });
+    // Production finding: this API rejects variant_distribution_type "MANUALLY_EQUAL". The classic form (subject/email_body
+    // per step, blank subject = same thread) is tried first; the single-variant form only if that shape is refused.
+    const formats: unknown[] = [
+      { sequences: steps.map((st) => ({ ...base(st), subject: st.subject, email_body: st.email_body })) },
+      { sequences: steps.map((st) => ({ ...base(st), seq_variants: [{ subject: st.subject, email_body: st.email_body, variant_label: "A" }] })) },
+    ];
     const path = `/campaigns/${encodeURIComponent(campaignId)}/sequences`;
-    try {
-      await this.call("set_sequences", "POST", path, { sequences: list });
-    } catch (e) {
-      if (!(e instanceof SmartleadError) || e.status !== 400 || !/array|sequences/i.test(e.message)) throw e;
-      await this.call("set_sequences", "POST", path, list);
+    let last: unknown;
+    for (const body of formats) {
+      try {
+        await this.call("set_sequences", "POST", path, body);
+        return;
+      } catch (e) {
+        last = e;
+        if (!(e instanceof SmartleadError) || e.retryable || e.status === 401 || e.status === 403) throw e;
+      }
     }
+    throw last;
   }
 
   async listMailboxes() {
@@ -259,7 +267,16 @@ export class SmartleadClient implements SmartleadPort {
   }
 
   async findLeadId(email: string, campaignId: string) {
-    const body = (await this.call("find_lead", "GET", "/leads/", undefined, { email })) as Json | null;
+    let body: Json | null;
+    try {
+      body = (await this.call("find_lead", "GET", "/leads/", undefined, { email })) as Json | null;
+    } catch (e) {
+      if (!(e instanceof SmartleadError) || e.status !== 404) throw e;
+      body = (await this.call("find_lead", "GET", "/leads", undefined, { email }).catch((x) => {
+        if (x instanceof SmartleadError && x.status === 404) return null;
+        throw x;
+      })) as Json | null;
+    }
     if (!body || typeof body !== "object") return null;
     const id = str(body.id ?? (body.data as Json | undefined)?.id);
     const campaigns = arr(body.lead_campaign_data ?? (body.data as Json | undefined)?.lead_campaign_data);

@@ -158,6 +158,7 @@ describe("push (fake Smartlead — nothing leaves the process)", () => {
     const steps = sl.calls.find((c) => c.op === "setSequences")!.args[1] as Array<{ email_body: string; delay_in_days: number }>;
     expect(steps.map((s) => [s.email_body, s.delay_in_days])).toEqual([["{{am_s1_body}}", 0], ["{{am_s2_body}}", 3], ["{{am_s3_body}}", 4]]);
     expect(sl.calls.find((c) => c.op === "setCampaignStatus")!.args[1]).toBe("START");
+    expect(sl.calls.filter((c) => c.op === "setCampaignStatus").every((c) => c.args[1] === "START")).toBe(true);
     expect(sl.count("createCampaignWebhook")).toBe(1);
     const s = await sendOf(ready[0]!.id);
     expect(s).toMatchObject({ state: "ACTIVE", provider_campaign_id: sl.campaigns[0]!.id });
@@ -227,6 +228,17 @@ describe("push (fake Smartlead — nothing leaves the process)", () => {
     await t.sql("update outreach_sends set next_attempt_at = now()");
     expect((await runSendTick(sendCtx(t, sl))).pushed).toBe(1);
     expect(sl.count("createCampaign")).toBe(1); // the existing campaign is re-configured, not duplicated
+  });
+
+  it("a campaign that cannot be started while empty is started after the first lead push", async () => {
+    await queueProspectForActor(t.db, OWNER, ready[0]!.id);
+    await enableSending(t);
+    const sl = new FakeSmartlead();
+    const { SmartleadError } = await import("../../../src/lib/outreach/sending/smartlead.js");
+    sl.failNext.setCampaignStatus = new SmartleadError(400, "set_campaign_status", "no leads", false);
+    expect((await runSendTick(sendCtx(t, sl))).pushed).toBe(1);
+    expect(sl.campaigns[0]!.status).toBe("START");
+    expect(await sendOf(ready[0]!.id)).toMatchObject({ state: "ACTIVE" });
   });
 
   it("kill switch OFF pauses every live campaign; ON resumes them", async () => {

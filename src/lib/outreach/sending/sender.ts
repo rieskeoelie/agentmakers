@@ -175,8 +175,10 @@ export async function ensureCampaign(ctx: SendContext, sl: SmartleadPort, config
     } else {
       webhookError = "WEBHOOK: OUTREACH_WEBHOOK_SECRET not configured (sync polling only)";
     }
-    await sl.setCampaignStatus(campaignId, "START");
-    await sendRepo.setRunCampaign(ctx.db, run.id, campaignId, "ACTIVE", webhookError);
+    // Starting can be refused while the campaign has no leads yet; it is started again after every lead push.
+    let startError: string | null = null;
+    await sl.setCampaignStatus(campaignId, "START").catch((e) => { startError = `START: ${errMsg(e)}`; });
+    await sendRepo.setRunCampaign(ctx.db, run.id, campaignId, "ACTIVE", [webhookError, startError].filter(Boolean).join(" | ") || null);
     return campaignId;
   } catch (e) {
     await sendRepo.setRunCampaign(ctx.db, run.id, campaignId, "ERROR", errMsg(e)).catch(() => undefined);
@@ -215,6 +217,7 @@ async function pushOne(ctx: SendContext, sl: SmartleadPort, config: SendingConfi
       return false;
     }
     await sendRepo.completePush(ctx.db, send.id, lease_token, campaignId, leadId);
+    await sl.setCampaignStatus(campaignId, "START").catch((e) => ctx.log?.("campaign start after push failed", { campaign: campaignId, error: errMsg(e) }));
     return true;
   } catch (e) {
     const retryable = !(e instanceof SmartleadError) || e.retryable;
