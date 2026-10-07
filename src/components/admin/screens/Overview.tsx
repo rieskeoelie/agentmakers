@@ -67,7 +67,7 @@ export function OverviewScreen() {
     { key: 't', header: 'Ontvangen', nowrap: true, render: (i) => <span className="am-muted am-num">{dateTime(i.last_inbound_at)}</span> },
   ]
   const leadCols: Array<Column<Lead>> = [
-    { key: 'n', header: t('colContact'), render: (l) => <div><span className="am-cell-primary">{l.naam}</span><span className="am-cell-secondary">{l.bedrijfsnaam || l.email}</span></div> },
+    { key: 'n', header: t('colContact'), render: (l) => <div style={{ maxWidth: 210 }}><span className="am-cell-primary am-truncate" style={{ display: 'block' }}>{l.naam || l.bedrijfsnaam || l.email}</span><span className="am-cell-secondary am-truncate" style={{ display: 'block' }}>{l.naam ? (l.bedrijfsnaam || l.email) : l.email}</span></div> },
     { key: 's', header: t('colSource'), nowrap: true, render: (l) => <SourceStatus lead={l} /> },
     { key: 'd', header: t('colCreated'), nowrap: true, render: (l) => <span className="am-muted am-num">{shortDate(l.created_at)}</span> },
   ]

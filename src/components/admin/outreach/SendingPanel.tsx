@@ -71,7 +71,7 @@ export function SendingBody({ o, mailboxes, busy, onPatch, onSync }: {
           <Row label="Webhook" help="Zonder webhook komen reacties alleen via synchronisatie binnen."><Configured ok={o.provider.webhook_configured} no="Niet geconfigureerd (alleen sync)" /></Row>
           <Row label="Noodstop (omgeving)">{o.provider.env_kill_switch ? <Status tone="danger">Actief</Status> : <Status tone="muted">Niet actief</Status>}</Row>
           <Row label="Testmodus">{c.test_recipients.length ? <span>alleen naar: {c.test_recipients.join(', ')}</span> : <span className="am-muted">Uit (alle goedgekeurde prospects)</span>}</Row>
-          <Row label="Laatste wijziging"><span className="am-muted">{dateTime(c.updated_at)}{c.updated_by ? ` door ${c.updated_by}` : ''}{c.kill_reason ? ` — ${c.kill_reason}` : ''}</span></Row>
+          <Row label="Laatste wijziging"><span className="am-muted">{dateTime(c.updated_at)}{c.updated_by && !/^[0-9a-f-]{32,36}$/i.test(c.updated_by) ? ` door ${c.updated_by}` : ''}{c.kill_reason ? ` — ${c.kill_reason}` : ''}</span></Row>
           {onSync && o.provider.smartlead_configured && <Row label="Synchroniseren" help="Haalt statussen en reacties direct op bij Smartlead."><Button size="sm" icon="refresh" disabled={busy} onClick={onSync}>Nu synchroniseren</Button></Row>}
         </Rows>
       </Section>

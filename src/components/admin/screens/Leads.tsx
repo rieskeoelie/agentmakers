@@ -74,19 +74,19 @@ export function LeadsScreen() {
     { key: 'sel', shrink: true, header: <input type="checkbox" aria-label="Selecteer alles" checked={allSelected} onChange={() => setSelected(allSelected ? new Set() : new Set(rows.map((r) => r.id)))} />,
       render: (l) => <input type="checkbox" aria-label={`Selecteer ${l.naam}`} checked={selected.has(l.id)} onChange={() => toggle(l.id)} /> },
     { key: 'contact', header: t('colContact'), sort: (l) => (l.naam || l.bedrijfsnaam || '').toLowerCase(), render: (l) => (
-      <div style={{ minWidth: 180 }}>
-        <span className="am-cell-primary am-inline" style={{ gap: 6 }}>
+      <div style={{ minWidth: 150, maxWidth: 210 }}>
+        <span className="am-cell-primary am-inline" style={{ gap: 6, flexWrap: 'nowrap' }} title={l.naam || l.bedrijfsnaam || undefined}>
           {!seenAtOpen.current!.has(l.id) && <span title={t('newBadge')} style={{ width: 6, height: 6, borderRadius: 3, background: 'var(--am-accent)', flexShrink: 0 }} />}
-          {l.naam || '—'}
+          <span className="am-truncate" style={{ minWidth: 0 }}>{l.naam || l.bedrijfsnaam || '—'}</span>
         </span>
-        <span className="am-cell-secondary">{l.bedrijfsnaam || '—'}</span>
+        {l.naam && l.bedrijfsnaam && <span className="am-cell-secondary am-truncate" style={{ display: 'block' }} title={l.bedrijfsnaam}>{l.bedrijfsnaam}</span>}
       </div>) },
-    { key: 'email', header: t('colEmail'), render: (l) => <div style={{ maxWidth: 220 }}><span className="am-cell-primary am-truncate" style={{ fontWeight: 400, display: 'block' }} title={l.email}>{l.email}</span>{l.telefoon && <span className="am-cell-secondary">{l.telefoon}</span>}</div> },
+    { key: 'email', header: t('colEmail'), render: (l) => <div style={{ maxWidth: 200 }}><span className="am-cell-primary am-truncate" style={{ fontWeight: 400, display: 'block' }} title={l.email}>{l.email}</span>{l.telefoon && <span className="am-cell-secondary">{l.telefoon}</span>}</div> },
     { key: 'source', header: t('colSource'), sort: (l) => leadSource(l), render: (l) => <SourceStatus lead={l} />, nowrap: true },
     { key: 'stage', header: t('colStatus'), sort: (l) => STAGES.indexOf(stageOf(a.leadStatus, l.id)), render: (l) => <StageSelect value={stageOf(a.leadStatus, l.id)} onChange={(s) => a.setLeadStatus(l.id, s)} />, nowrap: true },
     { key: 'page', hide: 'lg', header: t('colPage'), sort: (l) => l.landing_page_slug, render: (l) => <span className="am-muted">/{l.landing_page_slug}</span>, nowrap: true },
     { key: 'lang', hide: 'md', header: t('colLanguage'), render: (l) => <span className="am-muted" style={{ textTransform: 'uppercase' }}>{l.language}</span>, shrink: true },
-    { key: 'conv', hide: 'sm', header: t('colConversation'), shrink: true, render: (l) => {
+    { key: 'conv', hide: 'md', header: t('colConversation'), shrink: true, render: (l) => {
       const c = matchedConversation(l, a.convIndex)
       return c ? <button type="button" className="am-link-btn am-inline" style={{ gap: 4, flexWrap: 'nowrap', whiteSpace: 'nowrap' }} onClick={() => a.navigate({ screen: 'conversations', id: c })}><Icon name="phone" size={13} />{t('open')}</button> : <span className="am-faint">—</span>
     } },
