@@ -64,6 +64,13 @@ Rules:
 - Healthcare: never write that the AI diagnoses, assesses urgency or severity, triages, gives medical advice or decides treatment — even if the page says so. Use operational wording only: answers the call, asks predefined questions, follows the practice's routing rules/protocol, forwards urgent calls, schedules according to predefined rules.
 - Deliver the Campaign Brain ONLY through the structured output tool (submit_structured_output). Never answer in prose.`;
 
+/**
+ * Output-token allowance for Campaign Brain generation. 3000 truncated real responses (stop_reason=max_tokens →
+ * incomplete JSON → schema rejection) on the first production run; a full brain within the schema limits needs more.
+ * Applies to the campaign_brain call only (cached afterwards per page + language + model).
+ */
+export const CAMPAIGN_BRAIN_MAX_TOKENS = 6000;
+
 export async function buildCampaignBrain(
   url: string,
   language: "nl" | "en",
@@ -93,7 +100,7 @@ export async function buildCampaignBrain(
     system: SYSTEM,
     user: `Outreach language: ${language}\nSource URL: ${url}\n\n<landing_page>\n${text.replace(/<\/?landing_page>/gi, "")}\n</landing_page>`,
     schema: BrainExtractionSchema,
-    maxTokens: 3000,
+    maxTokens: CAMPAIGN_BRAIN_MAX_TOKENS,
   });
 
   // Deterministic gate: capability phrases must pass claim checks against flags derived from the page itself.
