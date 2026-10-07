@@ -39,6 +39,7 @@ export interface SendTickResult {
   cancelledByGate: number;
   synced: number;
   syncEvents: number;
+  syncHistory?: Array<{ send_id: string; items: number; types: Record<string, number> }>;
 }
 
 const SYSTEM: Actor = { userId: "autopilot", isAdmin: true, isSuperAdmin: true };
@@ -73,6 +74,7 @@ export async function runSendTick(ctx: SendContext, opts: { push?: boolean; sync
     const s = await syncWithProvider(ctx, sl, 25, opts.syncMinAgeSeconds);
     r.synced = s.synced;
     r.syncEvents = s.events;
+    r.syncHistory = s.history;
   }
   return r;
 }
@@ -249,12 +251,15 @@ export async function repairWebhooks(ctx: SendContext, sl: SmartleadPort): Promi
 }
 
 /** Missed-webhook safety net: replays Smartlead's message history as idempotent provider events. */
-export async function syncWithProvider(ctx: SendContext, sl: SmartleadPort, limit = 25, minAgeSeconds = 600): Promise<{ synced: number; events: number }> {
+export async function syncWithProvider(ctx: SendContext, sl: SmartleadPort, limit = 25, minAgeSeconds = 600): Promise<{ synced: number; events: number; history: Array<{ send_id: string; items: number; types: Record<string, number> }> }> {
   let synced = 0;
   let events = 0;
+  const seen: Array<{ send_id: string; items: number; types: Record<string, number> }> = [];
   for (const c of await sendRepo.syncCandidates(ctx.db, limit, minAgeSeconds)) {
     try {
       const history = await sl.messageHistory(c.campaign_id, c.lead_id);
+      // Diagnostics without content: how many history items of each type the provider returned.
+      seen.push({ send_id: c.send_id, items: history.length, types: history.reduce<Record<string, number>>((a, h) => ({ ...a, [h.raw_type ?? h.type]: (a[h.raw_type ?? h.type] ?? 0) + 1 }), {}) });
       let step = 0;
       for (const h of history) {
         if (h.type === "SENT") step++;
@@ -275,5 +280,5 @@ export async function syncWithProvider(ctx: SendContext, sl: SmartleadPort, limi
       ctx.log?.("sync failed", { send: c.send_id, error: errMsg(e) });
     }
   }
-  return { synced, events };
+  return { synced, events, history: seen };
 }

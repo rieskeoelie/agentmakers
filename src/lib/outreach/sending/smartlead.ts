@@ -44,6 +44,8 @@ export interface SmartleadMailbox {
 
 export interface SmartleadHistoryItem {
   type: "SENT" | "REPLY" | "OTHER";
+  /** Provider type as returned (diagnostics only). */
+  raw_type?: string | null;
   stats_id: string | null;
   message_id: string | null;
   time: string | null;
@@ -93,6 +95,7 @@ export function normalizeHistoryItem(raw: unknown): SmartleadHistoryItem {
   const type = t === "SENT" || t === "OUTBOUND" ? "SENT" : t === "REPLY" || t === "INBOUND" || t === "REPLIED" ? "REPLY" : "OTHER";
   return {
     type,
+    raw_type: t ? t.slice(0, 30) : null,
     stats_id: str(h.stats_id ?? h.email_stats_id ?? h.id),
     message_id: str(h.message_id ?? h.messageId),
     time: str(h.time ?? h.sent_time ?? h.sent_at ?? h.received_at ?? h.reply_time),
