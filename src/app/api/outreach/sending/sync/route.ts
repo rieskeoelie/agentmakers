@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     requireOperator(actor)
     const ctx = sendContext(outreachDb(), sendingEnvFrom(), (m, d) => console.log('[outreach-sync]', m, d ?? ''))
-    const send = await runSendTick(ctx, { push: false, sync: true })
+    const send = await runSendTick(ctx, { push: false, sync: true, syncMinAgeSeconds: 15 })
     const analysis = await runAnalysisTick(ctx, replyLlmFactory(loadOutreachEnv()))
     return NextResponse.json({ send, analysis })
   } catch (e) {

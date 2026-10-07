@@ -44,7 +44,7 @@ export interface SendTickResult {
 const SYSTEM: Actor = { userId: "autopilot", isAdmin: true, isSuperAdmin: true };
 const errMsg = (e: unknown) => String((e as Error)?.message ?? e).slice(0, 500);
 
-export async function runSendTick(ctx: SendContext, opts: { push?: boolean; sync?: boolean } = {}): Promise<SendTickResult> {
+export async function runSendTick(ctx: SendContext, opts: { push?: boolean; sync?: boolean; syncMinAgeSeconds?: number } = {}): Promise<SendTickResult> {
   const r: SendTickResult = { enabled: false, stopped: 0, campaignsPaused: 0, campaignsResumed: 0, autopilotQueued: 0, pushed: 0, pushFailed: 0, cancelledByGate: 0, synced: 0, syncEvents: 0 };
   const sl = ctx.smartlead;
   const config = await sendRepo.config(ctx.db);
@@ -70,7 +70,7 @@ export async function runSendTick(ctx: SendContext, opts: { push?: boolean; sync
   }
   if (opts.sync !== false) {
     await repairWebhooks(ctx, sl);
-    const s = await syncWithProvider(ctx, sl);
+    const s = await syncWithProvider(ctx, sl, 25, opts.syncMinAgeSeconds);
     r.synced = s.synced;
     r.syncEvents = s.events;
   }
@@ -249,10 +249,10 @@ export async function repairWebhooks(ctx: SendContext, sl: SmartleadPort): Promi
 }
 
 /** Missed-webhook safety net: replays Smartlead's message history as idempotent provider events. */
-export async function syncWithProvider(ctx: SendContext, sl: SmartleadPort, limit = 25): Promise<{ synced: number; events: number }> {
+export async function syncWithProvider(ctx: SendContext, sl: SmartleadPort, limit = 25, minAgeSeconds = 600): Promise<{ synced: number; events: number }> {
   let synced = 0;
   let events = 0;
-  for (const c of await sendRepo.syncCandidates(ctx.db, limit)) {
+  for (const c of await sendRepo.syncCandidates(ctx.db, limit, minAgeSeconds)) {
     try {
       const history = await sl.messageHistory(c.campaign_id, c.lead_id);
       let step = 0;
