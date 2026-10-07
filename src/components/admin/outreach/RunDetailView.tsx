@@ -1,7 +1,7 @@
 'use client'
-import { useCallback, useEffect, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import {
-  Bar, BlockSkeleton, Button, Callout, DataTable, ErrorState, KeyValue, LinkButton, Menu, Metrics, Page, PageHeader, Section, Timeline, useLoad, type Column,
+  Bar, BlockSkeleton, Button, Callout, DataTable, ErrorState, KeyValue, LinkButton, Menu, Metrics, Page, PageHeader, Section, useLoad, type Column,
 } from '../ds'
 import { useAdmin } from '../app/AdminContext'
 import { dateTime, duration, eur } from '../../../lib/outreach/ui/format'
@@ -13,8 +13,10 @@ import type { RunOverview, TimelineEvent } from '../../../lib/outreach/ui/types'
 import { MODE_COPY } from '../../../lib/outreach/ui/newRun'
 import type { RunAction } from '../../../lib/outreach/orchestration/states'
 import { RunStatus, useRunActions } from './RunsView'
+import { RunActivity } from './RunActivity'
+import type { OutcomeCounts } from './activity'
 import { RunSendingSection } from './SendingPanel'
-import { EVENT_TONE, eventLabel } from './tones'
+import { eventLabel } from './tones'
 
 const EVENT_LABEL: Record<string, string> = {
   RUN_CREATED: 'Run aangemaakt', RUN_STATUS: 'Status gewijzigd', RUN_BUDGET: 'Budget gewijzigd', RUN_MODE: 'Modus gewijzigd', SETUP_CLAIMED: 'Bedrijven zoeken gestart',
@@ -65,13 +67,12 @@ type ErrRow = RunOverview['errors'][number]
 type BlockedRow = RunOverview['blocked'][number]
 
 /** Presentational run detail body: metrics, funnel, blockers/errors, cost and activity. */
-export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, sending, activeIndex = null }: {
-  data: RunOverview; sending?: ReactNode; activeIndex?: number | null; onAction?: (a: RunAction) => void; onOpenProspect: (id: string) => void; onOpenProspects?: () => void; busy?: boolean; canOperate?: boolean; now?: number
+export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, sending, activeIndex = null, names = {}, outcomes }: {
+  data: RunOverview; sending?: ReactNode; activeIndex?: number | null; names?: Record<string, string>; outcomes?: OutcomeCounts; onAction?: (a: RunAction) => void; onOpenProspect: (id: string) => void; onOpenProspects?: () => void; busy?: boolean; canOperate?: boolean; now?: number
 }) {
   const r = data.run
   const p = runProgress(r)
   const used = budgetUse(r)
-  const events = data.recent_events.filter((e) => e.type !== 'PROSPECT_CLAIMED').slice(0, 20)
 
   const errCols: Array<Column<ErrRow>> = [
     { key: 'co', header: 'Bedrijf', render: (e) => <LinkButton onClick={() => onOpenProspect(e.id)}>{e.company_name}</LinkButton> },
@@ -95,7 +96,7 @@ export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, send
         { label: 'Kosten', value: eur(r.spent_eur), sub: `van ${eur(r.budget_cap_eur)} · ${used}%`, tone: used >= 90 ? 'danger' : undefined },
       ]} />
 
-      <div className="am-split" style={{ marginTop: 24 }}>
+      <div className="am-split" data-aside="wide" style={{ marginTop: 24 }}>
         <div>
           <Section title="Funnel" aside={onOpenProspects ? <LinkButton onClick={onOpenProspects}>Alle prospects van deze run →</LinkButton> : undefined}>
             <div className="am-panel am-panel-pad" data-testid="run-funnel">
@@ -140,7 +141,7 @@ export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, send
           </Section>
           <Section title="Activiteit">
             <div className="am-panel am-panel-pad">
-              <Timeline items={events.map((e) => ({ id: e.id, time: dateTime(e.created_at), text: eventText(e), tone: EVENT_TONE(e.type) }))} />
+              <RunActivity events={data.recent_events} funnel={r.funnel} outcomes={outcomes} names={names} onOpenProspect={onOpenProspect} />
             </div>
           </Section>
         </aside>
@@ -162,12 +163,20 @@ export function RunDetailScreen({ runId }: { runId: string }) {
   }, [live, reload])
 
   // Which funnel step is being processed: derived from the run's own prospects (existing endpoint, ≤ 20 per run).
-  const needsSteps = live && data?.run.setup_state === 'DONE'
+  // Also gives the activity timeline the company names of its prospects.
   const { data: steps, reload: reloadSteps } = useLoad(useCallback(
-    () => (needsSteps ? a.api.listProspects({ ...EMPTY_FILTERS, run_id: runId }, 0).then((p) => p.items) : Promise.resolve(null)),
-    [a.api, runId, needsSteps]))
-  useEffect(() => { if (data) reloadSteps() }, [data, reloadSteps])
-  const activeIndex = data ? activeFunnelIndex(data.run, steps) : null
+    () => a.api.listProspects({ ...EMPTY_FILTERS, run_id: runId }, 0).then((p) => p.items).catch(() => null),
+    [a.api, runId]))
+  useEffect(() => { if (live) reloadSteps() }, [data, live, reloadSteps])
+  const activeIndex = data ? activeFunnelIndex(data.run, data.run.setup_state === 'DONE' ? steps : null) : null
+  const names = useMemo(() => Object.fromEntries((steps ?? []).map((p) => [p.id, p.company_name])), [steps])
+  // Outcome counts for the completion summary — only when the full list of the run's prospects is known.
+  const outcomes = useMemo(() => {
+    if (!steps || !data || steps.length < data.run.funnel.total) return undefined
+    const c: OutcomeCounts = {}
+    for (const p of steps) if (p.outcome) c[p.outcome] = (c[p.outcome] ?? 0) + 1
+    return c
+  }, [steps, data])
 
   const toRuns = () => a.navigate({ screen: 'outreach', view: 'runs' })
   const r = data?.run
@@ -193,7 +202,7 @@ export function RunDetailScreen({ runId }: { runId: string }) {
       {actionError && <div style={{ marginBottom: 16 }}><Callout tone="danger" action={<Button size="sm" variant="ghost" onClick={clearError}>Sluiten</Button>}>{actionError}</Callout></div>}
       {error && !data && <ErrorState message={error} onRetry={reload} />}
       {!data && !error && <BlockSkeleton lines={8} />}
-      {data && <RunDetailBody data={data} activeIndex={activeIndex} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })}
+      {data && <RunDetailBody data={data} activeIndex={activeIndex} names={names} outcomes={outcomes} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })}
         onOpenProspects={() => a.navigate({ screen: 'outreach', view: 'prospects', runId: data.run.id })}
         sending={data.run.status !== 'CREATED' ? <RunSendingSection runId={data.run.id} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })} /> : undefined} />}
       {confirmDialog}
