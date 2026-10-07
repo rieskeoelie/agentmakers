@@ -459,3 +459,8 @@
 @media (max-width: 1360px) { .am-table [data-hide='md'] { display: none; } }
 @media (max-width: 1180px) { .am-table [data-hide='sm'] { display: none; } }
 @media (max-width: 1520px) { .am-table [data-hide='lg'] { display: none; } }
+
+/* Funnel: the step being processed gets a calm pulse on its track only (no text, no opacity flashing, no layout change). */
+@keyframes am-track-pulse { 0%, 100% { background-color: var(--am-hover); } 50% { background-color: #ccefe9; } }
+.am-bar[data-state='active'] { animation: am-track-pulse 2.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .am-bar[data-state='active'] { animation: none; } }

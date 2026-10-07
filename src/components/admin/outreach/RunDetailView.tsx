@@ -6,7 +6,9 @@ import {
 import { useAdmin } from '../app/AdminContext'
 import { dateTime, duration, eur } from '../../../lib/outreach/ui/format'
 import { reasonLabel } from '../../../lib/outreach/ui/review'
-import { budgetUse, funnelSteps, geography, isLive, PAUSE_REASON_LABEL, RUN_STATUS_META, runActions, runProgress } from '../../../lib/outreach/ui/runs'
+import { activeFunnelIndex, budgetUse, funnelRowState, funnelSteps, geography, isLive, PAUSE_REASON_LABEL, RUN_STATUS_META, runActions, runProgress } from '../../../lib/outreach/ui/runs'
+import { EMPTY_FILTERS } from '../../../lib/outreach/ui/prospects'
+import type { RunFunnel as RunFunnelCounts } from '../../../lib/outreach/ui/types'
 import type { RunOverview, TimelineEvent } from '../../../lib/outreach/ui/types'
 import { MODE_COPY } from '../../../lib/outreach/ui/newRun'
 import type { RunAction } from '../../../lib/outreach/orchestration/states'
@@ -31,17 +33,43 @@ export function eventText(e: TimelineEvent): string {
   return base
 }
 
+const ROW_TONE: Partial<Record<string, 'success' | 'warning'>> = { ready: 'success', needs_review: 'warning' }
+
+/**
+ * Run funnel. Completed rows keep their colour and stay static, the one row being processed gets a calm pulse on its
+ * track (never on text or numbers), later rows are neutral grey. With nothing processing every row is static.
+ */
+export function RunFunnelChart({ funnel, activeIndex }: { funnel: RunFunnelCounts; activeIndex: number | null }) {
+  const steps = funnelSteps(funnel)
+  const max = Math.max(1, ...steps.map((s) => s.value))
+  return (
+    <div className="am-stack am-funnel" style={{ gap: 10 }}>
+      {steps.map((s, i) => {
+        const state = funnelRowState(i, activeIndex)
+        return (
+          <div key={s.key} className="am-funnel-row" data-state={state} aria-current={state === 'active' ? 'step' : undefined}
+            title={state === 'active' ? 'Wordt nu verwerkt' : undefined}
+            style={{ display: 'grid', gridTemplateColumns: '150px 1fr 48px', alignItems: 'center', gap: 12 }}>
+            <span className="am-muted">{s.label}</span>
+            <Bar pct={Math.round((s.value / max) * 100)} state={state === 'active' ? 'active' : undefined}
+              tone={state === 'future' ? 'muted' : ROW_TONE[s.key]} />
+            <span className="am-num am-strong" style={{ textAlign: 'right' }}>{s.value}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 type ErrRow = RunOverview['errors'][number]
 type BlockedRow = RunOverview['blocked'][number]
 
 /** Presentational run detail body: metrics, funnel, blockers/errors, cost and activity. */
-export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, sending }: {
-  data: RunOverview; sending?: ReactNode; onAction?: (a: RunAction) => void; onOpenProspect: (id: string) => void; onOpenProspects?: () => void; busy?: boolean; canOperate?: boolean; now?: number
+export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, sending, activeIndex = null }: {
+  data: RunOverview; sending?: ReactNode; activeIndex?: number | null; onAction?: (a: RunAction) => void; onOpenProspect: (id: string) => void; onOpenProspects?: () => void; busy?: boolean; canOperate?: boolean; now?: number
 }) {
   const r = data.run
   const p = runProgress(r)
-  const steps = funnelSteps(r.funnel)
-  const max = Math.max(1, ...steps.map((s) => s.value))
   const used = budgetUse(r)
   const events = data.recent_events.filter((e) => e.type !== 'PROSPECT_CLAIMED').slice(0, 20)
 
@@ -71,15 +99,7 @@ export function RunDetailBody({ data, onOpenProspect, onOpenProspects, now, send
         <div>
           <Section title="Funnel" aside={onOpenProspects ? <LinkButton onClick={onOpenProspects}>Alle prospects van deze run →</LinkButton> : undefined}>
             <div className="am-panel am-panel-pad" data-testid="run-funnel">
-              <div className="am-stack" style={{ gap: 10 }}>
-                {steps.map((s) => (
-                  <div key={s.key} style={{ display: 'grid', gridTemplateColumns: '150px 1fr 48px', alignItems: 'center', gap: 12 }}>
-                    <span className="am-muted">{s.label}</span>
-                    <Bar pct={Math.round((s.value / max) * 100)} tone={s.key === 'needs_review' ? 'warning' : s.key === 'ready' ? 'success' : undefined} />
-                    <span className="am-num am-strong" style={{ textAlign: 'right' }}>{s.value}</span>
-                  </div>
-                ))}
-              </div>
+              <RunFunnelChart funnel={r.funnel} activeIndex={activeIndex} />
               <p className="am-faint" style={{ margin: '12px 0 0', fontSize: 12 }}>
                 Ook: {r.funnel.blocked} geblokkeerd · {r.funnel.skipped} overgeslagen · {r.funnel.failed} mislukt{r.funnel.cancelled ? ` · ${r.funnel.cancelled} geannuleerd` : ''}
               </p>
@@ -141,6 +161,14 @@ export function RunDetailScreen({ runId }: { runId: string }) {
     return () => clearInterval(t)
   }, [live, reload])
 
+  // Which funnel step is being processed: derived from the run's own prospects (existing endpoint, ≤ 20 per run).
+  const needsSteps = live && data?.run.setup_state === 'DONE'
+  const { data: steps, reload: reloadSteps } = useLoad(useCallback(
+    () => (needsSteps ? a.api.listProspects({ ...EMPTY_FILTERS, run_id: runId }, 0).then((p) => p.items) : Promise.resolve(null)),
+    [a.api, runId, needsSteps]))
+  useEffect(() => { if (data) reloadSteps() }, [data, reloadSteps])
+  const activeIndex = data ? activeFunnelIndex(data.run, steps) : null
+
   const toRuns = () => a.navigate({ screen: 'outreach', view: 'runs' })
   const r = data?.run
   const actions = r ? runActions(r).filter((x) => a.canOperate || x.action === 'pause' || x.action === 'stop') : []
@@ -165,7 +193,7 @@ export function RunDetailScreen({ runId }: { runId: string }) {
       {actionError && <div style={{ marginBottom: 16 }}><Callout tone="danger" action={<Button size="sm" variant="ghost" onClick={clearError}>Sluiten</Button>}>{actionError}</Callout></div>}
       {error && !data && <ErrorState message={error} onRetry={reload} />}
       {!data && !error && <BlockSkeleton lines={8} />}
-      {data && <RunDetailBody data={data} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })}
+      {data && <RunDetailBody data={data} activeIndex={activeIndex} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })}
         onOpenProspects={() => a.navigate({ screen: 'outreach', view: 'prospects', runId: data.run.id })}
         sending={data.run.status !== 'CREATED' ? <RunSendingSection runId={data.run.id} onOpenProspect={(id) => a.navigate({ screen: 'outreach', view: 'prospect', id })} /> : undefined} />}
       {confirmDialog}

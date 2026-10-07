@@ -176,8 +176,8 @@ export function KeyValue({ items, cols, dense }: { items: Array<[string, ReactNo
   )
 }
 
-export function Bar({ pct, tone }: { pct: number | null; tone?: 'warning' | 'success' | 'danger' | 'muted' }) {
-  return <div className="am-bar" data-tone={tone} aria-label={pct === null ? 'onbekend' : `${pct}%`}><span style={{ width: `${pct ?? 0}%` }} /></div>
+export function Bar({ pct, tone, state }: { pct: number | null; tone?: 'warning' | 'success' | 'danger' | 'muted'; state?: 'active' }) {
+  return <div className="am-bar" data-tone={tone} data-state={state} aria-label={pct === null ? 'onbekend' : `${pct}%`}><span style={{ width: `${pct ?? 0}%` }} /></div>
 }
 
 export function Avatar({ name, size }: { name: string; size?: 'md' }) {

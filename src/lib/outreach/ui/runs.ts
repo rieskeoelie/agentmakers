@@ -1,4 +1,4 @@
-import { planRunAction, RUN_ACTIONS, type RunAction, type RunStatus } from "../orchestration/states";
+import { planRunAction, RUN_ACTIONS, type PipelineStep, type ProspectQueueState, type RunAction, type RunStatus } from "../orchestration/states";
 import { percent } from "./format";
 import type { RunFunnel, RunSummary } from "./types";
 
@@ -85,4 +85,40 @@ export function geography(c: { country: string; region?: string | null }): strin
 
 export function budgetUse(run: Pick<RunSummary, "spent_eur" | "budget_cap_eur">): number {
   return percent(Number(run.spent_eur), Number(run.budget_cap_eur));
+}
+
+/** Funnel row (index into funnelSteps) that a prospect at this pipeline step is working towards. */
+const STEP_ROW: Record<PipelineStep, number> = {
+  RESEARCH: 1, COMPANY_BRAIN: 1, FIT: 2, DECISION_MAKER: 3, EMAIL: 4, ELIGIBILITY: 4, PERSONALIZATION: 5, DONE: 6,
+};
+
+/**
+ * The funnel row that is currently being processed, derived from existing state only:
+ * - while the run is live and setup (company search) is not done → "Gevonden" (row 0);
+ * - afterwards → the earliest step any still-open (PENDING / IN_PROGRESS) prospect of the run is at.
+ * Returns null when nothing is processing (not live, finished, paused, failed) or prospects are not known yet.
+ */
+export function activeFunnelIndex(
+  run: Pick<RunSummary, "status" | "setup_state">,
+  prospects: Array<{ queue_state: ProspectQueueState; current_step: PipelineStep }> | null | undefined,
+): number | null {
+  if (!isLive(run.status)) return null;
+  if (run.setup_state !== "DONE") return 0;
+  if (!prospects) return null;
+  let min: number | null = null;
+  for (const p of prospects) {
+    if (p.queue_state !== "PENDING" && p.queue_state !== "IN_PROGRESS") continue;
+    const row = STEP_ROW[p.current_step] ?? 1;
+    if (row > 5) continue;
+    min = min === null ? row : Math.min(min, row);
+  }
+  return min;
+}
+
+export type FunnelRowState = "complete" | "active" | "future" | "idle";
+
+/** complete before the active row, active (exactly one), future after it; "idle" for every row when nothing is processing. */
+export function funnelRowState(index: number, active: number | null): FunnelRowState {
+  if (active === null) return "idle";
+  return index < active ? "complete" : index === active ? "active" : "future";
 }
