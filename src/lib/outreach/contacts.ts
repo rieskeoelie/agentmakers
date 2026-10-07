@@ -3,12 +3,13 @@ import { rootDomain } from "./domain";
 import type { ContactProvider, HunterContact } from "./providers/hunter";
 import { extractFirstNameOwners, extractPeople, type FetchedPage, type WebsitePerson } from "./research";
 import { hunterMetadataDecisionMakers, matchRole, rankContacts, type RoleMatch } from "./roles";
-import { findDecisionMakerViaPublicSearch, type PublicSearchReport } from "./publicSearch";
+import { findDecisionMakerViaPublicSearch, type NearMatchCandidate, type PublicSearchReport } from "./publicSearch";
 import type { PublicSearchProvider } from "./providers/dataforseo";
 import { discoverTeamPages, type SameDomainTrace } from "./sameDomain";
 import type { PageFetcher } from "./research";
 import type { CostTracker } from "./cost";
 import { defaultVocabulary, type RoleVocabulary } from "./vocabulary";
+import type { RegistryLookupInput, RegistrySource, RegistryTrace } from "./registry";
 
 export type ContactSource =
   | "hunter_domain_search"
@@ -20,6 +21,11 @@ export type ContactSource =
   /** Named decision maker from public search-result metadata (strong person+role+company evidence). */
   | "public_search+hunter_email_finder"
   | "public_search"
+  /** Named decision maker from an official company registry (extension point; no provider integrated yet). */
+  | "registry+hunter_email_finder"
+  | "registry"
+  /** Review-only: strong business-name near match with corroboration, address from Email Finder. Never READY. */
+  | "public_search_near_match+hunter_email_finder"
   | "none";
 
 export interface ContactSelection {
@@ -48,7 +54,11 @@ export interface ContactSelection {
    * owner/director title (no surname — never inferred). "first_name_hunter_match": that first name matched exactly one
    * Hunter contact on the company's mail domain (full name from Hunter; always routed to review).
    */
-  identification?: "full_name" | "first_name_only" | "first_name_hunter_match";
+  identification?: "full_name" | "first_name_only" | "first_name_hunter_match" | "near_match_review";
+  /** Official registry stage trace (NOT_CONFIGURED until a registry provider is added). */
+  registry?: RegistryTrace | null;
+  /** Review-only near-match candidate (identity NOT confirmed) — kept for the reviewer even when no email was found. */
+  near_match?: NearMatchCandidate | null;
   /** Audit: Hunter Domain Search people (name, position, verdict) — no email addresses of non-selected people. */
   hunter_candidates?: HunterCandidateAudit[];
   /** Domains Domain Search ran on: the website domain + at most one mail domain published on the company's own site. */
@@ -113,11 +123,13 @@ export async function discoverContact(input: {
   hunter: ContactProvider;
   prospect: string;
   /** Optional public-search fallback; runs only when Hunter Domain Search AND website discovery found no relevant named person. */
-  publicSearch?: { provider: PublicSearchProvider; companyName: string; city: string | null; language: "nl" | "en"; country: string };
+  publicSearch?: { provider: PublicSearchProvider; companyName: string; city: string | null; language: "nl" | "en"; country: string; phone?: string | null; address?: string | null };
   /** Optional same-domain team/leadership page discovery (≤3 extra pages) when crawled pages name no decision maker. */
   sameDomain?: { fetcher: PageFetcher; homeUrl: string; search?: PublicSearchProvider; language: "nl" | "en"; country: string; cost?: CostTracker };
   /** Niche-aware role vocabulary. When given, its effective priority replaces `priority` for title matching. */
   vocabulary?: RoleVocabulary;
+  /** Optional official registry source (see registry.ts). Absent → trace NOT_CONFIGURED, pipeline unchanged. */
+  registry?: { source: RegistrySource; lookup: RegistryLookupInput };
 }): Promise<ContactSelection> {
   const notes: string[] = [];
   const vocab = input.vocabulary ?? defaultVocabulary(input.priority);
@@ -129,6 +141,8 @@ export async function discoverContact(input: {
     public_search: null as PublicSearchReport | null,
     same_domain_discovery: null as SameDomainTrace | null,
     identification: undefined as ContactSelection["identification"],
+    near_match: null as NearMatchCandidate | null,
+    registry: null as RegistryTrace | null,
     hunter_candidates: [] as HunterCandidateAudit[],
     email_domains_searched: [input.domain] as string[],
   };
@@ -264,11 +278,53 @@ export async function discoverContact(input: {
     }
   }
 
+  // Official registry stage (extension point) — after Hunter + the company's own website, before public search,
+  // only while no FULLY named decision maker is known. A registry officer can complete a first-name-only owner.
+  if (identified) base.registry = { status: "NOT_NEEDED", reason: "FULLY_NAMED_DECISION_MAKER_ALREADY_IDENTIFIED" };
+  else if (!input.registry) base.registry = { status: "NOT_CONFIGURED" };
+  else {
+    const src = input.registry.source.name;
+    try {
+      const r = await input.registry.source.lookup(input.registry.lookup, input.prospect);
+      if (r.status === "not_found") base.registry = { status: "NOT_FOUND", source: src };
+      else if (r.status === "ambiguous") base.registry = { status: "AMBIGUOUS", source: src };
+      else if (r.match.confidence === "medium") base.registry = { status: "NO_COMPANY_MATCH", source: src };
+      else {
+        const rejected: Array<{ full_name: string; role: string; reason: string }> = [];
+        const ok: Array<{ o: (typeof r.officers)[number]; m: RoleMatch }> = [];
+        for (const o of r.officers) {
+          const m = matchRole(o.role, priority);
+          if (!m) rejected.push({ full_name: o.full_name, role: o.role, reason: "ROLE_NOT_DECISION_MAKER" });
+          else if (!o.first_name || !o.last_name) rejected.push({ full_name: o.full_name, role: o.role, reason: "NO_FULL_NAME" });
+          else ok.push({ o, m });
+        }
+        const pf = partial?.first_name ? fold(partial.first_name) : null;
+        ok.sort((a, b) => Number(fold(b.o.first_name) === pf) - Number(fold(a.o.first_name) === pf) || a.m.rank - b.m.rank);
+        const sel = ok[0];
+        base.registry = { status: "FOUND", source: src, company: r.company.legal_name, officers_seen: r.officers.length, selected: sel ? { full_name: sel.o.full_name, role: sel.o.role, confidence: sel.o.confidence } : null, rejected };
+        if (sel) {
+          const who = { name: sel.o.full_name, first_name: sel.o.first_name, last_name: sel.o.last_name, title: sel.o.role, title_source_url: sel.o.evidence.source_url, role_match: sel.m, identification: "full_name" as const };
+          notes.push(`Registry ${src}: "${sel.o.full_name}" (${sel.o.role}) for ${r.company.legal_name}.`);
+          const f = await input.hunter.emailFinder(input.domain, sel.o.first_name, sel.o.last_name, input.prospect);
+          if (f?.email && !isGenericEmail(f.email)) {
+            return { ...base, ...who, source: "registry+hunter_email_finder", email: f.email, email_source: "hunter_email_finder", verification_status: f.verification_status, hunter_confidence: f.score, linkedin: f.linkedin };
+          }
+          if (f?.email && !base.company_generic_emails.includes(f.email)) base.company_generic_emails.push(f.email);
+          identified = { ...who, source: "registry", linkedin: null };
+        }
+      }
+    } catch (e) {
+      if ((e as Error).name === "BudgetExceededError") throw e;
+      base.registry = { status: "ERROR", source: src, error: (e as Error).message.slice(0, 200) };
+      notes.push(`Registry ${src} error (not treated as "not found"): ${(e as Error).message.slice(0, 120)}`);
+    }
+  }
+
   // Public search fallback — only when neither Hunter nor the website yielded a relevant (fully) named person.
   if (!identified && input.publicSearch) {
     const ps = await findDecisionMakerViaPublicSearch({
       search: input.publicSearch.provider,
-      company: { name: input.publicSearch.companyName, domain: input.domain, city: input.publicSearch.city },
+      company: { name: input.publicSearch.companyName, domain: input.domain, city: input.publicSearch.city, phone: input.publicSearch.phone ?? null, address: input.publicSearch.address ?? null },
       priority,
       language: input.publicSearch.language,
       country: input.publicSearch.country,
@@ -291,6 +347,23 @@ export async function discoverContact(input: {
       if (f?.email && !base.company_generic_emails.includes(f.email)) base.company_generic_emails.push(f.email);
       notes.push(`Public search found "${c.full_name}" (${c.title}), but Email Finder found no business address.`);
       identified = { ...who, source: "public_search", linkedin: c.is_linkedin_result ? c.result_url : null };
+    }
+    // Review-only near match (identity not confirmed): only when no verified candidate was found.
+    const nm = !c ? ps.review_candidates?.[0] : undefined;
+    if (nm) {
+      base.near_match = nm;
+      notes.push(`Review-only near match: "${nm.full_name}" (${nm.title}) at "${nm.organisation}" — ${nm.uncertainty} Corroboration: ${nm.corroboration.join(", ")}.`);
+      const f = await input.hunter.emailFinder(input.domain, nm.first_name, nm.last_name, input.prospect);
+      if (f?.email && !isGenericEmail(f.email)) {
+        notes.push(`Email Finder found an address for near match "${nm.full_name}" — review only, never READY.`);
+        return {
+          ...base, name: nm.full_name, first_name: nm.first_name, last_name: nm.last_name, title: nm.title, title_source_url: nm.result_url, role_match: nm.role_match,
+          source: "public_search_near_match+hunter_email_finder", email: f.email, email_source: "hunter_email_finder", verification_status: f.verification_status,
+          hunter_confidence: f.score, linkedin: null, identification: "near_match_review",
+        };
+      }
+      if (f?.email && !base.company_generic_emails.includes(f.email)) base.company_generic_emails.push(f.email);
+      notes.push(`Email Finder found no business address for near match "${nm.full_name}" — kept as review information only.`);
     }
   }
 

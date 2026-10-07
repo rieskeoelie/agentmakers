@@ -48,7 +48,7 @@ export type ProspectOutcome =
 /** Live progress marker derived from the provider call being made (monotonic). */
 export function stepForCall(provider: string, method: string): PipelineStep | null {
   if (provider === "hunter" && (method === "domainSearch" || method === "emailFinder")) return "DECISION_MAKER";
-  if (provider === "publicSearch") return "DECISION_MAKER";
+  if (provider === "publicSearch" || provider === "registry") return "DECISION_MAKER";
   if (provider === "hunter" && method === "verify") return "ELIGIBILITY";
   if (provider === "prospeo") return "EMAIL";
   if (provider === "llm" && method === "personalization_hook") return "PERSONALIZATION";

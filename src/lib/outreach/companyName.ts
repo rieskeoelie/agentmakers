@@ -12,11 +12,25 @@
 
 export const fold = (s: string) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
+/**
+ * Cross-niche business descriptors (automotive + general trade words). A name made only of these plus a city
+ * ("Autohuis Hoorn", "Autocentrum Hoorn") is NOT distinctive: the city is part of its identity and is kept, and
+ * association with off-domain search results then needs domain evidence. Franchise/brand names (e.g. "Vakgarage")
+ * are deliberately not listed.
+ */
+export const GENERIC_BUSINESS_TOKENS = [
+  "auto", "autos", "autohuis", "autocentrum", "autobedrijf", "autobedrijven", "autoservice", "autogarage", "autodealer", "autohandel",
+  "autoschade", "autotechniek", "autorijschool", "automotive", "garage", "garages", "garagebedrijf", "bandenservice", "banden",
+  "bandencentrum", "carservice", "carcenter", "dealer", "occasion", "occasions", "schadeherstel", "apk", "service", "services",
+  "bedrijf", "handel", "techniek", "onderhoud", "reparatie",
+];
+
 const GENERIC = new Set([
   "tandarts", "tandartsen", "tandartspraktijk", "tandartspraktijken", "tandheelkunde", "tandheelkundig", "tandheelkundige", "centrum", "center", "centre",
   "praktijk", "mondzorg", "mondzorgpraktijk", "mondzorgcentrum", "mondhygiene", "mondhygienist", "dental", "dentist", "dentistry", "clinic", "clinics",
   "kliniek", "practice", "orthodontie", "orthodontist", "orthodontics", "implantologie", "parodontologie", "kindertandarts", "spoedtandarts",
   "zorg", "groep", "group", "care", "specialistische", "tandartsspoedpraktijk",
+  ...GENERIC_BUSINESS_TOKENS,
 ]);
 const STOP = new Set(["van", "de", "der", "den", "het", "en", "&", "voor", "the", "and", "of", "te", "in", "'t", "t"]);
 const LEGAL = /^(b\.?v\.?|n\.?v\.?|v\.?o\.?f\.?|vof|maatschap|i\.?o\.?|bv|nv|holding)$/i;
@@ -121,4 +135,15 @@ export function matchCompanyAlias(text: string, ca: CompanyAliases): AliasMatch 
     }
   }
   return ambiguous ? { matched: false, ambiguous } : { matched: false };
+}
+
+
+/** Does the name (city removed) still carry a distinctive, non-generic token? */
+export function isDistinctiveCompanyName(name: string, city: string | null): boolean {
+  return companyAliases(name, city).brand.length > 0;
+}
+
+/** Generic business descriptor, stopword or legal-form token (folded). */
+export function isGenericOrStopToken(t: string): boolean {
+  return GENERIC.has(t) || STOP.has(t) || LEGAL.test(t) || t === "b" || t === "v";
 }

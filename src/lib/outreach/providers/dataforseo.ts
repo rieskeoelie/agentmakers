@@ -180,6 +180,16 @@ export const DFS_ORGANIC_LIVE_URL = "https://api.dataforseo.com/v3/serp/google/o
 export const DFS_ORGANIC_EST_USD = 0.002;
 /** DataForSEO task status "No Search Results." (https://docs.dataforseo.com/v3/appendix/errors/). */
 export const DFS_NO_SEARCH_RESULTS = 40102;
+/**
+ * Task statuses treated as transient provider-side failures (retried once): 40101 "Internal SE Server Error"
+ * (seen live) and the 50000-range internal errors. Never retried: 40102 no results, 400xx/404xx invalid requests,
+ * 401xx/402xx/403xx authentication / payment / access, and any non-200 HTTP response.
+ */
+export function isTransientDfsTaskStatus(code: number | undefined): boolean {
+  return code === 40101 || (code !== undefined && code >= 50000 && code < 51000);
+}
+export const DFS_TRANSIENT_MAX_RETRIES = 1;
+export const DFS_TRANSIENT_BACKOFF_MS = 1500;
 const ADVANCED_OPERATOR = /\b(site|inurl|intitle|allinurl|allintitle|intext|allintext):/i;
 
 export function estimateOrganicUsd(keyword: string): number {
@@ -208,9 +218,29 @@ export class DataForSeoOrganicSearch implements PublicSearchProvider {
   ) {}
 
   async search(keyword: string, prospect: string, q: { country: string; language: string }): Promise<SearchResult[]> {
+    // One bounded retry for transient provider-side task errors (e.g. 40101 "Internal SE Server Error").
+    // Both attempts are recorded; the first failure stays visible in the audit trail.
+    for (let attempt = 1; ; attempt++) {
+      const r = await this.attempt(keyword, prospect, q, attempt);
+      if (r.kind === "items") return this.toResults(r.items);
+      if (r.kind === "transient" && attempt < 1 + DFS_TRANSIENT_MAX_RETRIES) {
+        await this.sleep(DFS_TRANSIENT_BACKOFF_MS * attempt);
+        continue;
+      }
+      throw r.error;
+    }
+  }
+
+  /** Test seam: bounded backoff wait. */
+  protected sleep(ms: number): Promise<void> {
+    return new Promise((res) => setTimeout(res, ms));
+  }
+
+  private async attempt(keyword: string, prospect: string, q: { country: string; language: string }, attempt: number): Promise<{ kind: "items"; items: unknown[] } | { kind: "transient" | "fatal"; error: Error }> {
     const est = estimateOrganicUsd(keyword) * this.usdToEur;
     this.cost.guard("dataforseo", "serp_organic_live", prospect, est);
     const auth = Buffer.from(`${this.creds.login}:${this.creds.password}`).toString("base64");
+    const tag = attempt > 1 ? ` attempt=${attempt}` : "";
     let res;
     try {
       res = await requestJson(DFS_ORGANIC_LIVE_URL, {
@@ -222,8 +252,8 @@ export class DataForSeoOrganicSearch implements PublicSearchProvider {
         fetchImpl: this.fetchImpl,
       });
     } catch (e) {
-      this.cost.record({ prospect, provider: "dataforseo", operation: "serp_organic_live", estimated_cost_eur: est, actual_cost_eur: null, native_cost: null, result: "error", detail: String((e as Error).message) });
-      throw e;
+      this.cost.record({ prospect, provider: "dataforseo", operation: "serp_organic_live", estimated_cost_eur: est, actual_cost_eur: null, native_cost: null, result: "error", detail: `${String((e as Error).message)}${tag}` });
+      return { kind: "fatal", error: e as Error };
     }
     const parsed = MapsResponse.safeParse(res.body);
     const usd = parsed.success ? (parsed.data.cost ?? null) : null;
@@ -232,14 +262,21 @@ export class DataForSeoOrganicSearch implements PublicSearchProvider {
     // 40102 "No Search Results" is a valid, empty answer — not a provider failure.
     const noResults = res.status === 200 && parsed.success && task?.status_code === DFS_NO_SEARCH_RESULTS;
     const ok = res.status === 200 && parsed.success && (task?.status_code === 20000 || noResults);
+    const transient = !ok && res.status === 200 && parsed.success && isTransientDfsTaskStatus(task?.status_code);
     this.cost.record({
       prospect, provider: "dataforseo", operation: "serp_organic_live", estimated_cost_eur: est,
       actual_cost_eur: usd === null ? null : usd * this.usdToEur, native_cost: usd === null ? null : `$${usd}`,
       result: !ok ? "error" : items.length && !noResults ? "ok" : "empty",
-      detail: `keyword=${JSON.stringify(keyword)} task_status=${task?.status_code ?? "?"}`,
+      detail: `keyword=${JSON.stringify(keyword)} task_status=${task?.status_code ?? "?"}${tag}${transient ? " transient" : ""}`,
     });
-    if (noResults) return [];
-    if (!ok) throw new Error(`DataForSEO organic HTTP ${res.status} task ${task?.status_code ?? "?"}: ${task?.status_message ?? "unexpected response"}`);
+    if (noResults) return { kind: "items", items: [] };
+    if (!ok) {
+      return { kind: transient ? "transient" : "fatal", error: new Error(`DataForSEO organic HTTP ${res.status} task ${task?.status_code ?? "?"}: ${task?.status_message ?? "unexpected response"}${tag}`) };
+    }
+    return { kind: "items", items };
+  }
+
+  private toResults(items: unknown[]): SearchResult[] {
     const out: SearchResult[] = [];
     for (const raw of items) {
       const p = OrganicItem.safeParse(raw);

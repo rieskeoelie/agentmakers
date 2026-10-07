@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { TestDb } from "../stage2/helpers.js";
 import { createTestDb } from "../stage2/helpers.js";
-import { STAGE3_MIGRATION } from "../stage3/helpers.js";
+import { IDENTITY_REVIEW_MIGRATION, STAGE3_MIGRATION } from "../stage3/helpers.js";
 import type { SmartleadHistoryItem, SmartleadLeadInput, SmartleadMailbox, SmartleadPort, SmartleadSequenceStep } from "../../../src/lib/outreach/sending/smartlead.js";
 import { SmartleadError } from "../../../src/lib/outreach/sending/smartlead.js";
 import type { SendContext } from "../../../src/lib/outreach/sending/sender.js";
@@ -31,6 +31,9 @@ export async function createStage4Db(): Promise<TestDb> {
   const sql = readFileSync(STAGE4_MIGRATION, "utf8");
   await t.pg.exec(sql);
   await t.pg.exec(sql); // re-runnable
+  const identity = readFileSync(IDENTITY_REVIEW_MIGRATION, "utf8");
+  await t.pg.exec(identity);
+  await t.pg.exec(identity); // re-runnable
   return t;
 }
 

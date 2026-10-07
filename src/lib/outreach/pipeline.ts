@@ -15,6 +15,7 @@ import type { LLMProvider } from "./providers/anthropic";
 import { renderEmail, validateMessage, type ProspectStatus, type RenderedEmail } from "./render";
 import { extractEvidence, fetchWebsite, type PageFetcher } from "./research";
 import { roleVocabulary } from "./vocabulary";
+import type { RegistrySource } from "./registry";
 
 export type StageName = "prefilter" | "website_fetch" | "evidence" | "fit" | "contact" | "eligibility" | "brief" | "hook" | "render";
 export interface StageStatus {
@@ -63,6 +64,7 @@ export type ProspeoTrace =
  * review-only (e.g. accept_all) address. Never for CONTACT_NOT_FOUND and never after a valid eligible Hunter email.
  */
 export function prospeoDecision(contact: ContactSelection, hunterEligibility: Eligibility): { run: boolean; reason: string } {
+  if (contact.identification === "near_match_review") return { run: false, reason: "NEAR_MATCH_IDENTITY_UNCONFIRMED" };
   if (!contact.name || !contact.first_name || !contact.last_name || contact.source === "none") return { run: false, reason: "NO_IDENTIFIED_DECISION_MAKER" };
   if (contact.source === "hunter_metadata" || !contact.role_match) return { run: false, reason: "DECISION_MAKER_NOT_STRONGLY_IDENTIFIED" };
   if (!contact.email) return { run: true, reason: "HUNTER_NO_EMAIL" };
@@ -102,6 +104,8 @@ export interface PipelineDeps {
   prospeo?: EmailFallbackProvider;
   /** Public decision-maker search fallback (DataForSEO organic). Optional. */
   publicSearch?: PublicSearchProvider;
+  /** Official company-registry source (extension point, see registry.ts). Not configured anywhere yet. */
+  registry?: RegistrySource;
   settings: { maxPages: number; maxTextChars: number; concurrency: number };
 }
 
@@ -197,7 +201,8 @@ export async function processProspect(company: DiscoveredCompany, index: number,
     const vocabulary = roleVocabulary(campaign.niche, campaign.decision_maker_priority);
     const contact = await discoverContact({
       domain, pages: site.pages, priority: vocabulary.priority, vocabulary, hunter: deps.hunter, prospect: domain,
-      publicSearch: deps.publicSearch ? { provider: deps.publicSearch, companyName: company.company_name, city: company.city, language: campaign.language, country: campaign.country } : undefined,
+      publicSearch: deps.publicSearch ? { provider: deps.publicSearch, companyName: company.company_name, city: company.city, language: campaign.language, country: campaign.country, phone: company.phone, address: company.address } : undefined,
+      registry: deps.registry ? { source: deps.registry, lookup: { company_name: company.company_name, domain, city: company.city, country: campaign.country, address: company.address } } : undefined,
       sameDomain: { fetcher: deps.websiteFetcher, homeUrl: rec.pages[0]!.url, search: deps.publicSearch, language: campaign.language, country: campaign.country, cost: deps.cost },
     });
     rec.contact = contact;
@@ -258,6 +263,12 @@ export async function processProspect(company: DiscoveredCompany, index: number,
       } else {
         rec.status = contact.failure_reason === "DECISION_MAKER_EMAIL_NOT_FOUND" ? "DECISION_MAKER_EMAIL_NOT_FOUND" : "CONTACT_NOT_FOUND";
         rec.status_reasons = [rec.status];
+        // First-name-only owner from the company's own site: a human may confirm the identity in review. Approval never
+        // creates a surname and never makes this READY without a usable email (the database keeps it non-READY).
+        if (contact.identification === "first_name_only" && rec.status === "DECISION_MAKER_EMAIL_NOT_FOUND") {
+          rec.status = "NEEDS_REVIEW";
+          rec.status_reasons = ["PARTIAL_NAME_MATCH_REVIEW", "DECISION_MAKER_EMAIL_NOT_FOUND"];
+        }
       }
       return finish(); // no LLM spend without a usable recipient
     }
@@ -291,6 +302,11 @@ export async function processProspect(company: DiscoveredCompany, index: number,
     rec.status = v.status;
     rec.status_reasons = v.issues;
     rec.warnings = v.warnings;
+    // A near match (identity not confirmed) is review-only — never READY, whatever the message validation says.
+    if (contact.identification === "near_match_review" && (rec.status === "READY" || rec.status === "NEEDS_REVIEW")) {
+      rec.status = "NEEDS_REVIEW";
+      rec.status_reasons = [...rec.status_reasons, "NEAR_MATCH_IDENTITY_UNCONFIRMED"];
+    }
     // A decision maker matched on first name only (website title + one Hunter contact) is never auto-sendable.
     if (contact.identification === "first_name_hunter_match" && (rec.status === "READY" || rec.status === "NEEDS_REVIEW")) {
       rec.status = "NEEDS_REVIEW";

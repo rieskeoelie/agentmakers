@@ -4,6 +4,7 @@ import type { LLMProvider, StructuredRequest } from "../providers/anthropic";
 import type { CompanyDiscoveryProvider, PublicSearchProvider } from "../providers/dataforseo";
 import type { ContactProvider } from "../providers/hunter";
 import type { EmailFallbackProvider } from "../providers/prospeo";
+import type { RegistrySource } from "../registry";
 import type { PageFetcher } from "../research";
 import type { OutreachDb } from "./db";
 import { repo, type JournalEntry } from "./repository";
@@ -131,6 +132,11 @@ export class CallRecorder {
 
   emailFallback(p: EmailFallbackProvider): EmailFallbackProvider {
     return { enrichPerson: (req, prospect) => this.call("prospeo", "enrichPerson", [req, prospect], () => p.enrichPerson(req, prospect)) };
+  }
+
+  /** Official registry source (extension point): lookups are journaled like every other paid provider call. */
+  registry(p: RegistrySource): RegistrySource {
+    return { name: p.name, lookup: (input, prospect) => this.call("registry", "lookup", [input, prospect], () => p.lookup(input, prospect)) };
   }
 
   publicSearch(p: PublicSearchProvider): PublicSearchProvider {

@@ -82,7 +82,8 @@ export async function prospectDetailForActor(db: OutreachDb, actor: Actor, prosp
   const d = await adminRepo.getProspectDetail(db, actor, prospectId);
   if (d.prospect.outcome !== "NEEDS_REVIEW") return d;
   const check = decisionMakerRoleCheck(d.prospect.record?.contact?.title, d.run.decision_maker_priority);
-  return { ...d, review_blockers: withRoleBlockers(d.review_blockers, check) };
+  const identity_review = await adminRepo.identityReview(db, d.prospect.id); // access verified by getProspectDetail above
+  return { ...d, review_blockers: withRoleBlockers(d.review_blockers, check), identity_review };
 }
 
 const ReviewBodySchema = z.object({

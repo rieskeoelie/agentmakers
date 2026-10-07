@@ -1,5 +1,6 @@
 import type {
   Page, ProspectDetail, ProspectListItem, ReviewAction, ReviewActionResult, ReviewQueueItem, RunOverview, RunSummary, SendingMode,
+  IdentityReview,
 } from "../ui/types";
 import type { OutreachDb } from "./db";
 import type { Actor } from "./repository";
@@ -45,4 +46,7 @@ export const adminRepo = {
     db.rpc<{ title: string | null; priority: unknown }>("outreach_review_role_input", { p_prospect_id: prospectId, ...actorArgs(actor) }),
 
   reviewBlockers: (db: OutreachDb, prospectId: string) => db.rpc<string[]>("outreach_review_blockers", { p_prospect_id: prospectId }),
+
+  /** Identity-review verdict (no access check — call only after the caller's access to the prospect was verified). */
+  identityReview: (db: OutreachDb, prospectId: string) => db.rpc<IdentityReview | null>("outreach_identity_review", { p_prospect_id: prospectId }),
 };

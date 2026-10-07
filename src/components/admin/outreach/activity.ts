@@ -131,6 +131,11 @@ export function describeEvent(e: TimelineEvent, funnel?: RunFunnel, outcomes?: O
     case 'PROSPECT_LEASE_EXPIRED': return { group: 'p-lease', one: 'Prospect hervat na onderbreking', many: (n) => `${n} prospects hervat na onderbreking`, tone: 'neutral', level: 'detail' }
     case 'PROSPECT_BLOCKED': return { group: 'p-blocked', one: 'Prospect geblokkeerd', many: (n) => `${n} prospects geblokkeerd`, tone: 'warning', level: 'detail' }
     case 'REVIEW_DECISION': {
+      if (d.decision === 'APPROVE' && d.identity_accepted === true) {
+        return d.outcome === 'READY'
+          ? { group: 'review:identity', one: 'Identiteit handmatig bevestigd → READY', many: (n) => `${n} identiteiten handmatig bevestigd`, tone: 'success', level: 'detail' }
+          : { group: 'review:identity-pending', one: 'Identiteit handmatig bevestigd (nog geen bruikbaar e-mailadres)', many: (n) => `${n} identiteiten bevestigd zonder e-mailadres`, tone: 'neutral', level: 'detail' }
+      }
       const r = REVIEW[s(d.decision)] ?? { one: 'Reviewbesluit genomen', tone: 'neutral' as const }
       return { group: `review:${s(d.decision)}`, one: r.one, many: (n) => `${r.one} (${n}×)`, tone: r.tone, level: 'detail' }
     }

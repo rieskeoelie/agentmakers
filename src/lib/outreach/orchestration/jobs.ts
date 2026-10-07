@@ -90,6 +90,7 @@ export async function runProspectJob(ctx: WorkerContext, job: ClaimedProspect): 
     llm: rec.llm(base.llm),
     prospeo: base.prospeo ? rec.emailFallback(base.prospeo) : undefined,
     publicSearch: base.publicSearch ? rec.publicSearch(base.publicSearch) : undefined,
+    registry: base.registry ? rec.registry(base.registry) : undefined,
     websiteFetcher: capturingFetcher(base.websiteFetcher, pages),
     cost,
     brainCache: undefined,

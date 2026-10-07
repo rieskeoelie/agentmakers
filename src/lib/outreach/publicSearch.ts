@@ -4,7 +4,7 @@ import { isPersonName, sanitizeSnippet, splitName, looksLikeInjection } from "./
 import { jobTitleVerdict, matchRole, type RoleMatch } from "./roles";
 import { DEFAULT_ROLE_PRIORITY } from "./config";
 import { defaultVocabulary, type RoleVocabulary } from "./vocabulary";
-import { companyAliases, fold as foldName, matchCompanyAlias, strongNameAliases } from "./companyName";
+import { companyAliases, fold as foldName, isGenericOrStopToken, matchCompanyAlias, strongNameAliases } from "./companyName";
 
 /** Recover the original-cased words of an alias from the company name (for readable queries). */
 function aliasDisplay(companyName: string, alias: string): string {
@@ -52,6 +52,8 @@ export interface PublicSearchReport {
   errors: string[];
   /** Audit: every result seen (title + URL without query string) and the verdict for candidate discovery. */
   results?: Array<{ title: string; url: string; verdict: string }>;
+  /** Review-only near matches (never verified decision makers), best first. */
+  review_candidates?: NearMatchCandidate[];
 }
 
 /** URL for audit storage: origin + path only (no query string / fragment). */
@@ -71,9 +73,19 @@ export function coreCompanyName(name: string): string {
   return name.split(/\s+[|–—-]\s+|:\s+/)[0]!.replace(/\b(b\.?v\.?|v\.?o\.?f\.?|n\.?v\.?)\s*$/i, "").trim();
 }
 
-export function buildQueries(companyName: string, language: "nl" | "en", city: string | null = null, vocabulary: RoleVocabulary = defaultVocabulary(DEFAULT_ROLE_PRIORITY)): string[] {
+/**
+ * Company name used in search queries. A location suffix is only removed when what remains is distinctive
+ * ("Octant Mondzorg Hoorn" → "Octant Mondzorg"); a generic remainder keeps its locality ("Autohuis Hoorn",
+ * "Autocentrum Hoorn" stay as they are — "Autohuis" alone would match every Autohuis in the country).
+ * Taglines (": Tandarts & …") and legal suffixes (B.V.) are always dropped.
+ */
+export function searchCompanyName(companyName: string, city: string | null): string {
   const alias = companyAliases(companyName, city).aliases[0];
-  const n = (alias ? aliasDisplay(companyName, alias) : coreCompanyName(companyName)).replace(/"/g, "");
+  return (alias ? aliasDisplay(companyName, alias) : coreCompanyName(companyName)).replace(/"/g, "");
+}
+
+export function buildQueries(companyName: string, language: "nl" | "en", city: string | null = null, vocabulary: RoleVocabulary = defaultVocabulary(DEFAULT_ROLE_PRIORITY)): string[] {
+  const n = searchCompanyName(companyName, city);
   const roles = `(${vocabulary.searchRoles[language].join(" OR ")})`;
   const liRoles = `(${vocabulary.linkedinRoles[language].join(" OR ")})`;
   return [`"${n}" ${roles}`, `site:linkedin.com/in "${n}" ${liRoles}`].slice(0, MAX_PUBLIC_SEARCHES);
@@ -143,11 +155,81 @@ function nameRolePairs(text: string, priority: string[]): Array<{ name: string; 
   return out;
 }
 
+export interface SearchCompany {
+  name: string;
+  domain: string;
+  city: string | null;
+  /** Optional company facts used ONLY as independent corroboration for review-only near matches. */
+  phone?: string | null;
+  address?: string | null;
+}
+
+/**
+ * A plausible but unconfirmed decision maker: the result names an organisation that is a strong business-name match
+ * ("Garage Verburg B.V." for "Autobedrijf Verburg") AND at least one independent company-specific signal corroborates
+ * it (same locality, company domain, phone or street address in the same result). Never a verified decision maker:
+ * at most a REVIEW candidate (never READY, never Prospeo).
+ */
+export interface NearMatchCandidate {
+  full_name: string;
+  first_name: string;
+  last_name: string;
+  title: string;
+  role_match: RoleMatch;
+  result_url: string;
+  evidence: string;
+  organisation: string;
+  similarity: "STRONG_BUSINESS_NAME_MATCH";
+  corroboration: Array<"SAME_LOCALITY" | "COMPANY_DOMAIN" | "COMPANY_PHONE" | "COMPANY_ADDRESS">;
+  uncertainty: string;
+}
+
+export const NEAR_MATCH_UNCERTAINTY = "Bedrijfsnaam komt sterk overeen, maar identiteit is niet volledig bevestigd.";
+
+const LEGAL_SUFFIX = /[\s,]*\b(b\.?\s?v\.?|n\.?\s?v\.?|v\.?\s?o\.?\s?f\.?|holding)\s*$/i;
+const tokensOf = (s: string) => foldName(s).replace(/[^a-z0-9&' ]/g, " ").split(/\s+/).filter(Boolean);
+
+/** Organisation names a result associates with the person ("… bij Garage Verburg B.V.", LinkedIn headline segments). */
+function organisationsIn(r: SearchResult): string[] {
+  const out: string[] = [];
+  const text = `${r.title} | ${r.snippet}`;
+  for (const m of text.matchAll(/(?:\bbij|\bat|@|\bvan)\s+([A-ZÀ-Ý0-9][^|·•,;()–—\n]{1,60})/g)) out.push(m[1]!.trim());
+  if (isLinkedInProfile(r.url)) {
+    const segs = r.title.replace(/\s*\|\s*LinkedIn.*$/i, "").split(/\s+[-–—|]\s+/).slice(1);
+    for (const sgm of segs) out.push(sgm.replace(/^.*?\b(bij|at)\s+/i, "").trim());
+  }
+  return [...new Set(out.map((o) => o.replace(/[.\s]+$/, "").trim()).filter(Boolean))];
+}
+
+/** Strong business-name similarity: every distinctive company token is present and the rest is only generic wording. */
+export function strongBusinessNameMatch(organisation: string, ca: ReturnType<typeof companyAliases>): boolean {
+  const distinctive = ca.brand.filter((b) => b.length >= 3);
+  if (!distinctive.length) return false;
+  const org = tokensOf(organisation.replace(LEGAL_SUFFIX, ""));
+  if (!distinctive.every((d) => org.includes(d))) return false;
+  const rest = org.filter((t) => !distinctive.includes(t));
+  return rest.every((t) => isGenericOrStopToken(t) || ca.cityTokens.includes(t));
+}
+
+function corroborationFor(r: SearchResult, company: SearchCompany, ca: ReturnType<typeof companyAliases>): NearMatchCandidate["corroboration"] {
+  const text = `${r.title} ${r.snippet} ${r.url}`;
+  const toks = new Set(tokensOf(text));
+  const out: NearMatchCandidate["corroboration"] = [];
+  if (ca.cityTokens.length && ca.cityTokens.every((c) => toks.has(c))) out.push("SAME_LOCALITY");
+  const root = rootDomain(company.domain);
+  if (root && (rootDomain(r.url) === root || foldName(text).includes(root))) out.push("COMPANY_DOMAIN");
+  const digits = (company.phone ?? "").replace(/\D/g, "").slice(-9);
+  if (digits.length === 9 && text.replace(/\D/g, "").includes(digits)) out.push("COMPANY_PHONE");
+  const street = (company.address ?? "").match(/^([A-Za-zÀ-ÿ.' -]{3,}?)\s+(\d+[a-zA-Z]?)\b/);
+  if (street && foldName(text).includes(`${foldName(street[1]!.trim())} ${street[2]!.toLowerCase()}`)) out.push("COMPANY_ADDRESS");
+  return out;
+}
+
 export function evaluateResult(
   r: SearchResult,
-  company: { name: string; domain: string; city: string | null },
+  company: SearchCompany,
   priority: string[],
-): { candidate: PublicSearchCandidate | null; reason?: string; name?: string; title?: string } {
+): { candidate: PublicSearchCandidate | null; reason?: string; name?: string; title?: string; near_match?: NearMatchCandidate } {
   const text = `${r.title} — ${r.snippet}`;
   if (looksLikeInjection(text)) return { candidate: null, reason: "INSTRUCTION_LIKE_TEXT_IGNORED" };
   const ca = companyAliases(company.name, company.city, company.domain);
@@ -203,6 +285,23 @@ export function evaluateResult(
     ambiguous = inTitle.ambiguous ?? inSnippet.ambiguous;
   }
   if (!association) {
+    // Review-only near match: strong business-name similarity + at least one independent company-specific signal.
+    const { first_name: nf, last_name: nl } = splitName(best.name);
+    if (!ambiguous && nl) {
+      const org = organisationsIn(r).find((o) => strongBusinessNameMatch(o, ca));
+      if (org) {
+        const corroboration = corroborationFor(r, company, ca);
+        if (!corroboration.length) return { candidate: null, reason: "NEAR_MATCH_WITHOUT_CORROBORATION", name: best.name, title: best.title };
+        return {
+          candidate: null, reason: "REVIEW_NEAR_MATCH", name: best.name, title: best.title,
+          near_match: {
+            full_name: best.name, first_name: nf, last_name: nl, title: best.title, role_match: best.match, result_url: r.url,
+            evidence: sanitizeSnippet(text, 300), organisation: org.slice(0, 80), similarity: "STRONG_BUSINESS_NAME_MATCH", corroboration,
+            uncertainty: NEAR_MATCH_UNCERTAINTY,
+          },
+        };
+      }
+    }
     return { candidate: null, reason: ambiguous
         ? `AMBIGUOUS_COMPANY_REFERENCE (${ambiguous})`
         : !ca.aliases.length && !ca.compact
@@ -230,7 +329,7 @@ export function evaluateResult(
 /** Run ≤2 public searches; stop as soon as a strong candidate is found. Never fetches result URLs. */
 export async function findDecisionMakerViaPublicSearch(input: {
   search: PublicSearchProvider;
-  company: { name: string; domain: string; city: string | null };
+  company: SearchCompany;
   priority: string[];
   language: "nl" | "en";
   country: string;
@@ -238,7 +337,7 @@ export async function findDecisionMakerViaPublicSearch(input: {
   /** Niche-aware query wording (default: generic, no practice terms). */
   vocabulary?: RoleVocabulary;
 }): Promise<PublicSearchReport> {
-  const report: PublicSearchReport = { queries: [], results_seen: 0, selected: null, rejected: [], errors: [], results: [] };
+  const report: PublicSearchReport = { queries: [], results_seen: 0, selected: null, rejected: [], errors: [], results: [], review_candidates: [] };
   for (const q of buildQueries(input.company.name, input.language, input.company.city, input.vocabulary).slice(0, MAX_PUBLIC_SEARCHES)) {
     report.queries.push(q);
     let results: SearchResult[];
@@ -255,12 +354,15 @@ export async function findDecisionMakerViaPublicSearch(input: {
       const ev = evaluateResult(r, input.company, input.priority);
       report.results!.push({ title: sanitizeSnippet(r.title, 140), url: auditUrl(r.url), verdict: ev.candidate ? "CANDIDATE" : ev.reason ?? "NO_CANDIDATE" });
       if (ev.candidate) strong.push(ev.candidate);
-      else if (ev.name || ev.reason === "INSTRUCTION_LIKE_TEXT_IGNORED") report.rejected.push({ result_url: r.url, reason: ev.reason!, name: ev.name, title: ev.title });
+      else if (ev.near_match) {
+        if (!report.review_candidates!.some((c) => c.full_name === ev.near_match!.full_name)) report.review_candidates!.push(ev.near_match);
+      } else if (ev.name || ev.reason === "INSTRUCTION_LIKE_TEXT_IGNORED") report.rejected.push({ result_url: r.url, reason: ev.reason!, name: ev.name, title: ev.title });
     }
     if (strong.length) {
       report.selected = strong.sort((a, b) => a.role_match.rank - b.role_match.rank || (a.confidence === b.confidence ? 0 : a.confidence === "high" ? -1 : 1))[0]!;
       return report;
     }
   }
+  report.review_candidates!.sort((a, b) => a.role_match.rank - b.role_match.rank || b.corroboration.length - a.corroboration.length);
   return report;
 }

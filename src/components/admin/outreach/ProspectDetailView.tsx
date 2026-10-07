@@ -6,11 +6,12 @@ import {
 import { useAdmin } from '../app/AdminContext'
 import { dateTime, eur } from '../../../lib/outreach/ui/format'
 import { splitEvidence, STEP_LABEL, themeFacts } from '../../../lib/outreach/ui/prospects'
-import { reasonLabel, splitReasons } from '../../../lib/outreach/ui/review'
+import { reasonLabel, reviewApprovability, splitReasons } from '../../../lib/outreach/ui/review'
 import type { EvidenceItem, ProspectDetail } from '../../../lib/outreach/ui/types'
 import { eventText } from './RunDetailView'
 import { FitChip, LifecycleChip, VerificationChip } from './ProspectsView'
 import { ProspectSendingSection } from './SendingPanel'
+import { IdentityReviewPanel } from './IdentityReviewPanel'
 import { EVENT_TONE } from './tones'
 
 type Ev = Pick<EvidenceItem, 'kind' | 'ref' | 'signal' | 'statement' | 'snippet' | 'source_url' | 'strength'> & Partial<EvidenceItem>
@@ -87,6 +88,7 @@ export function ProspectDetailBody({ d, outreach }: { d: ProspectDetail; outreac
   const cited = new Set(rec?.hook?.hook?.evidence_ids ?? [])
   const total = d.provider_calls.reduce((s, c) => s + Number(c.cost_eur), 0)
   const { hard, resolvable } = splitReasons(p.outcome_reasons)
+  const appr = reviewApprovability(d.review_blockers, d.identity_review)
   const callCols: Array<Column<Call>> = [
     { key: 't', header: 'Tijd', nowrap: true, render: (c) => <span className="am-num am-muted">{dateTime(c.called_at)}</span> },
     { key: 'p', header: 'Provider', render: (c) => <span className="am-strong">{c.provider}</span> },
@@ -103,10 +105,13 @@ export function ProspectDetailBody({ d, outreach }: { d: ProspectDetail; outreac
   return (
     <div className="am-split">
       <div>
-        {p.outcome === 'NEEDS_REVIEW' && d.review_blockers.length > 0 && (
+        {p.outcome === 'NEEDS_REVIEW' && !appr.approvable && (
           <div data-testid="review-blockers" style={{ marginBottom: 24 }}>
-            <Callout tone="danger" title="Kan niet worden goedgekeurd">{d.review_blockers.map(reasonLabel).join(' · ')}</Callout>
+            <Callout tone="danger" title="Kan niet worden goedgekeurd">{appr.hard.map(reasonLabel).join(' · ')}</Callout>
           </div>
+        )}
+        {p.outcome === 'NEEDS_REVIEW' && d.identity_review?.substantiated && (
+          <div style={{ marginBottom: 24 }}><IdentityReviewPanel identity={d.identity_review} missingAfterApproval={appr.missingAfterApproval} /></div>
         )}
         {(hard.length > 0 || resolvable.length > 0) && p.outcome !== 'READY' && (
           <div style={{ marginBottom: 24 }} className="am-stack">

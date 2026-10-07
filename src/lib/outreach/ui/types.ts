@@ -154,6 +154,7 @@ export interface ProspectDetail {
   events: TimelineEvent[];
   review_decisions: Array<{ id: string; decision: string; reviewer_user_id: string; reason: string | null; notes: string | null; created_at: string }>;
   review_blockers: string[];
+  identity_review?: IdentityReview | null;
 }
 
 export interface FitView {
@@ -211,6 +212,7 @@ export interface ReviewQueueItem {
   outcome_reasons: string[];
   warnings: string[];
   blockers: string[];
+  identity_review?: IdentityReview | null;
   evidence: Array<{ kind: "FACT" | "INFERENCE"; ref: string; signal: string | null; statement: string; snippet: string | null; source_url: string | null; strength: string | null }>;
   hook: { personalization_hook: string; evidence_ids: string[] } | null;
   email_draft: { subject: string; body: string } | null;
@@ -223,6 +225,22 @@ export interface ReviewActionResult {
   outcome: ProspectOutcome;
   blockers?: string[];
   decision_id?: string;
+  /** True when the approval accepted a person/company identity (identity review). */
+  identity_accepted?: boolean;
+  /** Recipient data still missing after an identity approval (prospect stays non-READY). */
+  missing_after_approval?: string[];
+}
+
+/** Server verdict for an identity review (outreach_identity_review). */
+export interface IdentityReview {
+  reason: "PARTIAL_NAME_MATCH_REVIEW" | "NEAR_MATCH_IDENTITY_UNCONFIRMED";
+  substantiated: boolean;
+  candidate: { name: string | null; first_name: string | null; last_name: string | null; title: string | null; source: string | null; identification: string | null; title_source_url: string | null };
+  evidence: {
+    near_match?: { full_name: string; organisation: string; result_url: string; evidence: string; corroboration: string[]; uncertainty: string } | null;
+    title_source_url?: string | null;
+    surname_source?: string | null;
+  };
 }
 
 export interface OutreachSettingsView {

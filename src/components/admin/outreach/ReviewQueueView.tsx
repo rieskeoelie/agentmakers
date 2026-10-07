@@ -4,8 +4,9 @@ import { Button, Callout, EmptyState, ErrorState, ExtLink, KeyValue, LinkButton,
 import { useAdmin } from '../app/AdminContext'
 import { ApiError } from '../../../lib/outreach/ui/api'
 import { eur } from '../../../lib/outreach/ui/format'
-import { reasonLabel, REVIEW_ACTION_COPY, splitReasons } from '../../../lib/outreach/ui/review'
+import { identityApprovalText, reasonLabel, REVIEW_ACTION_COPY, reviewApprovability, splitReasons } from '../../../lib/outreach/ui/review'
 import type { Page, ReviewAction, ReviewQueueItem } from '../../../lib/outreach/ui/types'
+import { IdentityReviewPanel } from './IdentityReviewPanel'
 import { EvidenceList } from './ProspectDetailView'
 import { FitChip, VerificationChip } from './ProspectsView'
 
@@ -17,7 +18,8 @@ export function ReviewCard({ item, onAction, busy, message, onOpen }: {
   item: ReviewQueueItem; onAction: (a: ReviewAction) => void; busy?: boolean; message?: { kind: 'error' | 'ok'; text: string } | null; onOpen: () => void
 }) {
   const { resolvable, hard } = splitReasons(item.outcome_reasons)
-  const blocked = item.blockers.length > 0
+  const appr = reviewApprovability(item.blockers, item.identity_review)
+  const blocked = !appr.approvable
   const eligReasons = item.eligibility?.reasons.filter((r) => r !== 'NO_EMAIL') ?? []
   return (
     <article className="am-decision" data-testid="review-card">
@@ -32,9 +34,10 @@ export function ReviewCard({ item, onAction, busy, message, onOpen }: {
       <div className="am-decision-body">
         {blocked && (
           <div data-testid="approve-blocked">
-            <Callout tone="danger" title="Goedkeuren niet mogelijk — harde regel">{item.blockers.map(reasonLabel).join(' · ')}</Callout>
+            <Callout tone="danger" title="Goedkeuren niet mogelijk — harde regel">{appr.hard.map(reasonLabel).join(' · ')}</Callout>
           </div>
         )}
+        {item.identity_review?.substantiated && <IdentityReviewPanel identity={item.identity_review} missingAfterApproval={appr.missingAfterApproval} />}
 
         <div>
           <h3 className="am-subhead">Waarom review?</h3>
@@ -75,7 +78,7 @@ export function ReviewCard({ item, onAction, busy, message, onOpen }: {
       </div>
 
       <div className="am-decision-actions">
-        <Button variant="primary" icon="check" disabled={busy || blocked} title={blocked ? 'Harde regel: kan niet worden goedgekeurd' : REVIEW_ACTION_COPY.APPROVE.help} onClick={() => onAction('APPROVE')}>{REVIEW_ACTION_COPY.APPROVE.label}</Button>
+        <Button variant="primary" icon="check" disabled={busy || blocked} title={blocked ? 'Harde regel: kan niet worden goedgekeurd' : appr.kind === 'identity' ? 'Bevestigt de identiteit van deze kandidaat. Verstuurt niets.' : REVIEW_ACTION_COPY.APPROVE.help} onClick={() => onAction('APPROVE')}>{REVIEW_ACTION_COPY.APPROVE.label}</Button>
         <Button disabled={busy} title={REVIEW_ACTION_COPY.REJECT.help} onClick={() => onAction('REJECT')}>{REVIEW_ACTION_COPY.REJECT.label}</Button>
         <span style={{ flex: 1 }} />
         <Button variant="danger" disabled={busy} title={REVIEW_ACTION_COPY.EXCLUDE_COMPANY.help} onClick={() => onAction('EXCLUDE_COMPANY')}>{REVIEW_ACTION_COPY.EXCLUDE_COMPANY.label}</Button>
@@ -94,7 +97,8 @@ function QueueItem({ item, current, onSelect }: { item: ReviewQueueItem; current
       <div className="am-conv-sub">{item.contact_name ?? 'Geen beslisser'}{item.contact_title ? ` · ${item.contact_title}` : ''}</div>
       <div className="am-conv-meta">
         <FitChip fit={item.fit?.classification ?? null} />
-        {item.blockers.length > 0 && <Status tone="danger">Geblokkeerd</Status>}
+        {!reviewApprovability(item.blockers, item.identity_review).approvable ? <Status tone="danger">Geblokkeerd</Status>
+          : item.identity_review?.substantiated ? <Status tone="warning">Bevestiging nodig</Status> : null}
       </div>
     </button>
   )
@@ -113,11 +117,16 @@ export function ReviewQueueView() {
 
   const act = async (item: ReviewQueueItem, action: ReviewAction) => {
     if (action !== 'APPROVE' && !(await confirm({ title: `${REVIEW_ACTION_COPY[action].label}: ${item.company_name}?`, description: REVIEW_ACTION_COPY[action].help, confirmLabel: REVIEW_ACTION_COPY[action].label }))) return
+    if (action === 'APPROVE' && item.identity_review?.substantiated) {
+      // Identity approval: say exactly what is accepted (and that nothing is sent) before confirming.
+      const t = identityApprovalText(item.company_name, item.identity_review, reviewApprovability(item.blockers, item.identity_review).missingAfterApproval)
+      if (!(await confirm({ title: t.title, description: t.description, confirmLabel: 'Identiteit bevestigen' }))) return
+    }
     setBusy(true)
     const idx = items.findIndex((x) => x.id === item.id)
     try {
       const r = await a.api.review(item.id, action)
-      setMessage({ id: items[idx + 1]?.id ?? '', kind: 'ok', text: `${item.company_name}: ${r.outcome}` })
+      setMessage({ id: items[idx + 1]?.id ?? '', kind: 'ok', text: `${item.company_name}: ${r.identity_accepted ? 'identiteit bevestigd → ' : ''}${r.outcome}` })
       setSelected(items[idx + 1]?.id ?? items[idx - 1]?.id ?? null) // advance to the next decision
     } catch (e) {
       const blockers = e instanceof ApiError && Array.isArray(e.details?.blockers) ? (e.details!.blockers as string[]) : null
@@ -131,7 +140,7 @@ export function ReviewQueueView() {
     <div>
       <div style={{ marginBottom: 16 }}>
         <Callout tone="info" icon="shield" title="Goedkeuren verstuurt niets.">
-          Goedgekeurde prospects worden READY. Verzenden gebeurt alleen via de verzendwachtrij als verzenden centraal aan staat. Harde regels kun je niet overrulen.
+          Goedgekeurde prospects worden READY als alle regels kloppen; een bevestigde identiteit zonder bruikbaar e-mailadres blijft niet-READY. Verzenden gebeurt alleen via de verzendwachtrij als verzenden centraal aan staat. Harde regels kun je niet overrulen.
         </Callout>
       </div>
       {error && !data && <ErrorState message={error} onRetry={reload} />}
