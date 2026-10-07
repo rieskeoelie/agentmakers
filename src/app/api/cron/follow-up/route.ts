@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { isCronOrAdminKeyAuthorized } from '@/lib/cronAuth'
 import { sendFollowUpEmail } from '@/lib/email'
 
-// Runs daily at 09:00 via Vercel Cron
+// Runs daily at 09:00 via Vercel Cron — follow-up for INBOUND demo leads only (never cold outreach).
 // Finds leads created 3 days ago (±12h window) that have an email
 // and haven't received a follow-up yet, then sends follow-up email.
 // Tracks sent follow-ups via user_agent field suffix "|fu" to avoid
@@ -34,6 +34,10 @@ export async function GET(req: NextRequest) {
     .not('email', 'is', null)
     .neq('email', '')
     .not('demo_token', 'is', null)
+    // Inbound demo leads only. Cold outreach is handled by Smartlead (sequences + reply stop), never by this cron:
+    // exclude the retired bulk demo-link import (leads promoted from the outreach Inbox have no demo_token).
+    .neq('landing_page_slug', 'bulk-outreach')
+    .or('user_agent.is.null,user_agent.neq.bulk-import')
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

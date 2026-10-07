@@ -150,80 +150,8 @@ export async function sendAdminNotification(lead: LeadData) {
   })
 }
 
-// Email #3: Cold outreach to prospect (sent manually from admin)
-export async function sendOutreachEmail({
-  naam,
-  email,
-  bedrijfsnaam,
-  demo_url,
-  subject: customSubject,
-  body: customBody,
-}: {
-  naam: string
-  email: string
-  bedrijfsnaam: string
-  demo_url: string
-  subject?: string
-  body?: string
-}) {
-  const voornaam = naam.split(' ')[0]
-  const subject = customSubject || `${bedrijfsnaam} — uw persoonlijke AI receptioniste staat klaar`
-
-  // If AI-generated body provided, use it directly
-  if (customBody) {
-    const bodyHtml = customBody
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/\n/g, '<br>')
-    await resend.emails.send({
-      from: FROM, to: email, subject,
-      html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1E293B;line-height:1.7">${bodyHtml}</div>`,
-      text: customBody,
-    })
-    return
-  }
-
-  const html = `
-<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1E293B;line-height:1.7">
-  <p>Hallo${voornaam ? ` ${voornaam}` : ''},</p>
-  <p>Ik ben Richard van <strong>Agentmakers.io</strong> — wij bouwen AI receptionistes voor Nederlandse bedrijven.</p>
-  <p>Ik heb alvast een persoonlijke demo gemaakt voor <strong>${bedrijfsnaam}</strong>. Ze is getraind op jullie website en staat klaar om vragen van klanten te beantwoorden, 24/7.</p>
-  <p style="margin:28px 0;">
-    <a href="${demo_url}"
-       style="background:#0D9488;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:1rem;display:inline-block;">
-      🎤 Beluister uw persoonlijke AI demo
-    </a>
-  </p>
-  <p>Ze kan nu al uw bedrijf voorstellen, vragen over diensten en prijzen beantwoorden, en direct een afspraak inplannen.</p>
-  <p>Geen verplichtingen — het is gewoon leuk om te zien wat er al mogelijk is.</p>
-  <p>Met vriendelijke groet,<br><strong>Richard</strong><br>Agentmakers.io</p>
-  <hr style="border:none;border-top:1px solid #E2E8F0;margin:24px 0">
-  <p style="font-size:.78rem;color:#94A3B8;">U ontvangt deze mail omdat wij een demo hebben gemaakt voor ${bedrijfsnaam}. Wilt u geen mails meer ontvangen? Laat het ons weten via dit e-mailadres.</p>
-</div>`.trim()
-
-  const text = `Hallo${voornaam ? ` ${voornaam}` : ''},
-
-Ik ben Richard van Agentmakers.io — wij bouwen AI receptionistes voor Nederlandse bedrijven.
-
-Ik heb alvast een persoonlijke demo gemaakt voor ${bedrijfsnaam}. Ze is getraind op jullie website en staat klaar om vragen van klanten te beantwoorden, 24/7.
-
-👉 Beluister uw persoonlijke AI demo: ${demo_url}
-
-Ze kan nu al uw bedrijf voorstellen, vragen over diensten en prijzen beantwoorden, en direct een afspraak inplannen.
-
-Geen verplichtingen — het is gewoon leuk om te zien wat er al mogelijk is.
-
-Met vriendelijke groet,
-Richard
-Agentmakers.io`
-
-  await resend.emails.send({
-    from: FROM,
-    to: email,
-    subject,
-    html,
-    text,
-  })
-}
+// Email #3 (cold outreach via Resend) was retired: cold email + follow-ups go through Smartlead
+// (src/lib/outreach/sending). Resend is transactional only.
 
 // Email #4: Follow-up (3 days after demo link, no booking yet)
 export async function sendFollowUpEmail({
