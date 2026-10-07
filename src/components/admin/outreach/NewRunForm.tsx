@@ -74,7 +74,7 @@ export function NewRunForm({ api, landingOptions, initial, onCreated, onCancel }
           </label>
         ))}
         <div data-testid="no-sending-notice" style={{ background: C.amberBg, color: C.amber, borderRadius: 8, padding: '6px 10px', fontSize: '.78rem', fontWeight: 700 }}>
-          Verzenden is uitgeschakeld. Ook in Autopilot wordt geen enkele mail verstuurd.
+          Een run verstuurt zelf niets. Verzenden gebeurt pas via de verzendwachtrij, alleen als verzenden centraal aan staat.
         </div>
       </fieldset>
       {serverError && <div style={{ marginTop: 12 }}><ErrorBox message={serverError} /></div>}

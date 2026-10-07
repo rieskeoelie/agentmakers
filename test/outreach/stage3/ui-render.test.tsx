@@ -70,7 +70,7 @@ describe("Run detail", () => {
     const out = html(<RunDetailBody data={overview} onAction={noop} onOpenProspect={noop} canOperate />);
     for (const s of ["Gevonden", "Onderzocht", "GOOD_FIT", "Beslissers", "Zakelijke e-mails", "READY", "NEEDS_REVIEW"]) expect(out).toContain(s);
     expect(out).toContain("Klaar");
-    expect(out).toContain("niets wordt verzonden");
+    expect(out).not.toContain("niets wordt verzonden");
     expect(out).toContain("Geblokkeerd (");
     expect(out).toContain("100%");
     expect(out).not.toMatch(/>Pauzeer<|>Hervat</); // completed run: no actions
@@ -91,7 +91,7 @@ describe("New run form", () => {
     expect(out).toContain('max="20"');
     expect(out).toContain("Autopilot");
     expect(out).toContain("Review vóór verzenden");
-    expect(out).toContain("Er wordt NIETS verzonden");
+    expect(out).toContain("Er wordt niets verzonden tot een mens ze goedkeurt");
   });
 });
 
@@ -154,7 +154,7 @@ describe("Settings, empty and error states", () => {
   it("settings show configuration status but never secret values", () => {
     const env = EnvSchema.parse({ HUNTER_API_KEY: "hunter-secret-value" });
     const out = html(<SettingsBody s={settingsForActor(OWNER, env, DEFAULT_WORKER_SETTINGS, undefined)} />);
-    expect(out).toContain("Uitgeschakeld");
+    expect(out).toContain("Providers");
     expect(out).not.toContain("hunter-secret-value");
     expect(out).toContain("ontbreekt");
   });
@@ -165,9 +165,9 @@ describe("Settings, empty and error states", () => {
     expect(err).toContain("Geen toegang.");
     expect(err).toContain(">Opnieuw<");
   });
-  it("workspace: Runs / Prospects / Review / Settings — no Inbox; sending clearly disabled", () => {
-    const out = html(<OutreachWorkspace currentUser={{ userId: "u", isAdmin: true, isSuperAdmin: false }} viewAsUser={null} landingOptions={[]} onOpenLegacy={noop} />);
-    for (const s of [">Runs<", ">Prospects<", ">Review<", ">Instellingen<", "Verzenden uitgeschakeld", "Oude demo-link tool"]) expect(out).toContain(s);
-    expect(out).not.toMatch(/Inbox/i);
+  it("workspace: Runs / Prospects / Review / Inbox / Settings with a sending status badge; legacy tool retired", () => {
+    const out = html(<OutreachWorkspace currentUser={{ userId: "u", isAdmin: true, isSuperAdmin: false }} viewAsUser={null} landingOptions={[]} />);
+    for (const s of [">Runs<", ">Prospects<", ">Review<", ">Inbox<", ">Instellingen<", 'data-testid="sending-badge"', "Verzenden: …"]) expect(out).toContain(s);
+    expect(out).not.toContain("Oude demo-link tool");
   });
 });

@@ -9,6 +9,7 @@ import type { RunOverview, TimelineEvent } from '../../../lib/outreach/ui/types'
 import { MODE_COPY } from '../../../lib/outreach/ui/newRun'
 import type { RunAction } from '../../../lib/outreach/orchestration/states'
 import { RunStatusChip } from './RunsView'
+import { RunSendingSection } from './SendingPanel'
 import { Btn, C, ErrorBox, KeyValue, Loading, panel, Progress, SectionTitle, tableWrap, td, th, useLoad } from './ui'
 
 const EVENT_LABEL: Record<string, string> = {
@@ -50,7 +51,7 @@ export function RunDetailBody({ data, onAction, onOpenProspect, busy, canOperate
             {r.status_reason ? (PAUSE_REASON_LABEL[r.status_reason] ?? r.status_reason) : meta.hint}
             {r.status === 'RUNNING' && r.funnel.in_progress > 0 && <> · {r.funnel.in_progress} bezig, {r.funnel.pending} in wachtrij</>}
           </div>
-          <div style={{ fontSize: '.78rem', color: C.muted, marginTop: 2 }}>{r.campaign.niche} · {geography(r.campaign)} · {MODE_COPY[r.sending_mode ?? 'REVIEW_BEFORE_SENDING'].label} · niets wordt verzonden</div>
+          <div style={{ fontSize: '.78rem', color: C.muted, marginTop: 2 }}>{r.campaign.niche} · {geography(r.campaign)} · {MODE_COPY[r.sending_mode ?? 'REVIEW_BEFORE_SENDING'].label}</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {actions.map((a) => <Btn key={a.action} kind={a.action === 'stop' ? 'danger' : a.action === 'resume' || a.action === 'start' ? 'primary' : 'secondary'} disabled={busy} onClick={() => onAction(a.action)}>{a.label}</Btn>)}
@@ -166,6 +167,7 @@ export function RunDetailView({ api, runId, onBack, onOpenProspects, onOpenProsp
       {error && <div style={{ marginBottom: 10 }}><ErrorBox message={error} onRetry={() => { setActionError(null); reload() }} /></div>}
       {!data && !error && <Loading />}
       {data && <RunDetailBody data={data} onAction={act} onOpenProspect={onOpenProspect} busy={busy} canOperate={canOperate} />}
+      {data && data.run.status !== 'CREATED' && <RunSendingSection api={api} runId={runId} canOperate={canOperate} onOpenProspect={onOpenProspect} />}
     </div>
   )
 }

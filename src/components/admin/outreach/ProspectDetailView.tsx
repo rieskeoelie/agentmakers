@@ -1,4 +1,5 @@
 'use client'
+import { ProspectSendingSection } from './SendingPanel'
 import { useCallback, type ReactNode } from 'react'
 import type { OutreachApi } from '../../../lib/outreach/ui/api'
 import { dateTime, eur } from '../../../lib/outreach/ui/format'
@@ -193,6 +194,7 @@ export function ProspectDetailView({ api, prospectId, onBack, onOpenRun }: { api
       {error && <ErrorBox message={error} onRetry={reload} />}
       {!d && !error && <Loading />}
       {d && <ProspectDetailBody d={d} />}
+      {d && <ProspectSendingSection api={api} prospectId={prospectId} />}
     </div>
   )
 }

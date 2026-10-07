@@ -73,10 +73,10 @@ export function inputFromRun(run: { name: string; sending_mode?: SendingMode; ca
 export const MODE_COPY: Record<SendingMode, { label: string; text: string }> = {
   AUTOPILOT: {
     label: "Autopilot",
-    text: "Prospects mogen automatisch doorlopen tot READY. Er wordt NIETS verzonden — verzending bestaat nog niet. Zodra verzending bestaat, komen READY-prospects van deze run in aanmerking voor automatisch versturen.",
+    text: "READY-prospects van deze run gaan automatisch in de verzendwachtrij — alleen als verzenden én Autopilot centraal aan staan, en altijd via de verzendcontrole (suppressies, dubbel contact, limieten).",
   },
   REVIEW_BEFORE_SENDING: {
     label: "Review vóór verzenden",
-    text: "Prospects lopen door tot READY of NEEDS_REVIEW. Er wordt NIETS verzonden. Zodra verzending bestaat, moet elke prospect eerst door een mens worden goedgekeurd.",
+    text: "Prospects lopen door tot READY of NEEDS_REVIEW. Er wordt niets verzonden tot een mens ze goedkeurt en in de verzendwachtrij zet.",
   },
 };

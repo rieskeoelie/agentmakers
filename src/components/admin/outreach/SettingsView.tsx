@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import type { OutreachApi } from '../../../lib/outreach/ui/api'
 import { eur } from '../../../lib/outreach/ui/format'
 import type { OutreachSettingsView } from '../../../lib/outreach/ui/types'
+import { SendingPanel } from './SendingPanel'
 import { C, Chip, ErrorBox, KeyValue, Loading, panel, SectionTitle, useLoad } from './ui'
 
 const yes = (ok: boolean, label = ok ? 'ingesteld' : 'ontbreekt') => <Chip color={ok ? C.green : C.red} bg={ok ? C.greenBg : C.redBg}>{label}</Chip>
@@ -10,10 +11,6 @@ const yes = (ok: boolean, label = ok ? 'ingesteld' : 'ontbreekt') => <Chip color
 export function SettingsBody({ s }: { s: OutreachSettingsView }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
-      <div style={panel}>
-        <SectionTitle>Verzenden</SectionTitle>
-        <KeyValue items={[['Status', <Chip key="s" color={C.amber} bg={C.amberBg}>Uitgeschakeld</Chip>], ['Uitleg', 'Er bestaat nog geen verzending. Runs stoppen bij READY / NEEDS_REVIEW.']]} />
-      </div>
       <div style={panel}>
         <SectionTitle>Limieten</SectionTitle>
         <KeyValue items={[['Max prospects per run', `${s.limits.max_prospects} (harde limiet ${s.hard_max_prospects})`], ['Max budget per run', eur(s.limits.max_budget_eur)], ['Gelijktijdig per run', String(s.limits.concurrency)]]} />
@@ -34,7 +31,8 @@ export function SettingsView({ api }: { api: OutreachApi }) {
   const { data: s, error, reload } = useLoad<OutreachSettingsView>(useCallback(() => api.settings(), [api]))
   return (
     <div>
-      <div style={{ fontSize: '.85rem', color: C.muted, marginBottom: 10 }}>Alleen-lezen. Waarden van sleutels worden nooit getoond.</div>
+      <SendingPanel api={api} />
+      <div style={{ fontSize: '.85rem', color: C.muted, margin: '16px 0 10px' }}>Onderzoek (alleen-lezen). Waarden van sleutels worden nooit getoond.</div>
       {error && <ErrorBox message={error} onRetry={reload} />}
       {!s && !error && <Loading />}
       {s && <SettingsBody s={s} />}
